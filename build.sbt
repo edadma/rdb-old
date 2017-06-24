@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-//	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
+	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 //	"org.scala-lang.modules" %% "scala-swing" % "2.0.0"
 )
@@ -50,6 +50,13 @@ libraryDependencies ++= {
 	)
 }
 
+libraryDependencies ++= Seq(
+	"xyz.hyperreal" %% "json" % "0.7",
+	"xyz.hyperreal" %% "table" % "0.4",
+	"xyz.hyperreal" %% "lia" % "0.20",
+	"xyz.hyperreal" %% "options" % "0.2"
+)
+
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
 
 mainClass in assembly := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
@@ -62,7 +69,7 @@ publishArtifact in Test := false
 
 pomIncludeRepository := { _ => false }
 
-licenses := Seq("MIT" -> url("https://opensource.org/licenses/ISC"))
+licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
 
 homepage := Some(url("https://github.com/edadma/" + name.value))
 
