@@ -11,6 +11,11 @@ abstract class AbstractRelation {
 
 	def iterator: Iterator[Vector[AnyRef]]
 
+	def foreach( f: Vector[AnyRef] => Unit ): Unit = {
+		for (row <- iterator)
+			f( row )
+	}
+
 	override def toString = name
 
 }
