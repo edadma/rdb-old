@@ -1,17 +1,19 @@
 package xyz.hyperreal.rdb
 
-import scala.util.parsing.input.CharSequenceReader
+import scala.util.parsing.input.{CharSequenceReader, Positional}
 import util.parsing.combinator.RegexParsers
 
 
 class RQLParser extends RegexParsers {
-	def number = """\d+(\.\d*)?""".r ^^ {
-		case n if n contains '.' => ('number, n)
-		case n => ('integer, n) }
+	def pos = positioned( success(new Positional{}) ) ^^ { _.pos }
 
-	def string = "'" ~> """[^'\n]+""".r <~ "'" ^^ { ('string, _) }
+	def number = pos ~ """\d+(\.\d*)?""".r ^^ {
+		case p ~ n if n contains '.' => NumberLit( p, n )
+		case p ~ n => IntegerLit( p, n ) }
 
-	def ident = """[a-zA-Z_]+""".r ^^ { ('ident, _) }
+	def string = pos ~ ("'" ~> """[^'\n]+""".r <~ "'") ^^ { case p ~ s => StringLit( p, s ) }
+
+	def ident = pos ~ """[a-zA-Z_]+""".r ^^ { case p ~ s => Ident( p, s ) }
 
 	def relation =
 		relationLiteral
@@ -24,9 +26,9 @@ class RQLParser extends RegexParsers {
 	def tuple = "(" ~> rep1sep(valueExpression, ",") <~ ")" ^^ { ('tuple, _) }
 
 	def valueExpression =
-		primary
+		valuePrimary
 
-	def primary =
+	def valuePrimary =
 		number |
 		string
 
