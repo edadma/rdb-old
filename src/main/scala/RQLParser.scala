@@ -1,5 +1,6 @@
 package xyz.hyperreal.rdb
 
+import scala.util.parsing.input.CharSequenceReader
 import util.parsing.combinator.RegexParsers
 
 
@@ -12,7 +13,10 @@ class RQLParser extends RegexParsers {
 
 	def ident = """[a-zA-Z_]+""".r ^^ { ('ident, _) }
 
-	def tableLiteral =
+	def relation =
+		relationLiteral
+
+	def relationLiteral =
 		("{" ~> nameList) ~ (rep(tuple) <~ "}") ^^ { case h ~ d => ('table, h, d) }
 
 	def nameList = "[" ~> rep1sep(ident, ",") <~ "]"
@@ -26,10 +30,11 @@ class RQLParser extends RegexParsers {
 		number |
 		string
 
-	def apply( input: String ) =
-		parseAll( tableLiteral, input ) match {
-			case Success( result, _ ) => result
-			case failure: NoSuccess => scala.sys.error( failure.msg )
+	def parseFromString[T]( src: String, grammar: Parser[T] ) = {
+		parse( grammar, new CharSequenceReader(src) ) match {
+			case Success( tree, _ ) => tree
+			case NoSuccess( error, rest ) => problem( rest.pos, error )
 		}
+	}
 
 }
