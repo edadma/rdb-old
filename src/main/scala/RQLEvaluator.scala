@@ -16,4 +16,6 @@ object RQLEvaluator {
 			case ('string, n: String) => n
 		}
 	}
+
+	def evalLogical() {}
 }
