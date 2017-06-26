@@ -4,16 +4,16 @@ package xyz.hyperreal.rdb
 object RQLEvaluator {
 	def evalRelation( ast: Any ) = {
 		ast match {
-			case ('table, headings: List[_], data: List[_]) =>
+			case RelationLit( columns, data ) =>
 				var hset = Set[String]()
 
-				for (Ident( p, n ) <- headings)
+				for (ColumnSpec( Ident(p, n), _ ) <- columns)
 					if (hset(n))
 						problem( p, s"duplicate $n" )
 					else
 						hset += n
 
-				(headings map {case Ident( _, n ) => n}, data map {case ('tuple, t: List[_]) => t map evalExpression})
+				(columns map {case ColumnSpec( Ident(_, n), _ ) => n}, data map {_ map evalExpression})
 		}
 	}
 
