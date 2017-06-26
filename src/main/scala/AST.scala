@@ -10,6 +10,7 @@ case class StringLit( p: Position, s: String ) extends ValueExpression
 case class Ident( p: Position, s: String ) extends ValueExpression
 
 trait RelationExpression
-case class RelationLit( columns: List[ColumnSpec], data: List[List[ValueExpression]] ) extends RelationExpression
+//case class RelationLit( columns: List[ColumnSpec], data: List[List[ValueExpression]] ) extends RelationExpression
+case class RelationLit( columns: List[Ident], data: List[List[ValueExpression]] ) extends RelationExpression
 
-case class ColumnSpec( name: Ident, typ: Option[Ident] )
+//case class ColumnSpec( name: Ident, typ: Option[Ident] )

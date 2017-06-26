@@ -3,9 +3,7 @@ package xyz.hyperreal.rdb
 
 abstract class AbstractRelation {
 
-	def name: String
-
-	def columns: Seq[Column]
+	def header: Seq[Column]
 
 	def columnMap: Map[String, Int]
 
@@ -16,7 +14,11 @@ abstract class AbstractRelation {
 			f( row )
 	}
 
-	override def toString = name
+}
+
+object Type {
+
+
 
 }
 

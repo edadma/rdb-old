@@ -7,13 +7,18 @@ object RQLEvaluator {
 			case RelationLit( columns, data ) =>
 				var hset = Set[String]()
 
-				for (ColumnSpec( Ident(p, n), _ ) <- columns)
+//				for (ColumnSpec( Ident(p, n), _ ) <- columns)
+				for (Ident( p, n ) <- columns)
 					if (hset(n))
 						problem( p, s"duplicate $n" )
 					else
 						hset += n
 
-				(columns map {case ColumnSpec( Ident(_, n), _ ) => n}, data map {_ map evalExpression})
+//				(columns map {case ColumnSpec( Ident(_, n), _ ) => n}, data map {_ map evalExpression})
+				val header = columns map {case Ident( _, n ) => n}
+				val body = data map {_ map evalExpression}
+
+				ConcreteRelation( )
 		}
 	}
 

@@ -9,7 +9,7 @@ class BaseRelation( val name: String, definition: List[Column] ) extends Abstrac
 
 	private val rows = new ArrayBuffer[Vector[AnyRef]]
 
-	def columns = cols toList
+	def header = cols toList
 
 	def columnMap = (cols map (_.name) zipWithIndex) toMap
 

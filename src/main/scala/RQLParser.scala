@@ -21,9 +21,9 @@ class RQLParser extends RegexParsers {
 	def relationLiteral =
 		("{" ~> columns) ~ (rep(tuple) <~ "}") ^^ { case c ~ d => RelationLit( c, d ) }
 
-	def columns = "[" ~> rep1sep(column, ",") <~ "]"
+	def columns = "[" ~> rep1sep(ident, ",") <~ "]"
 
-	def column = ident ~ opt(":" ~> ident) ^^ { case (n ~ t) => ColumnSpec( n, t ) }
+//	def column = ident ~ opt(":" ~> ident) ^^ { case (n ~ t) => ColumnSpec( n, t ) }
 
 	def tuple = "(" ~> rep1sep(valueExpression, ",") <~ ")"
 
