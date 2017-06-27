@@ -75,13 +75,13 @@ package object rdb {
 			}
 	}
 
-	object A extends Mark {
+	object A extends Mark( "a-marked" ) {
 		def scala( that: AnyRef ) = if (that == I) I else A
 
 		def comparison( that: AnyRef ) = if (that == I) MAYBE_I else MAYBE_A
 	}
 
-	object I extends Mark {
+	object I extends Mark( "i-marked" ) {
 		def scala( that: AnyRef ) = I
 
 		def comparison( that: AnyRef ) = MAYBE_I

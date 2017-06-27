@@ -11,8 +11,6 @@ class BaseRelation( val name: String, definition: List[Column] ) extends Abstrac
 
 	def header = cols toList
 
-	def columnMap = (cols map (_.name) zipWithIndex) toMap
-
 	def iterator = rows.iterator
 
 	def insert( row: Vector[AnyRef] ): Unit = {

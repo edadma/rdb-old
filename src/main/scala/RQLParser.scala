@@ -7,13 +7,16 @@ import util.parsing.combinator.RegexParsers
 class RQLParser extends RegexParsers {
 	def pos = positioned( success(new Positional{}) ) ^^ { _.pos }
 
-	def number = pos ~ """\d+(\.\d*)?""".r ^^ {
-		case p ~ n if n contains '.' => NumberLit( p, n )
-		case p ~ n => IntegerLit( p, n ) }
+	def number: Parser[ValueExpression] = positioned( """\d+(\.\d*)?""".r ^^ {
+		case n if n contains '.' => NumberLit( n )
+		case n => IntegerLit( n ) } )
 
-	def string = pos ~ ("'" ~> """[^'\n]+""".r <~ "'") ^^ { case p ~ s => StringLit( p, s ) }
+	def string: Parser[ValueExpression] =
+		positioned(
+			(("'" ~> """[^'\n]+""".r <~ "'") |
+			("\"" ~> """[^"\n]+""".r <~ "\"")) ^^ StringLit )
 
-	def ident = pos ~ """[a-zA-Z_]+""".r ^^ { case p ~ s => Ident( p, s ) }
+	def ident = pos ~ """[a-zA-Z_#$]+""".r ^^ { case p ~ s => Ident( p, s ) }
 
 	def relation =
 		relationLiteral
@@ -21,9 +24,9 @@ class RQLParser extends RegexParsers {
 	def relationLiteral =
 		("{" ~> columns) ~ (rep(tuple) <~ "}") ^^ { case c ~ d => RelationLit( c, d ) }
 
-	def columns = "[" ~> rep1sep(ident, ",") <~ "]"
+	def columns = "[" ~> rep1sep(column, ",") <~ "]"
 
-//	def column = ident ~ opt(":" ~> ident) ^^ { case (n ~ t) => ColumnSpec( n, t ) }
+	def column = ident ~ opt(":" ~> ident) ^^ { case (n ~ t) => ColumnSpec( n, t ) }
 
 	def tuple = "(" ~> rep1sep(valueExpression, ",") <~ ")"
 
@@ -32,7 +35,9 @@ class RQLParser extends RegexParsers {
 
 	def valuePrimary =
 		number |
-		string
+		string |
+		"A" ^^^ MarkLit( A ) |
+		"I" ^^^ MarkLit( I )
 
 	def parseFromString[T]( src: String, grammar: Parser[T] ) = {
 		parse( grammar, new CharSequenceReader(src) ) match {

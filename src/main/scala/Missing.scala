@@ -11,10 +11,11 @@ abstract class Logical {
 
 }
 
-abstract class Mark {
+abstract class Mark( name: String ) {
 
 	def scala( that: AnyRef ): Mark
 
 	def comparison( that: AnyRef ): Logical
 
+	override def toString = name
 }
