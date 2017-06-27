@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb
 
+import scala.util.parsing.input.Position
+
 
 abstract class AbstractRelation {
 
@@ -17,14 +19,13 @@ abstract class AbstractRelation {
 
 object Type {
 
-	def fromSpec( spec: Ident ) = {
-		val Ident( p, s ) = spec
+	def fromSpec( pos: Position, spec: String ) = {
 
-		s match {
+		spec match {
 			case "integer" => IntegerType
 			case "float" => FloatType
 			case "string" => StringType
-			case _ => problem( p, s"unrecognized type name '$s'" )
+			case _ => problem( pos, s"unrecognized type name '$spec'" )
 		}
 	}
 

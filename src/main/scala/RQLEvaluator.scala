@@ -9,7 +9,7 @@ object RQLEvaluator {
 			case RelationLit( columns, data ) =>
 				var hset = Set[String]()
 
-				for (ColumnSpec( Ident(p, n), _ ) <- columns)
+				for (ColumnSpec( p, n, _, _ ) <- columns)
 					if (hset(n))
 						problem( p, s"duplicate $n" )
 					else
@@ -18,14 +18,14 @@ object RQLEvaluator {
 				val body = new ArrayBuffer[Vector[AnyRef]]
 				val types =
 					columns map {
-						case ColumnSpec( _, None ) => null
-						case ColumnSpec( _, Some(t) ) => Type.fromSpec( t )
+						case ColumnSpec( _, _, _, None ) => null
+						case ColumnSpec( _, _, p, Some(t) ) => Type.fromSpec( p, t )
 					} toArray
 
 				if (data isEmpty)
 					types indexOf null match {
 						case -1 =>
-						case ind => problem( columns(ind).name.p, "missing type specification in empty relation" )
+						case ind => problem( columns(ind).typepos, "missing type specification in empty relation" )
 					}
 				else {
 					for (r <- data) {
@@ -67,8 +67,8 @@ object RQLEvaluator {
 
 				val header =
 					columns zip types map {
-						case (ColumnSpec( Ident(p, _), _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnSpec( Ident(_, n), _ ), t) => Column( n, t )
+						case (ColumnSpec( _, _, p, _ ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnSpec( _, n, _ , _), t) => Column( n, t )
 					}
 
 				ConcreteRelation( header, body toList )

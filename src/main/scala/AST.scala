@@ -9,9 +9,8 @@ case class IntegerLit( n: String ) extends ValueExpression
 case class StringLit( s: String ) extends ValueExpression
 case class MarkLit( m: Mark ) extends ValueExpression
 
-case class Ident( p: Position, s: String )
-
 trait RelationExpression
+case class RelationVariable( name: String ) extends RelationExpression
 case class RelationLit( columns: List[ColumnSpec], data: List[List[ValueExpression]] ) extends RelationExpression
 
-case class ColumnSpec( name: Ident, typ: Option[Ident] )
+case class ColumnSpec( namepos: Position, name: String, typepos: Position, typ: Option[String] )
