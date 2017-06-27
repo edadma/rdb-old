@@ -19,6 +19,7 @@ class RQLParser extends RegexParsers {
 	def ident = """[a-zA-Z_#$]+""".r
 
 	def relation =
+		pos ~ ident ^^ { case p ~ n => RelationVariable(p, n) } |
 		relationLiteral
 //		projectionOperator
 
