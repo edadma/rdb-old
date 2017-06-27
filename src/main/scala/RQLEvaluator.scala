@@ -6,7 +6,9 @@ import scala.collection.mutable.ArrayBuffer
 object RQLEvaluator {
 	def evalRelation( ast: RelationExpression ) = {
 		ast match {
-			case RelationLit( columns, data ) =>
+			case ProjectionRelationExpression( operand, names ) =>
+
+			case LiteralRelationExpression( columns, data ) =>
 				var hset = Set[String]()
 
 				for (ColumnSpec( p, n, _, _ ) <- columns)
