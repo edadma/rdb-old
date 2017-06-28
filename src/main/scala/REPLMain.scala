@@ -2,15 +2,12 @@ package xyz.hyperreal.rdb
 
 import java.io.PrintWriter
 
-import collection.mutable.HashMap
 import jline.console.ConsoleReader
 
 import xyz.hyperreal.table.TextTable
 
 
 object REPLMain extends App {
-
-	val baseRelations = new HashMap[String, BaseRelation]
 
 	val reader =
 		new ConsoleReader {
@@ -21,6 +18,7 @@ object REPLMain extends App {
 	val out = new PrintWriter( reader.getTerminal.wrapOutIfNeeded( System.out ), true )
 	var line: String = _
 	var stacktrace = false
+	var conn = new Connection
 
 	s"""
 		 |Welcome to rdb/$VERSION
@@ -55,12 +53,25 @@ object REPLMain extends App {
 
 					ast match {
 						case InsertStatement( target, relation ) =>
-							if (!baseRelations.contains( target.name ))
-								problem( target.pos, "base relation not found" )
+							val src = Connection.evalRelation( relation )
+							val dst =
+								baseRelations get target.name match {
+									case None =>
+										val base = new BaseRelation( target.name, src.header )
 
-							
+										baseRelations(target.name) = base
+										base
+									case Some( base ) =>
+										if (!src.headerSet.subsetOf( base.headerSet ))
+											problem( relation.pos, "attributes much be a subset of target" )
+
+										base
+								}
+
+							dst.insertRelation( src )
+							println( dst.size )
 						case r: RelationExpression =>
-							val rel = RQLEvaluator.evalRelation( r )
+							val rel = Connection.evalRelation( r )
 							val t =
 								new TextTable {
 									headerSeq( rel.header map (_.name) )

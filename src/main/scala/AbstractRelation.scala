@@ -5,23 +5,25 @@ import scala.util.parsing.input.Position
 
 trait Relation {
 
-	def columnMap: Map[String, Int]
-
 	def header: IndexedSeq[Column]
 
 	def iterator: Iterator[Vector[AnyRef]]
 
 	def foreach( f: Vector[AnyRef] => Unit ): Unit
 
+	def size: Int
+
+	lazy val columnNameMap = (header map (_.name) zipWithIndex) toMap
+
+	lazy val columnMap = header.zipWithIndex toMap
+
+	lazy val headerSet = header toSet
+
 }
 
+case class Column( name: String, typ: Type )
+
 abstract class AbstractRelation extends Relation {
-
-	lazy val columnMap = (header map (_.name) zipWithIndex) toMap
-
-	def header: IndexedSeq[Column]
-
-	def iterator: Iterator[Vector[AnyRef]]
 
 	def foreach( f: Vector[AnyRef] => Unit ) =
 		for (row <- iterator)
@@ -90,5 +92,3 @@ case class SetType( elements: List[String] ) extends SimpleType {
 case class ArrayType( parameter: SimpleType ) extends Type {
 	val name = s"array($parameter)"
 }
-
-case class Column( name: String, typ: Type )
