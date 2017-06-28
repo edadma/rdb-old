@@ -12,7 +12,7 @@ case class MarkLit( m: Mark ) extends ValueExpression
 trait RelationExpression
 case class VariableRelationExpression( name: Ident ) extends RelationExpression
 case class LiteralRelationExpression( columns: List[ColumnSpec], data: List[List[ValueExpression]] ) extends RelationExpression
-case class ProjectionRelationExpression( operand: RelationExpression, columns: List[Ident] ) extends RelationExpression
+case class ProjectionRelationExpression( relation: RelationExpression, columns: List[Ident] ) extends RelationExpression
 
 case class Ident( pos: Position, name: String )
 

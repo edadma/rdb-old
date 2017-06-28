@@ -1,13 +1,27 @@
 package xyz.hyperreal.rdb
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, HashSet, ListBuffer}
 
 
 object RQLEvaluator {
-	def evalRelation( ast: RelationExpression ) = {
+	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
-//			case ProjectionRelationExpression( operand, names ) =>
+			case ProjectionRelationExpression( relation, columns ) =>
+				val rel = evalRelation( relation )
+				val s = new HashSet[String]
+				val cs = new ListBuffer[String]
 
+				for (Ident( p, n ) <- columns)
+					if (!rel.columnMap.contains( n ))
+						problem( p, "unknown column name" )
+					else if (s(n))
+						problem( p, "duplicate column name" )
+					else {
+						s += n
+						cs += n
+					}
+
+				new ProjectionRelation( rel, cs toList )
 			case LiteralRelationExpression( columns, data ) =>
 				var hset = Set[String]()
 

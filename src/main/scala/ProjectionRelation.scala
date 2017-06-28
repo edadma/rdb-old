@@ -1,16 +1,25 @@
 package xyz.hyperreal.rdb
 
-import scala.collection.mutable.ArrayBuffer
 
+class ProjectionRelation( relation: Relation, columns: List[String] ) extends AbstractRelation {
 
-class ProjectionRelation( ) extends AbstractRelation {
+	require( columns.toSet.size == columns.length, "columns contains duplicate" )
 
-	def header: IndexedSeq[Column] = {
-		null
-	}
+	val ind = columns map relation.columnMap toVector
+	val header = ind map relation.header
 
-	def iterator: Iterator[Vector[AnyRef]] = {
-		null
+	def iterator = {
+		new Iterator[Vector[AnyRef]] {
+			val it = relation.iterator
+
+			def hasNext = it.hasNext
+
+			def next = {
+				val r = it.next
+
+				ind map r
+			}
+		}
 	}
 
 }

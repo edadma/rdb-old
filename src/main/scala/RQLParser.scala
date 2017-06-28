@@ -27,7 +27,7 @@ class RQLParser extends RegexParsers {
 		ident ^^ VariableRelationExpression
 
 	def relationProjection =
-		relation ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ n => ProjectionRelationExpression( r, n ) }
+		relation ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) }
 
 	def relationLiteral =
 		("{" ~> columns) ~ (rep(tuple) <~ "}") ^^ { case c ~ d => LiteralRelationExpression( c, d ) }
