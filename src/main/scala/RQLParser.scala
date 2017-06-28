@@ -19,8 +19,13 @@ class RQLParser extends RegexParsers {
 	def ident = pos ~ """[a-zA-Z_$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def statement: Parser[StatementAST] =
-		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertStatement( n, r ) } |
+		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
+		(ident <~ "<-") ~ tupleset ^^ { case n ~ t => InsertTuplesetStatement( n, t ) } |
+		(ident <~ "<-") ~ tuple ^^ { case n ~ t => InsertTuplesetStatement( n, List(t) ) } |
 		relation
+
+	def tupleset =
+		"{" ~> rep1sep(tuple, ",") <~ "}"
 
 	def relation: Parser[RelationExpression] = positioned(
 		relationPrimary ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
@@ -28,17 +33,17 @@ class RQLParser extends RegexParsers {
 		)
 
 	def relationPrimary = positioned(
-		("{" ~> columns) ~ (rep(tuple) <~ "}") ^^ { case c ~ d => LiteralRelationExpression( c, d ) } |
+		("{" ~> columns) ~ (repsep(tuple, ",") <~ "}") ^^ { case c ~ d => ListRelationExpression( c, d ) } |
 		ident ^^ VariableRelationExpression
 		)
 
 	def columns = "[" ~> rep1sep(column, ",") <~ "]"
 
 	def column =
-		(ident <~ ":") ~ ident ^^ {
-				case (n ~ t) => ColumnSpec( n, t.pos, Some(t.name) )} |
-			ident ~ pos ^^ {
-				case (n ~ p) => ColumnSpec( n, p, None ) }
+		(	ident <~ ":") ~ ident ~ opt( "(" ~ "pk" ~ ")" ) ^^ {
+				case (n ~ t ~ pk) => ColumnSpec( n, t.pos, Some(t.name), pk isDefined )} |
+			ident ~ pos ~ opt( "fk" ) ^^ {
+				case (n ~ p ~ pk) => ColumnSpec( n, p, None, pk isDefined ) }
 
 	def tuple = "(" ~> rep1sep(valueExpression, ",") <~ ")"
 
@@ -48,8 +53,8 @@ class RQLParser extends RegexParsers {
 	def valuePrimary =
 		number |
 		string |
-		"A" ^^^ MarkLit( A ) |
-		"I" ^^^ MarkLit( I )
+		positioned( "A" ^^^ MarkLit(A) ) |
+		positioned( "I" ^^^ MarkLit(I) )
 
 	def parseFromString[T]( src: String, grammar: Parser[T] ) = {
 		parse( grammar, new CharSequenceReader(src) ) match {

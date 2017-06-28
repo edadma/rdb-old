@@ -12,7 +12,9 @@ class Connection {
 		val ast = p.parseFromString( statement, p.statement )
 
 		ast match {
-			case InsertStatement( target, relation ) =>
+			case InsertTuplesetStatement( target, tupleset ) =>
+
+			case InsertRelationStatement( target, relation ) =>
 				val src = evalRelation( relation )
 				val dst =
 					baseRelations get target.name match {
@@ -57,10 +59,10 @@ class Connection {
 					}
 
 				new ProjectionRelation( rel, cs toList )
-			case LiteralRelationExpression( columns, data ) =>
+			case ListRelationExpression( columns, data ) =>
 				var hset = Set[String]()
 
-				for (ColumnSpec( Ident(p, n), _, _ ) <- columns)
+				for (ColumnSpec( Ident(p, n), _, _, pk ) <- columns)
 					if (hset(n))
 						problem( p, s"duplicate $n" )
 					else
@@ -69,8 +71,8 @@ class Connection {
 				val body = new ArrayBuffer[Vector[AnyRef]]
 				val types =
 					columns map {
-						case ColumnSpec( _, _, None ) => null
-						case ColumnSpec( _, p, Some(t) ) => Type.fromSpec( p, t )
+						case ColumnSpec( _, _, None, pk ) => null
+						case ColumnSpec( _, p, Some(t), pk ) => Type.fromSpec( p, t )
 					} toArray
 
 				if (data isEmpty)
@@ -118,8 +120,8 @@ class Connection {
 
 				val header =
 					columns zip types map {
-						case (ColumnSpec( _, p, _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnSpec( Ident(_, n), _ , _), t) => Column( n, t )
+						case (ColumnSpec( _, p, _, pk ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( n, t )
 					}
 
 				ListRelation( header toIndexedSeq, body toList )
