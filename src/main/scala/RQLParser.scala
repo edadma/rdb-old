@@ -18,19 +18,17 @@ class RQLParser extends RegexParsers {
 
 	def ident = pos ~ """[a-zA-Z_#$]+""".r ^^ { case p ~ n => Ident( p, n ) }
 
+	def statement: Parser[StatementAST] =
+		relation |
+		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertStatement( n, r ) }
+
 	def relation: Parser[RelationExpression] =
-		relationVariable |
-		relationLiteral |
-		relationProjection
+		relationPrimary ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
+		relationPrimary
 
-	def relationVariable =
+	def relationPrimary =
+		("{" ~> columns) ~ (rep(tuple) <~ "}") ^^ { case c ~ d => LiteralRelationExpression( c, d ) } |
 		ident ^^ VariableRelationExpression
-
-	def relationProjection =
-		relation ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) }
-
-	def relationLiteral =
-		("{" ~> columns) ~ (rep(tuple) <~ "}") ^^ { case c ~ d => LiteralRelationExpression( c, d ) }
 
 	def columns = "[" ~> rep1sep(column, ",") <~ "]"
 

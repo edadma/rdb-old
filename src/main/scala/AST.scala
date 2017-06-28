@@ -3,13 +3,18 @@ package xyz.hyperreal.rdb
 import scala.util.parsing.input.{Positional, Position}
 
 
+trait AST
+
+trait StatementAST extends AST
+case class InsertStatement( target: Ident, relation: RelationExpression ) extends StatementAST
+
 trait ValueExpression extends Positional
 case class NumberLit( n: String ) extends ValueExpression
 case class IntegerLit( n: String ) extends ValueExpression
 case class StringLit( s: String ) extends ValueExpression
 case class MarkLit( m: Mark ) extends ValueExpression
 
-trait RelationExpression
+trait RelationExpression extends StatementAST
 case class VariableRelationExpression( name: Ident ) extends RelationExpression
 case class LiteralRelationExpression( columns: List[ColumnSpec], data: List[List[ValueExpression]] ) extends RelationExpression
 case class ProjectionRelationExpression( relation: RelationExpression, columns: List[Ident] ) extends RelationExpression

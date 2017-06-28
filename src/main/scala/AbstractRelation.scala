@@ -17,7 +17,7 @@ trait Relation {
 
 abstract class AbstractRelation extends Relation {
 
-	val columnMap = (header map (_.name) zipWithIndex) toMap
+	lazy val columnMap = (header map (_.name) zipWithIndex) toMap
 
 	def header: IndexedSeq[Column]
 

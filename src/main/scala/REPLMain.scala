@@ -10,6 +10,8 @@ import xyz.hyperreal.table.TextTable
 
 object REPLMain extends App {
 
+	val baseRelations = new HashMap[String, BaseRelation]
+
 	val reader =
 		new ConsoleReader {
 			setExpandEvents( false )
@@ -49,24 +51,31 @@ object REPLMain extends App {
 				case _ if line1 startsWith "?" =>
 				case _ =>
 					val p = new RQLParser
-					val ast = p.parseFromString( line1, p.relation )
-					val rel = RQLEvaluator.evalRelation( ast )
-					val t =
-						new TextTable {
-							headerSeq( rel.header map (_.name) )
-							line
+					val ast = p.parseFromString( line1, p.statement )
 
-							for (i <- 1 to rel.header.length)
-								rel.header(i - 1).typ match {
-									case _: NumericalType => rightAlignment( i )
-									case _ =>
+					ast match {
+						case InsertStatement( target, relation ) =>
+							if (!baseRelations.contains( target.name ))
+								problem( target.pos, "base relation not found" )
+
+							
+						case r: RelationExpression =>
+							val rel = RQLEvaluator.evalRelation( r )
+							val t =
+								new TextTable {
+									headerSeq( rel.header map (_.name) )
+									line
+
+									for (i <- 1 to rel.header.length)
+										if (rel.header(i - 1).typ.isInstanceOf[NumericalType])
+											rightAlignment( i )
+
+									for (r <- rel)
+										rowSeq( r )
 								}
 
-							for (r <- rel)
-								rowSeq( r )
-						}
-
-					print( t )
+							print( t )
+					}
 			}
 		}
 		catch
