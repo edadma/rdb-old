@@ -48,4 +48,19 @@ class BaseRelation( val name: String, definition: Seq[Column] ) extends Abstract
 
 		InsertResult( res toList, count )
 	}
+
+	private [rdb] def insertTupleset( data: List[Vector[AnyRef]] ) = {
+		val res = new ListBuffer[Map[String, AnyRef]]
+		var count = 0
+
+		for (r <- data) {
+			insertRow( r ) match {
+				case InsertResult( List( m ), c ) =>
+					res += m
+					count += c
+			}
+		}
+
+		InsertResult( res toList, count )
+	}
 }

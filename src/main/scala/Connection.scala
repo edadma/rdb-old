@@ -13,7 +13,14 @@ class Connection {
 
 		ast match {
 			case InsertTuplesetStatement( target, tupleset ) =>
+				baseRelations get target.name match {
+					case None => problem( target.pos, "base relation cannot be created from tuple set" )
+					case Some( base ) =>
+						val types = base.header map (_.typ) toArray
+						val body = evalTupleset( types, tupleset )
 
+						base.insertTupleset( body )
+				}
 			case InsertRelationStatement( target, relation ) =>
 				val src = evalRelation( relation )
 				val dst =
@@ -25,7 +32,7 @@ class Connection {
 							base
 						case Some( base ) =>
 							if (!src.headerSet.subsetOf( base.headerSet ))
-								problem( relation.pos, "attributes much be a subset of target" )
+								problem( relation.pos, "attributes must be a subset of target" )
 
 							base
 					}
@@ -34,6 +41,48 @@ class Connection {
 			case r: RelationExpression =>
 				RelationResult( evalRelation(r) )
 		}
+	}
+
+	def evalTupleset( types: Array[Type], data: List[List[ValueExpression]] ): List[Vector[AnyRef]] = {
+		val body = new ArrayBuffer[Vector[AnyRef]]
+
+		for (r <- data) {
+			val row = new ArrayBuffer[AnyRef]
+
+			if (r.length < types.length)
+				problem( r.last.pos, "unexpected last value (row too short)")
+
+			for ((v, i) <- r zipWithIndex) {
+				if (i == types.length)
+					problem( v.pos, "too many values")
+
+				var x = evalExpression( v )
+
+				val y = x match {
+					case _: Mark =>
+					case a: java.lang.Integer =>
+						types(i) match {
+							case null => types(i) = IntegerType
+							case IntegerType =>
+							case FloatType =>
+								x = a.toDouble.asInstanceOf[Number]
+							case t => problem( v.pos, s"expected $t, not integer" )
+						}
+					case a: String =>
+						types(i) match {
+							case null => types( i ) = StringType
+							case StringType =>
+							case t => problem( v.pos, s"expected $t, not string" )
+						}
+				}
+
+				row += x
+			}
+
+			body += row.toVector
+		}
+
+		body.toList
 	}
 
 	def evalRelation( ast: RelationExpression ): Relation = {
@@ -68,55 +117,19 @@ class Connection {
 					else
 						hset += n
 
-				val body = new ArrayBuffer[Vector[AnyRef]]
-				val types =
+				val types: Array[Type] =
 					columns map {
 						case ColumnSpec( _, _, None, pk ) => null
 						case ColumnSpec( _, p, Some(t), pk ) => Type.fromSpec( p, t )
 					} toArray
-
-				if (data isEmpty)
-					types indexOf null match {
-						case -1 =>
-						case ind => problem( columns(ind).typepos, "missing type specification in empty relation" )
-					}
-				else {
-					for (r <- data) {
-						val row = new ArrayBuffer[AnyRef]
-
-						if (r.length < types.length)
-							problem( r.last.pos, "unexpected last value (row too short)")
-
-						for ((v, i) <- r zipWithIndex) {
-							if (i == types.length)
-								problem( v.pos, "too many values")
-
-							var x = evalExpression( v )
-
-							val y = x match {
-								case _: Mark =>
-								case a: java.lang.Integer =>
-									types(i) match {
-										case null => types(i) = IntegerType
-										case IntegerType =>
-										case FloatType =>
-											x = a.toDouble.asInstanceOf[Number]
-										case t => problem( v.pos, s"expected $t, not integer" )
-									}
-								case a: String =>
-									types(i) match {
-										case null => types( i ) = StringType
-										case StringType =>
-										case t => problem( v.pos, s"expected $t, not string" )
-									}
-							}
-
-							row += x
+				val body =
+					if (data isEmpty)
+						types indexOf null match {
+							case -1 => Nil
+							case ind => problem( columns(ind).typepos, "missing type specification in empty relation" )
 						}
-
-						body += row.toVector
-					}
-				}
+					else
+						evalTupleset( types, data )
 
 				val header =
 					columns zip types map {
@@ -124,7 +137,7 @@ class Connection {
 						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( n, t )
 					}
 
-				ListRelation( header toIndexedSeq, body toList )
+				ListRelation( header toIndexedSeq, body )
 		}
 	}
 
