@@ -15,12 +15,12 @@ class BaseRelation( val name: String, definition: Seq[Column] ) extends Abstract
 
 	def size = rows.length
 
-	def insertRow( row: Vector[AnyRef] ) = {
+	private [rdb] def insertRow( row: Vector[AnyRef] ) = {
 		rows += row
 		InsertResult( List(Map.empty), 1 )
 	}
 
-	def insertRelation( rel: Relation ) = {
+	private [rdb] def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[AnyRef]
 
 		for (c <- header)
@@ -45,7 +45,7 @@ class BaseRelation( val name: String, definition: Seq[Column] ) extends Abstract
 					count += c
 			}
 		}
+
+		InsertResult( res toList, count )
 	}
 }
-
-case class InsertResult( auto: List[Map[String, AnyRef]], count: Int )

@@ -48,37 +48,15 @@ object REPLMain extends App {
 				case Nil|List( "" ) =>
 				case _ if line1 startsWith "?" =>
 				case _ =>
-					val p = new RQLParser
-					val ast = p.parseFromString( line1, p.statement )
-
-					ast match {
-						case InsertStatement( target, relation ) =>
-							val src = Connection.evalRelation( relation )
-							val dst =
-								baseRelations get target.name match {
-									case None =>
-										val base = new BaseRelation( target.name, src.header )
-
-										baseRelations(target.name) = base
-										base
-									case Some( base ) =>
-										if (!src.headerSet.subsetOf( base.headerSet ))
-											problem( relation.pos, "attributes much be a subset of target" )
-
-										base
-								}
-
-							dst.insertRelation( src )
-							println( dst.size )
-						case r: RelationExpression =>
-							val rel = Connection.evalRelation( r )
+					conn.executeStatement( line1 ) match {
+						case RelationResult( rel ) =>
 							val t =
 								new TextTable {
 									headerSeq( rel.header map (_.name) )
 									line
 
 									for (i <- 1 to rel.header.length)
-										if (rel.header(i - 1).typ.isInstanceOf[NumericalType])
+										if (rel.header( i - 1 ).typ.isInstanceOf[NumericalType])
 											rightAlignment( i )
 
 									for (r <- rel)
@@ -86,17 +64,22 @@ object REPLMain extends App {
 								}
 
 							print( t )
+						case InsertResult( _, count ) =>
+							println(
+								count match {
+									case 0 => "no rows were inserted"
+									case 1 => "1 row was inserted"
+									case _ => s"$count rows were inserted"
+								} )
 					}
 			}
+		} catch {
+			case e: Exception =>
+				if (stacktrace)
+					e.printStackTrace( out )
+				else
+					out.println( e )
 		}
-		catch
-			{
-				case e: Exception =>
-					if (stacktrace)
-						e.printStackTrace( out )
-					else
-						out.println( e )
-			}
 
 		out.println
 	}

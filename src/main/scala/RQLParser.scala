@@ -16,7 +16,7 @@ class RQLParser extends RegexParsers {
 			(("'" ~> """[^'\n]+""".r <~ "'") |
 			("\"" ~> """[^"\n]+""".r <~ "\"")) ^^ StringLit )
 
-	def ident = pos ~ """[a-zA-Z_#$]+""".r ^^ { case p ~ n => Ident( p, n ) }
+	def ident = pos ~ """[a-zA-Z_$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def statement: Parser[StatementAST] =
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertStatement( n, r ) } |

@@ -7,10 +7,40 @@ class Connection {
 
 	val baseRelations = new HashMap[String, BaseRelation]
 
+	def executeStatement( statement: String ): Result = {
+		val p = new RQLParser
+		val ast = p.parseFromString( statement, p.statement )
+
+		ast match {
+			case InsertStatement( target, relation ) =>
+				val src = evalRelation( relation )
+				val dst =
+					baseRelations get target.name match {
+						case None =>
+							val base = new BaseRelation( target.name, src.header )
+
+							baseRelations(target.name) = base
+							base
+						case Some( base ) =>
+							if (!src.headerSet.subsetOf( base.headerSet ))
+								problem( relation.pos, "attributes much be a subset of target" )
+
+							base
+					}
+
+				dst.insertRelation( src )
+			case r: RelationExpression =>
+				RelationResult( evalRelation(r) )
+		}
+	}
+
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
 			case VariableRelationExpression( Ident(p, n) ) =>
-
+				baseRelations get n match {
+					case None => problem( p, "unknown base relation" )
+					case Some( r ) => r
+				}
 			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val s = new HashSet[String]
@@ -107,3 +137,7 @@ class Connection {
 
 	def evalLogical() {}
 }
+
+trait Result
+case class InsertResult( auto: List[Map[String, AnyRef]], count: Int ) extends Result
+case class RelationResult( relation: Relation ) extends Result
