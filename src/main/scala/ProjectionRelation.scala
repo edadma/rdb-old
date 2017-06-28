@@ -5,7 +5,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class ProjectionRelation( ) extends AbstractRelation {
 
-	def header: Seq[Column] = {
+	def header: IndexedSeq[Column] = {
 		null
 	}
 

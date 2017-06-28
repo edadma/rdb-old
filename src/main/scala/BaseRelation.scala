@@ -9,7 +9,7 @@ class BaseRelation( val name: String, definition: List[Column] ) extends Abstrac
 
 	private val rows = new ArrayBuffer[Vector[AnyRef]]
 
-	def header = cols toList
+	def header = cols toIndexedSeq
 
 	def iterator = rows.iterator
 

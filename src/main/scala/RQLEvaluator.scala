@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 object RQLEvaluator {
 	def evalRelation( ast: RelationExpression ) = {
 		ast match {
-			case ProjectionRelationExpression( operand, names ) =>
+//			case ProjectionRelationExpression( operand, names ) =>
 
 			case LiteralRelationExpression( columns, data ) =>
 				var hset = Set[String]()
@@ -73,7 +73,7 @@ object RQLEvaluator {
 						case (ColumnSpec( Ident(_, n), _ , _), t) => Column( n, t )
 					}
 
-				ConcreteRelation( header, body toList )
+				ConcreteRelation( header toIndexedSeq, body toList )
 		}
 	}
 

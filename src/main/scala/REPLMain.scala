@@ -50,8 +50,23 @@ object REPLMain extends App {
 				case _ =>
 					val p = new RQLParser
 					val ast = p.parseFromString( line1, p.relation )
+					val rel = RQLEvaluator.evalRelation( ast )
+					val t =
+						new TextTable {
+							headerSeq( rel.header map (_.name) )
+							line
 
-					println( RQLEvaluator.evalRelation( ast ) )
+							for (i <- 1 to rel.header.length)
+								rel.header(i - 1).typ match {
+									case _: NumericalType => rightAlignment( i )
+									case _ =>
+								}
+
+							for (r <- rel)
+								rowSeq( r )
+						}
+
+					print( t )
 			}
 		}
 		catch

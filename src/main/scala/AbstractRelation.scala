@@ -3,11 +3,23 @@ package xyz.hyperreal.rdb
 import scala.util.parsing.input.Position
 
 
-abstract class AbstractRelation {
+trait Relation {
+
+	def columnMap: Map[String, Int]
+
+	def header: IndexedSeq[Column]
+
+	def iterator: Iterator[Vector[AnyRef]]
+
+	def foreach( f: Vector[AnyRef] => Unit ): Unit
+
+}
+
+abstract class AbstractRelation extends Relation {
 
 	val columnMap = (header map (_.name) zipWithIndex) toMap
 
-	def header: Seq[Column]
+	def header: IndexedSeq[Column]
 
 	def iterator: Iterator[Vector[AnyRef]]
 
@@ -39,12 +51,14 @@ abstract class PrimitiveType( val name: String ) extends SimpleType {
 	override def toString = name
 }
 
-case object ByteType extends PrimitiveType( "byte" )
+trait NumericalType extends Type
+
+case object ByteType extends PrimitiveType( "byte" ) with NumericalType
 //case object ShortType extends PrimitiveType
-case object IntegerType extends PrimitiveType( "integer" )
+case object IntegerType extends PrimitiveType( "integer" ) with NumericalType
 //case object LongType extends PrimitiveType
 //case object BigintType extends PrimitiveType
-case object FloatType extends PrimitiveType( "float" )
+case object FloatType extends PrimitiveType( "float" ) with NumericalType
 //case object DecimalType extends PrimitiveType
 //case object RationalType extends PrimitiveType
 //case object ComplexIntegerType extends PrimitiveType
