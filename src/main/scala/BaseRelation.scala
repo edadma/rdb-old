@@ -15,9 +15,9 @@ class BaseRelation( val name: String, definition: Seq[Column] ) extends Abstract
 
 	def size = rows.length
 
-	private [rdb] def insertRow( row: Vector[AnyRef] ) = {
+	private [rdb] def insertRow( row: Vector[AnyRef] ): Option[Map[String, AnyRef]] = {
 		rows += row
-		InsertResult( List(Map.empty), 1 )
+		Some( Map.empty )
 	}
 
 	private [rdb] def insertRelation( rel: Relation ) = {
@@ -40,13 +40,14 @@ class BaseRelation( val name: String, definition: Seq[Column] ) extends Abstract
 					}) toVector
 
 			insertRow( r ) match {
-				case InsertResult( List( m ), c ) =>
+				case None =>
+				case Some( m ) =>
 					res += m
-					count += c
+					count += 1
 			}
 		}
 
-		InsertResult( res toList, count )
+		(res toList, count)
 	}
 
 	private [rdb] def insertTupleset( data: List[Vector[AnyRef]] ) = {
@@ -55,12 +56,13 @@ class BaseRelation( val name: String, definition: Seq[Column] ) extends Abstract
 
 		for (r <- data) {
 			insertRow( r ) match {
-				case InsertResult( List( m ), c ) =>
+				case None =>
+				case Some( m ) =>
 					res += m
-					count += c
+					count += 1
 			}
 		}
 
-		InsertResult( res toList, count )
+		(res toList, count)
 	}
 }

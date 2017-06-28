@@ -64,12 +64,15 @@ object REPLMain extends App {
 								}
 
 							print( t )
-						case InsertResult( _, count ) =>
+						case InsertResult( _, count, created ) =>
 							println(
-								count match {
-									case 0 => "no rows were inserted"
-									case 1 => "1 row was inserted"
-									case _ => s"$count rows were inserted"
+								(count, created) match {
+									case (0, Some(name)) => s"base relation '$name' was created"
+									case (0, None) => "no rows were inserted"
+									case (1, Some(name)) => s"base relation '$name' was created with 1 row"
+									case (1, None) => "1 row was inserted"
+									case (_, Some(name)) => s"base relation '$name' was created with $count rows"
+									case (_, None) => s"$count rows were inserted"
 								} )
 					}
 			}

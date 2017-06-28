@@ -18,26 +18,28 @@ class Connection {
 					case Some( base ) =>
 						val types = base.header map (_.typ) toArray
 						val body = evalTupleset( types, tupleset )
+						val (l, c) = base.insertTupleset( body )
 
-						base.insertTupleset( body )
+						InsertResult( l, c, None )
 				}
 			case InsertRelationStatement( target, relation ) =>
 				val src = evalRelation( relation )
-				val dst =
+				val (dst, created) =
 					baseRelations get target.name match {
 						case None =>
 							val base = new BaseRelation( target.name, src.header )
 
 							baseRelations(target.name) = base
-							base
+							(base, Some( target.name ))
 						case Some( base ) =>
 							if (!src.headerSet.subsetOf( base.headerSet ))
 								problem( relation.pos, "attributes must be a subset of target" )
 
-							base
+							(base, None)
 					}
+				val (l, c) = dst.insertRelation( src )
 
-				dst.insertRelation( src )
+				InsertResult( l, c, created )
 			case r: RelationExpression =>
 				RelationResult( evalRelation(r) )
 		}
@@ -154,5 +156,5 @@ class Connection {
 }
 
 trait Result
-case class InsertResult( auto: List[Map[String, AnyRef]], count: Int ) extends Result
+case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends Result
 case class RelationResult( relation: Relation ) extends Result
