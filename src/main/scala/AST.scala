@@ -10,11 +10,14 @@ case class InsertRelationStatement( target: Ident, relation: RelationExpression 
 case class InsertTuplesetStatement( target: Ident, tupleset: List[List[ValueExpression]] ) extends StatementAST
 
 trait ValueExpression extends AST with Positional
-case class NumberLit( n: String ) extends ValueExpression
+case class FloatLit( n: String ) extends ValueExpression
 case class IntegerLit( n: String ) extends ValueExpression
+case class FloatBin( n: Double ) extends ValueExpression
+case class IntegerBin( n: Int ) extends ValueExpression
 case class StringLit( s: String ) extends ValueExpression
 case class MarkLit( m: Mark ) extends ValueExpression
 case class ValueVariableExpression( name: Ident ) extends ValueExpression
+case class FieldExpression( index: Int ) extends ValueExpression
 
 trait RelationExpression extends StatementAST with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression
@@ -25,6 +28,8 @@ case class SelectionRelationExpression( relation: RelationExpression, condition:
 trait LogicalExpression extends Positional
 case class LogicalLit( l: Logical ) extends LogicalExpression
 case class ComparisonExpression( left: ValueExpression, comp: List[(String, ValueExpression)] ) extends LogicalExpression
+case class LogicalAnd( left: LogicalExpression, right: LogicalExpression )
+case class LogicalOr( left: LogicalExpression, right: LogicalExpression )
 
 case class Ident( pos: Position, name: String )
 

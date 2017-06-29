@@ -145,14 +145,27 @@ class Connection {
 
 	def evalExpression( ast: ValueExpression ): AnyRef = {
 		ast match {
-			case NumberLit( n ) => n.toDouble.asInstanceOf[Number]
+			case FloatLit( n ) => n.toDouble.asInstanceOf[Number]
 			case IntegerLit( n ) => n.toInt.asInstanceOf[Number]
 			case StringLit( s ) => s
 			case MarkLit( m ) => m
 		}
 	}
 
-	def evalLogical() {}
+	def evalLogical( ast: LogicalExpression ): Logical = {
+		ast match {
+			case ComparisonExpression( left, List((comp, right)) ) =>
+				val l = evalExpression( left )
+				val r = evalExpression( right )
+				val c =
+					comp match {
+						case "<" => l.asInstanceOf[Int] < r.asInstanceOf[Int]
+						case "=" => l == r
+					}
+
+				if (c) TRUE else FALSE
+		}
+	}
 }
 
 trait Result
