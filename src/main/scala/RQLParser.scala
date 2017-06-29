@@ -28,13 +28,14 @@ class RQLParser extends RegexParsers {
 		"{" ~> rep1sep(tuple, ",") <~ "}"
 
 	def relation: Parser[RelationExpression] = positioned(
+		relationPrimary ~ ("[" ~> logicalExpression <~ "]") ^^ { case r ~ c => SelectionRelationExpression( r, c ) } |
 		relationPrimary ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
 		relationPrimary
 		)
 
 	def relationPrimary = positioned(
 		("{" ~> columns) ~ (repsep(tuple, ",") <~ "}") ^^ { case c ~ d => ListRelationExpression( c, d ) } |
-		ident ^^ VariableRelationExpression
+		ident ^^ RelationVariableExpression
 		)
 
 	def columns = "[" ~> rep1sep(column, ",") <~ "]"
@@ -54,10 +55,22 @@ class RQLParser extends RegexParsers {
 		number |
 		string |
 		positioned( "A" ^^^ MarkLit(A) ) |
-		positioned( "I" ^^^ MarkLit(I) )
+		positioned( "I" ^^^ MarkLit(I) ) |
+		positioned( ident ^^ ValueVariableExpression )
+
+	def logicalExpression =
+		valueExpression ~ rep1(("<" | "<=" | "=" | "/=" | ">" | ">=") ~ valueExpression) ^^ { case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, v)} ) } |
+		logicalPrimary
+
+	def logicalPrimary = positioned(
+		"true" ^^^ LogicalLit( TRUE ) |
+		"false" ^^^ LogicalLit( FALSE ) |
+		"maybe-a" ^^^ LogicalLit( MAYBE_A ) |
+		"maybe-i" ^^^ LogicalLit( MAYBE_I )
+		)
 
 	def parseFromString[T]( src: String, grammar: Parser[T] ) = {
-		parse( grammar, new CharSequenceReader(src) ) match {
+		parseAll( grammar, new CharSequenceReader(src) ) match {
 			case Success( tree, _ ) => tree
 			case NoSuccess( error, rest ) => problem( rest.pos, error )
 		}

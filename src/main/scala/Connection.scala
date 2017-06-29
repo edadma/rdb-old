@@ -89,7 +89,7 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
-			case VariableRelationExpression( Ident(p, n) ) =>
+			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None => problem( p, "unknown base relation" )
 					case Some( r ) => r
