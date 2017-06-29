@@ -58,9 +58,9 @@ class Connection {
 				if (i == types.length)
 					problem( v.pos, "too many values")
 
-				var x = evalExpression( v )
+				var x = evalExpression( null, null, v )
 
-				val y = x match {
+				x match {
 					case _: Mark =>
 					case a: java.lang.Integer =>
 						types(i) match {
@@ -70,7 +70,7 @@ class Connection {
 								x = a.toDouble.asInstanceOf[Number]
 							case t => problem( v.pos, s"expected $t, not integer" )
 						}
-					case a: String =>
+					case _: String =>
 						types(i) match {
 							case null => types( i ) = StringType
 							case StringType =>
@@ -89,6 +89,10 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
+			case SelectionRelationExpression( relation, condition ) =>
+				val rel = evalRelation( relation )
+
+				new SelectionRelation( rel, condition )
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None => problem( p, "unknown base relation" )
@@ -143,20 +147,21 @@ class Connection {
 		}
 	}
 
-	def evalExpression( ast: ValueExpression ): AnyRef = {
+	def evalExpression( relation: Relation, row: Vector[AnyRef], ast: ValueExpression ): AnyRef = {
 		ast match {
 			case FloatLit( n ) => n.toDouble.asInstanceOf[Number]
 			case IntegerLit( n ) => n.toInt.asInstanceOf[Number]
 			case StringLit( s ) => s
 			case MarkLit( m ) => m
+			case ValueVariableExpression( n ) => null
 		}
 	}
 
-	def evalLogical( ast: LogicalExpression ): Logical = {
+	def evalLogical( relation: Relation, row: Vector[AnyRef], ast: LogicalExpression ): Logical = {
 		ast match {
 			case ComparisonExpression( left, List((comp, right)) ) =>
-				val l = evalExpression( left )
-				val r = evalExpression( right )
+				val l = evalExpression( relation, row, left )
+				val r = evalExpression( relation, row, right )
 				val c =
 					comp match {
 						case "<" => l.asInstanceOf[Int] < r.asInstanceOf[Int]

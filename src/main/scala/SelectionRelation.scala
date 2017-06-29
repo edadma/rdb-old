@@ -7,7 +7,20 @@ class SelectionRelation( relation: Relation, condition: LogicalExpression ) exte
 
 	def iterator = {
 		new Iterator[Vector[AnyRef]] {
-			def hasNext = true
+			val it = relation.iterator
+			var row: Vector[AnyRef] = _
+
+			def hasNext = {
+				if (row ne null)
+					true
+				else {
+					if (!it.hasNext)
+						false
+					else {
+						row = it.next
+					}
+				}
+			}
 
 			def next = {
 				null
