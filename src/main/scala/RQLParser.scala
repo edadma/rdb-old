@@ -3,6 +3,8 @@ package xyz.hyperreal.rdb
 import scala.util.parsing.input.{CharSequenceReader, Positional}
 import util.parsing.combinator.RegexParsers
 
+import xyz.hyperreal.lia.Math
+
 
 class RQLParser extends RegexParsers {
 	def pos = positioned( success(new Positional{}) ) ^^ { _.pos }
@@ -59,7 +61,8 @@ class RQLParser extends RegexParsers {
 		positioned( ident ^^ ValueVariableExpression )
 
 	def logicalExpression =
-		valueExpression ~ rep1(("<" | "<=" | "=" | "/=" | ">" | ">=") ~ valueExpression) ^^ { case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, v)} ) } |
+		valueExpression ~ rep1(("<" | "<=" | "=" | "/=" | ">" | ">=") ~ valueExpression) ^^ {
+			case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, Math.lookup(Symbol(c)), v)} ) } |
 		logicalPrimary
 
 	def logicalPrimary = positioned(

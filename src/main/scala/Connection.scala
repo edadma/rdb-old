@@ -1,6 +1,9 @@
 package xyz.hyperreal.rdb
 
+import java.lang.{Double => JDouble}
 import scala.collection.mutable.{ArrayBuffer, HashSet, HashMap, ListBuffer}
+
+import xyz.hyperreal.lia.Math
 
 
 class Connection {
@@ -149,8 +152,8 @@ class Connection {
 
 	def evalExpression( relation: Relation, row: Vector[AnyRef], ast: ValueExpression ): AnyRef = {
 		ast match {
-			case FloatLit( n ) => n.toDouble.asInstanceOf[Number]
-			case IntegerLit( n ) => n.toInt.asInstanceOf[Number]
+			case FloatLit( n ) => JDouble.parseDouble( n ).asInstanceOf[Number]
+			case IntegerLit( n ) => Integer.parseInt( n ).asInstanceOf[Number]
 			case StringLit( s ) => s
 			case MarkLit( m ) => m
 			case ValueVariableExpression( n ) =>
@@ -163,14 +166,10 @@ class Connection {
 
 	def evalLogical( relation: Relation, row: Vector[AnyRef], ast: LogicalExpression ): Logical = {
 		ast match {
-			case ComparisonExpression( left, List((comp, right)) ) =>
+			case ComparisonExpression( left, List((comp, pred, right)) ) =>
 				val l = evalExpression( relation, row, left )
 				val r = evalExpression( relation, row, right )
-				val c =
-					comp match {
-						case "<" => l.asInstanceOf[Int] < r.asInstanceOf[Int]
-						case "=" => l == r
-					}
+				val c = Math( pred, l, r ).asInstanceOf[Boolean]
 
 				if (c) TRUE else FALSE
 		}

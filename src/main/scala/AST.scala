@@ -2,6 +2,8 @@ package xyz.hyperreal.rdb
 
 import scala.util.parsing.input.{Positional, Position}
 
+import xyz.hyperreal.lia.FunctionMap
+
 
 trait AST
 
@@ -27,7 +29,7 @@ case class SelectionRelationExpression( relation: RelationExpression, condition:
 
 trait LogicalExpression extends Positional
 case class LogicalLit( l: Logical ) extends LogicalExpression
-case class ComparisonExpression( left: ValueExpression, comp: List[(String, ValueExpression)] ) extends LogicalExpression
+case class ComparisonExpression( left: ValueExpression, comp: List[(String, FunctionMap, ValueExpression)] ) extends LogicalExpression
 case class LogicalAnd( left: LogicalExpression, right: LogicalExpression )
 case class LogicalOr( left: LogicalExpression, right: LogicalExpression )
 
