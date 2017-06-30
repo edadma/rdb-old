@@ -92,7 +92,7 @@ class Connection {
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
 
-				new SelectionRelation( rel, condition )
+				new SelectionRelation( this, rel, condition )
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None => problem( p, "unknown base relation" )
@@ -153,7 +153,11 @@ class Connection {
 			case IntegerLit( n ) => n.toInt.asInstanceOf[Number]
 			case StringLit( s ) => s
 			case MarkLit( m ) => m
-			case ValueVariableExpression( n ) => null
+			case ValueVariableExpression( n ) =>
+				relation.columnNameMap get n.name match {
+					case None => problem( n.pos, "no such column" )
+					case Some( ind ) => row(ind)
+				}
 		}
 	}
 

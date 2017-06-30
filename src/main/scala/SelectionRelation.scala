@@ -1,7 +1,9 @@
 package xyz.hyperreal.rdb
 
+import java.util.NoSuchElementException
 
-class SelectionRelation( relation: Relation, condition: LogicalExpression ) extends AbstractRelation {
+
+class SelectionRelation( conn: Connection, relation: Relation, condition: LogicalExpression ) extends AbstractRelation {
 
 	def header = relation.header
 
@@ -10,7 +12,7 @@ class SelectionRelation( relation: Relation, condition: LogicalExpression ) exte
 			val it = relation.iterator
 			var row: Vector[AnyRef] = _
 
-			def hasNext = {
+			def hasNext: Boolean =
 				if (row ne null)
 					true
 				else {
@@ -18,12 +20,25 @@ class SelectionRelation( relation: Relation, condition: LogicalExpression ) exte
 						false
 					else {
 						row = it.next
+
+						if (conn.evalLogical( SelectionRelation.this, row, condition ) == TRUE)
+							true
+						else {
+							row = null
+							hasNext
+						}
 					}
 				}
-			}
 
 			def next = {
-				null
+				if (hasNext) {
+					val res = row
+
+					row = null
+					res
+				} else {
+					throw new NoSuchElementException( "no more rows" )
+				}
 			}
 		}
 	}
