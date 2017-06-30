@@ -15,7 +15,7 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Logica
 			def hasNext: Boolean =
 				if (row ne null)
 					true
-				else {
+				else
 					if (!it.hasNext)
 						false
 					else {
@@ -28,7 +28,6 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Logica
 							hasNext
 						}
 					}
-				}
 
 			def next = {
 				if (hasNext) {
@@ -36,9 +35,8 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Logica
 
 					row = null
 					res
-				} else {
+				} else
 					throw new NoSuchElementException( "no more rows" )
-				}
 			}
 		}
 	}

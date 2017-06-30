@@ -21,10 +21,14 @@ class RQLParser extends RegexParsers {
 	def ident = pos ~ """[a-zA-Z_$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def statement: Parser[StatementAST] =
+		insertStatement |
+		relation
+
+	def insertStatement =
+		(ident <~ "<-") ~ columns ^^ { case n ~ c => InsertRelationStatement( n, ListRelationExpression(c, Nil) ) } |
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
 		(ident <~ "<-") ~ tupleset ^^ { case n ~ t => InsertTuplesetStatement( n, t ) } |
-		(ident <~ "<-") ~ tuple ^^ { case n ~ t => InsertTuplesetStatement( n, List(t) ) } |
-		relation
+		(ident <~ "<-") ~ tuple ^^ { case n ~ t => InsertTuplesetStatement( n, List(t) ) }
 
 	def tupleset =
 		"{" ~> rep1sep(tuple, ",") <~ "}"
