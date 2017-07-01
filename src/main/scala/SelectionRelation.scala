@@ -3,7 +3,7 @@ package xyz.hyperreal.rdb
 import java.util.NoSuchElementException
 
 
-class SelectionRelation( conn: Connection, relation: Relation, condition: LogicalExpression ) extends AbstractRelation {
+class SelectionRelation( conn: Connection, relation: Relation, condition: ConditionResult ) extends AbstractRelation {
 
 	def header = relation.header
 
@@ -21,7 +21,7 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Logica
 					else {
 						row = it.next
 
-						if (conn.evalLogical( SelectionRelation.this, row, condition ) == TRUE)
+						if (conn.evalCondition( row, condition ))
 							true
 						else {
 							row = null

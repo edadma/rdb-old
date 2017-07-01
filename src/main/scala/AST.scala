@@ -14,12 +14,9 @@ case class InsertTuplesetStatement( target: Ident, tupleset: List[List[ValueExpr
 trait ValueExpression extends AST with Positional
 case class FloatLit( n: String ) extends ValueExpression
 case class IntegerLit( n: String ) extends ValueExpression
-case class FloatBin( n: Double ) extends ValueExpression
-case class IntegerBin( n: Int ) extends ValueExpression
 case class StringLit( s: String ) extends ValueExpression
 case class MarkLit( m: Mark ) extends ValueExpression
 case class ValueVariableExpression( name: Ident ) extends ValueExpression
-case class FieldExpression( index: Int ) extends ValueExpression
 
 trait RelationExpression extends StatementAST with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression

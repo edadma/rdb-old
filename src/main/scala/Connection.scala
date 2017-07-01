@@ -1,16 +1,16 @@
 package xyz.hyperreal.rdb
 
 import java.lang.{Double => JDouble}
-import scala.collection.mutable.{ArrayBuffer, HashSet, HashMap, ListBuffer}
 
-import xyz.hyperreal.lia.Math
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, ListBuffer}
+import xyz.hyperreal.lia.{FunctionMap, Math}
 
 
 class Connection {
 
 	val baseRelations = new HashMap[String, BaseRelation]
 
-	def executeStatement( statement: String ): Result = {
+	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
 		val ast = p.parseFromString( statement, p.statement )
 
@@ -61,7 +61,7 @@ class Connection {
 				if (i == types.length)
 					problem( v.pos, "too many values")
 
-				var x = evalExpression( null, null, v )
+				var x = evalValue( null, evalExpression(null, v) )
 
 				x match {
 					case _: Mark =>
@@ -94,8 +94,9 @@ class Connection {
 		ast match {
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
+				val cond = evalLogical( rel, condition )
 
-				new SelectionRelation( this, rel, condition )
+				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None => problem( p, "unknown base relation" )
@@ -147,36 +148,57 @@ class Connection {
 						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( tab, n, t )
 					}
 
-				ListRelation( header toIndexedSeq, body )
+				new ListRelation( header toIndexedSeq, body )
 		}
 	}
 
-	def evalExpression( relation: Relation, row: Vector[AnyRef], ast: ValueExpression ): AnyRef = {
+	def evalExpression( relation: Relation, ast: ValueExpression ): ValueResult =
 		ast match {
-			case FloatLit( n ) => JDouble.parseDouble( n ).asInstanceOf[Number]
-			case IntegerLit( n ) => Integer.parseInt( n ).asInstanceOf[Number]
-			case StringLit( s ) => s
-			case MarkLit( m ) => m
+			case FloatLit( n ) => NumberValue( java.lang.Double.parseDouble(n) )
+			case IntegerLit( n ) => NumberValue( Integer.parseInt(n) )
+			case StringLit( s ) => StringValue( s )
+			case MarkLit( m ) => MarkedValue( m )
 			case ValueVariableExpression( n ) =>
 				relation.columnNameMap get n.name match {
 					case None => problem( n.pos, "no such column" )
-					case Some( ind ) => row(ind)
+					case Some( ind ) => FieldValue( ind )
 				}
 		}
-	}
 
-	def evalLogical( relation: Relation, row: Vector[AnyRef], ast: LogicalExpression ): Logical = {
+	def evalValue( row: Vector[AnyRef], result: ValueResult ): AnyRef =
+		result match {
+			case NumberValue( n: Number ) => n
+			case FieldValue( index: Int ) => row(index)
+			case MarkedValue( m: Mark ) => m
+			case StringValue( s: String ) => s
+		}
+
+	def evalCondition( row: Vector[AnyRef], cond: ConditionResult ): Boolean =
+		cond match {
+			case ComparisonLogical( left, pred, right ) =>
+				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]
+		}
+
+	def evalLogical( relation: Relation, ast: LogicalExpression ): ConditionResult = {
 		ast match {
 			case ComparisonExpression( left, List((comp, pred, right)) ) =>
-				val l = evalExpression( relation, row, left )
-				val r = evalExpression( relation, row, right )
-				val c = Math( pred, l, r ).asInstanceOf[Boolean]
+				val l = evalExpression( relation, left )
+				val r = evalExpression( relation, right )
 
-				if (c) TRUE else FALSE
+				ComparisonLogical( l, pred, r )
 		}
 	}
 }
 
-trait Result
-case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends Result
-case class RelationResult( relation: Relation ) extends Result
+trait ValueResult
+case class NumberValue( n: Number ) extends ValueResult
+case class FieldValue( index: Int ) extends ValueResult
+case class MarkedValue( m: Mark ) extends ValueResult
+case class StringValue( s: String ) extends ValueResult
+
+trait ConditionResult
+case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
+
+trait StatementResult
+case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
+case class RelationResult( relation: Relation ) extends StatementResult

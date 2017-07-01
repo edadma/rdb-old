@@ -3,7 +3,7 @@ package xyz.hyperreal.rdb
 import collection.mutable.{ArrayBuffer, ListBuffer}
 
 
-class BaseRelation( val name: String, definition: Seq[Column] ) extends AbstractRelation {
+class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRelation {
 
 	private val cols = ArrayBuffer[Column]( definition map {case Column( _, col, typ ) => Column( name, col, typ )}: _* )
 

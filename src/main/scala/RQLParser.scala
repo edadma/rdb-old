@@ -64,9 +64,17 @@ class RQLParser extends RegexParsers {
 		positioned( "I" ^^^ MarkLit(I) ) |
 		positioned( ident ^^ ValueVariableExpression )
 
+	private def lookup( s: String ) =
+		Math.lookup(Symbol(
+			s match {
+				case "=" => "=="
+				case "/=" => "!="
+				case _ => s
+			} ) )
+
 	def logicalExpression =
 		valueExpression ~ rep1(("<" | "<=" | "=" | "/=" | ">" | ">=") ~ valueExpression) ^^ {
-			case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, Math.lookup(Symbol(c)), v)} ) } |
+			case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, lookup(c), v)} ) } |
 		logicalPrimary
 
 	def logicalPrimary = positioned(
