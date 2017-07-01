@@ -23,6 +23,7 @@ case class RelationVariableExpression( name: Ident ) extends RelationExpression
 case class ListRelationExpression( columns: List[ColumnSpec], data: List[List[ValueExpression]] ) extends RelationExpression
 case class ProjectionRelationExpression( relation: RelationExpression, columns: List[Ident] ) extends RelationExpression
 case class SelectionRelationExpression( relation: RelationExpression, condition: LogicalExpression ) extends RelationExpression
+case class InnerJoinRelationExpression( left: RelationExpression, condition: LogicalExpression, right: RelationExpression ) extends RelationExpression
 
 trait LogicalExpression extends Positional
 case class LogicalLit( l: Logical ) extends LogicalExpression

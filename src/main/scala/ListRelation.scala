@@ -5,6 +5,4 @@ class ListRelation( val header: IndexedSeq[Column], body: List[Vector[AnyRef]] )
 
 	def iterator = body.iterator
 
-	lazy val size = body.length
-
 }

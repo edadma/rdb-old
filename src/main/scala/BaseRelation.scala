@@ -13,7 +13,7 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	def iterator = rows.iterator
 
-	def size = rows.length
+	override def size = rows.length
 
 	private [rdb] def insertRow( row: Vector[AnyRef] ): Option[Map[String, AnyRef]] = {
 		rows += row
@@ -23,6 +23,7 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 	private [rdb] def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[AnyRef]
 
+		println( header, rel.columnMap )
 		for (c <- header)
 			mapping += rel.columnMap.getOrElse( c, I ).asInstanceOf[AnyRef]
 

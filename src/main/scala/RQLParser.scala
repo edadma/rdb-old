@@ -36,6 +36,7 @@ class RQLParser extends RegexParsers {
 	def relation: Parser[RelationExpression] = positioned(
 		relationPrimary ~ ("[" ~> logicalExpression <~ "]") ^^ { case r ~ c => SelectionRelationExpression( r, c ) } |
 		relationPrimary ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
+		relationPrimary ~ ("[" ~> logicalExpression <~ "]") ~ relation ^^ { case l ~ c ~ r => InnerJoinRelationExpression( l, c, r ) } |
 		relationPrimary
 		)
 
@@ -72,8 +73,10 @@ class RQLParser extends RegexParsers {
 				case _ => s
 			} ) )
 
+	def comparison = "<" | "<=" | "=" | "/=" | ">" | ">="
+
 	def logicalExpression =
-		valueExpression ~ rep1(("<" | "<=" | "=" | "/=" | ">" | ">=") ~ valueExpression) ^^ {
+		valueExpression ~ rep1(comparison ~ valueExpression) ^^ {
 			case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, lookup(c), v)} ) } |
 		logicalPrimary
 

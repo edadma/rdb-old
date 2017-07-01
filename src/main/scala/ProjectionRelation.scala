@@ -21,6 +21,6 @@ class ProjectionRelation( relation: Relation, columns: List[String] ) extends Ab
 			}
 		}
 
-	def size = relation.size
+	override def size = relation.size
 
 }

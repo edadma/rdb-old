@@ -1,7 +1,5 @@
 package xyz.hyperreal.rdb
 
-import java.lang.{Double => JDouble}
-
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, ListBuffer}
 import xyz.hyperreal.lia.{FunctionMap, Math}
 
@@ -92,9 +90,17 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
+			case InnerJoinRelationExpression( left, condition, right ) =>
+				val lrel = evalRelation( left )
+				val lmap = lrel.columnNameMap
+				val lmapsize = lmap.size
+				val rrel = evalRelation( right )
+				val shiftedrmap = rrel.columnNameMap map {case (k, v) => (k, v + lmapsize)}
+
+				new InnerJoinRelation( this, lrel, evalLogical(lmap ++ shiftedrmap, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
-				val cond = evalLogical( rel, condition )
+				val cond = evalLogical( rel.columnNameMap, condition )
 
 				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
@@ -152,14 +158,14 @@ class Connection {
 		}
 	}
 
-	def evalExpression( relation: Relation, ast: ValueExpression ): ValueResult =
+	def evalExpression( columnNameMap: Map[String, Int], ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => NumberValue( java.lang.Double.parseDouble(n) )
 			case IntegerLit( n ) => NumberValue( Integer.parseInt(n) )
 			case StringLit( s ) => StringValue( s )
 			case MarkLit( m ) => MarkedValue( m )
 			case ValueVariableExpression( n ) =>
-				relation.columnNameMap get n.name match {
+				columnNameMap get n.name match {
 					case None => problem( n.pos, "no such column" )
 					case Some( ind ) => FieldValue( ind )
 				}
@@ -179,11 +185,11 @@ class Connection {
 				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]
 		}
 
-	def evalLogical( relation: Relation, ast: LogicalExpression ): ConditionResult = {
+	def evalLogical( columnNameMap: Map[String, Int], ast: LogicalExpression ): ConditionResult = {
 		ast match {
 			case ComparisonExpression( left, List((comp, pred, right)) ) =>
-				val l = evalExpression( relation, left )
-				val r = evalExpression( relation, right )
+				val l = evalExpression( columnNameMap, left )
+				val r = evalExpression( columnNameMap, right )
 
 				ComparisonLogical( l, pred, r )
 		}

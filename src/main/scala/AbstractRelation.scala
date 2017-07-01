@@ -3,15 +3,9 @@ package xyz.hyperreal.rdb
 import scala.util.parsing.input.Position
 
 
-trait Relation {
+trait Relation extends Iterable[Vector[AnyRef]] {
 
 	def header: IndexedSeq[Column]
-
-	def iterator: Iterator[Vector[AnyRef]]
-
-	def foreach( f: Vector[AnyRef] => Unit ): Unit
-
-	def size: Int
 
 	lazy val columnNameMap = (header map (_.column) zipWithIndex) toMap
 
@@ -23,13 +17,7 @@ trait Relation {
 
 case class Column( table: String, column: String, typ: Type )
 
-abstract class AbstractRelation extends Relation {
-
-	def foreach( f: Vector[AnyRef] => Unit ) =
-		for (row <- iterator)
-			f( row )
-
-}
+abstract class AbstractRelation extends Relation
 
 object Type {
 

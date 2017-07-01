@@ -7,40 +7,40 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Condit
 
 	def header = relation.header
 
-	def iterator = {
-		new Iterator[Vector[AnyRef]] {
-			val it = relation.iterator
-			var row: Vector[AnyRef] = _
+	def iterator = relation.iterator filter (conn.evalCondition( _, condition ))
 
-			def hasNext: Boolean =
-				if (row ne null)
-					true
-				else
-					if (!it.hasNext)
-						false
-					else {
-						row = it.next
-
-						if (conn.evalCondition( row, condition ))
-							true
-						else {
-							row = null
-							hasNext
-						}
-					}
-
-			def next = {
-				if (hasNext) {
-					val res = row
-
-					row = null
-					res
-				} else
-					throw new NoSuchElementException( "no more rows" )
-			}
-		}
-	}
-
-	def size = iterator.size
+	//	def iterator = {
+//		new Iterator[Vector[AnyRef]] {
+//			val it = relation.iterator
+//			var row: Vector[AnyRef] = _
+//
+//			def hasNext: Boolean =
+//				if (row ne null)
+//					true
+//				else
+//					if (!it.hasNext)
+//						false
+//					else {
+//						row = it.next
+//
+//						if (conn.evalCondition( row, condition ))
+//							true
+//						else {
+//							row = null
+//							hasNext
+//						}
+//					}
+//
+//			def next = {
+//				if (hasNext) {
+//					val res = row
+//
+//					row = null
+//					res
+//				} else
+//					throw new NoSuchElementException( "no more rows" )
+//			}
+//		}
+//	}
 
 }
