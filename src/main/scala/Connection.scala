@@ -140,10 +140,11 @@ class Connection {
 					else
 						evalTupleset( types, data )
 
+				val tab = "_" + anonymous
 				val header =
 					columns zip types map {
 						case (ColumnSpec( _, p, _, pk ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( n, t )
+						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( tab, n, t )
 					}
 
 				ListRelation( header toIndexedSeq, body )

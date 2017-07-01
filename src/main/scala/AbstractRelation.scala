@@ -13,7 +13,7 @@ trait Relation {
 
 	def size: Int
 
-	lazy val columnNameMap = (header map (_.name) zipWithIndex) toMap
+	lazy val columnNameMap = (header map (_.column) zipWithIndex) toMap
 
 	lazy val columnMap = header.zipWithIndex toMap
 
@@ -21,7 +21,7 @@ trait Relation {
 
 }
 
-case class Column( name: String, typ: Type )
+case class Column( table: String, column: String, typ: Type )
 
 abstract class AbstractRelation extends Relation {
 

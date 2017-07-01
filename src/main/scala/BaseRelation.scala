@@ -5,7 +5,7 @@ import collection.mutable.{ArrayBuffer, ListBuffer}
 
 class BaseRelation( val name: String, definition: Seq[Column] ) extends AbstractRelation {
 
-	private val cols = ArrayBuffer[Column]( definition: _* )
+	private val cols = ArrayBuffer[Column]( definition map {case Column( _, col, typ ) => Column( name, col, typ )}: _* )
 
 	private val rows = new ArrayBuffer[Vector[AnyRef]]
 

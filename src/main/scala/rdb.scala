@@ -6,6 +6,15 @@ import scala.util.parsing.input.Position
 package object rdb {
 	val VERSION = "0.1"
 
+	var anoncount = 1
+
+	def anonymous = {
+		val res = anoncount
+
+		anoncount += 1
+		res
+	}
+
 	def problem( pos: Position, error: String ) =
 		if (pos eq null)
 			sys.error( error )

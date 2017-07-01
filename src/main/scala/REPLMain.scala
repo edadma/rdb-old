@@ -52,7 +52,7 @@ object REPLMain extends App {
 						case RelationResult( rel ) =>
 							val t =
 								new TextTable {
-									headerSeq( rel.header map (_.name) )
+									headerSeq( rel.header map (_.column) )
 									line
 
 									for (i <- 1 to rel.header.length)
