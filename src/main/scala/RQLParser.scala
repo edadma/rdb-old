@@ -64,6 +64,7 @@ class RQLParser extends RegexParsers {
 		string |
 		positioned( "A" ^^^ MarkLit(A) ) |
 		positioned( "I" ^^^ MarkLit(I) ) |
+		positioned( ident ~ ("." ~> ident) ^^ { case t ~ c => ValueColumnExpression( t, c ) } ) |
 		positioned( ident ^^ ValueVariableExpression )
 
 	private def lookup( s: String ) =

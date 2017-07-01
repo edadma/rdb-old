@@ -100,7 +100,7 @@ class Connection {
 				new InnerJoinRelation( this, lrel, evalLogical(lmap ++ shiftedrmap, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
-				val cond = evalLogical( rel.columnMap, condition )
+				val cond = evalLogical( rel, condition )
 
 				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
@@ -158,17 +158,25 @@ class Connection {
 		}
 	}
 
-	def evalExpression( columnMap: Map[String, Int], ast: ValueExpression ): ValueResult =
+	def evalExpression( rel: Relation, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => NumberValue( java.lang.Double.parseDouble(n) )
 			case IntegerLit( n ) => NumberValue( Integer.parseInt(n) )
 			case StringLit( s ) => StringValue( s )
 			case MarkLit( m ) => MarkedValue( m )
 			case ValueVariableExpression( n ) =>
-				columnMap get n.name match {
+				rel.columnMap get n.name match {
 					case None => problem( n.pos, "no such column" )
 					case Some( ind ) => FieldValue( ind )
 				}
+			case ValueColumnExpression( t, c ) =>
+				if (!rel.tableSet(t.name))
+					problem( t.pos, "unknown table" )
+				else
+					rel.tableColumnMap get (t.name, c.name) match {
+						case None => problem( c.pos, "no such column" )
+						case Some( ind ) => FieldValue( ind )
+					}
 		}
 
 	def evalValue( row: Vector[AnyRef], result: ValueResult ): AnyRef =
@@ -185,11 +193,11 @@ class Connection {
 				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]
 		}
 
-	def evalLogical( columnMap: Map[String, Int], ast: LogicalExpression ): ConditionResult = {
+	def evalLogical( rel: Relation, ast: LogicalExpression ): ConditionResult = {
 		ast match {
 			case ComparisonExpression( left, List((comp, pred, right)) ) =>
-				val l = evalExpression( columnMap, left )
-				val r = evalExpression( columnMap, right )
+				val l = evalExpression( rel, left )
+				val r = evalExpression( rel, right )
 
 				ComparisonLogical( l, pred, r )
 		}

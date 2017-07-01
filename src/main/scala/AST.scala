@@ -17,6 +17,7 @@ case class IntegerLit( n: String ) extends ValueExpression
 case class StringLit( s: String ) extends ValueExpression
 case class MarkLit( m: Mark ) extends ValueExpression
 case class ValueVariableExpression( name: Ident ) extends ValueExpression
+case class ValueColumnExpression( table: Ident, column: Ident ) extends ValueExpression
 
 trait RelationExpression extends StatementAST with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression
