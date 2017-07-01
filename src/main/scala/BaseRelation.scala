@@ -23,9 +23,8 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 	private [rdb] def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[AnyRef]
 
-		println( header, rel.columnMap )
 		for (c <- header)
-			mapping += rel.columnMap.getOrElse( c, I ).asInstanceOf[AnyRef]
+			mapping += rel.columnMap.getOrElse( c.column, I ).asInstanceOf[AnyRef]
 
 		val res = new ListBuffer[Map[String, AnyRef]]
 		var count = 0

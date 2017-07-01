@@ -33,7 +33,7 @@ class Connection {
 							baseRelations(target.name) = base
 							(base, Some( target.name ))
 						case Some( base ) =>
-							if (!src.headerSet.subsetOf( base.headerSet ))
+							if (!src.attributes.subsetOf( base.attributes ))
 								problem( relation.pos, "attributes must be a subset of target" )
 
 							(base, None)
@@ -92,15 +92,15 @@ class Connection {
 		ast match {
 			case InnerJoinRelationExpression( left, condition, right ) =>
 				val lrel = evalRelation( left )
-				val lmap = lrel.columnNameMap
+				val lmap = lrel.columnMap
 				val lmapsize = lmap.size
 				val rrel = evalRelation( right )
-				val shiftedrmap = rrel.columnNameMap map {case (k, v) => (k, v + lmapsize)}
+				val shiftedrmap = rrel.columnMap map {case (k, v) => (k, v + lmapsize)}
 
 				new InnerJoinRelation( this, lrel, evalLogical(lmap ++ shiftedrmap, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
-				val cond = evalLogical( rel.columnNameMap, condition )
+				val cond = evalLogical( rel.columnMap, condition )
 
 				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
@@ -114,7 +114,7 @@ class Connection {
 				val cs = new ListBuffer[String]
 
 				for (Ident( p, n ) <- columns)
-					if (!rel.columnNameMap.contains( n ))
+					if (!rel.columnMap.contains( n ))
 						problem( p, "unknown column name" )
 					else if (s(n))
 						problem( p, "duplicate column name" )
@@ -158,14 +158,14 @@ class Connection {
 		}
 	}
 
-	def evalExpression( columnNameMap: Map[String, Int], ast: ValueExpression ): ValueResult =
+	def evalExpression( columnMap: Map[String, Int], ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => NumberValue( java.lang.Double.parseDouble(n) )
 			case IntegerLit( n ) => NumberValue( Integer.parseInt(n) )
 			case StringLit( s ) => StringValue( s )
 			case MarkLit( m ) => MarkedValue( m )
 			case ValueVariableExpression( n ) =>
-				columnNameMap get n.name match {
+				columnMap get n.name match {
 					case None => problem( n.pos, "no such column" )
 					case Some( ind ) => FieldValue( ind )
 				}
@@ -185,11 +185,11 @@ class Connection {
 				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]
 		}
 
-	def evalLogical( columnNameMap: Map[String, Int], ast: LogicalExpression ): ConditionResult = {
+	def evalLogical( columnMap: Map[String, Int], ast: LogicalExpression ): ConditionResult = {
 		ast match {
 			case ComparisonExpression( left, List((comp, pred, right)) ) =>
-				val l = evalExpression( columnNameMap, left )
-				val r = evalExpression( columnNameMap, right )
+				val l = evalExpression( columnMap, left )
+				val r = evalExpression( columnMap, right )
 
 				ComparisonLogical( l, pred, r )
 		}

@@ -34,13 +34,14 @@ class RQLParser extends RegexParsers {
 		"{" ~> rep1sep(tuple, ",") <~ "}"
 
 	def relation: Parser[RelationExpression] = positioned(
+		relationPrimary ~ ("[" ~> logicalExpression <~ "]") ~ relation ^^ { case l ~ c ~ r => InnerJoinRelationExpression( l, c, r ) } |
 		relationPrimary ~ ("[" ~> logicalExpression <~ "]") ^^ { case r ~ c => SelectionRelationExpression( r, c ) } |
 		relationPrimary ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
-		relationPrimary ~ ("[" ~> logicalExpression <~ "]") ~ relation ^^ { case l ~ c ~ r => InnerJoinRelationExpression( l, c, r ) } |
 		relationPrimary
 		)
 
 	def relationPrimary = positioned(
+		"(" ~> relation <~ ")" |
 		("{" ~> columns) ~ (repsep(tuple, ",") <~ "}") ^^ { case c ~ d => ListRelationExpression( c, d ) } |
 		ident ^^ RelationVariableExpression
 		)

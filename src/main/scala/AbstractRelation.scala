@@ -7,11 +7,9 @@ trait Relation extends Iterable[Vector[AnyRef]] {
 
 	def header: IndexedSeq[Column]
 
-	lazy val columnNameMap = (header map (_.column) zipWithIndex) toMap
+	lazy val columnMap = (header map (_.column) zipWithIndex) toMap
 
-	lazy val columnMap = header.zipWithIndex toMap
-
-	lazy val headerSet = header toSet
+	lazy val attributes = header map {case Column(_, n, t) => (n, t)} toSet
 
 }
 
