@@ -8,8 +8,9 @@ import xyz.hyperreal.lia.FunctionMap
 trait AST
 
 trait StatementAST extends AST
-case class InsertRelationStatement( target: Ident, relation: RelationExpression ) extends StatementAST
-case class InsertTuplesetStatement( target: Ident, tupleset: List[List[ValueExpression]] ) extends StatementAST
+case class InsertRelationStatement( base: Ident, relation: RelationExpression ) extends StatementAST
+case class InsertTuplesetStatement( base: Ident, tupleset: List[List[ValueExpression]] ) extends StatementAST
+case class DeleteStatement( base: Ident, condition: LogicalExpression ) extends StatementAST
 
 trait ValueExpression extends AST with Positional
 case class FloatLit( n: String ) extends ValueExpression

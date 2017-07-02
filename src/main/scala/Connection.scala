@@ -13,34 +13,42 @@ class Connection {
 		val ast = p.parseFromString( statement, p.statement )
 
 		ast match {
-			case InsertTuplesetStatement( target, tupleset ) =>
-				baseRelations get target.name match {
-					case None => problem( target.pos, "base relation cannot be created from tuple set" )
-					case Some( base ) =>
-						val types = base.metadata.header map (_.typ) toArray
+			case InsertTuplesetStatement( base, tupleset ) =>
+				baseRelations get base.name match {
+					case None => problem( base.pos, "base relation cannot be created from tuple set" )
+					case Some( b ) =>
+						val types = b.metadata.header map (_.typ) toArray
 						val body = evalTupleset( types, tupleset )
-						val (l, c) = base.insertTupleset( body )
+						val (l, c) = b.insertTupleset( body )
 
 						InsertResult( l, c, None )
 				}
-			case InsertRelationStatement( target, relation ) =>
+			case InsertRelationStatement( base, relation ) =>
 				val src = evalRelation( relation )
 				val (dst, created) =
-					baseRelations get target.name match {
+					baseRelations get base.name match {
 						case None =>
-							val base = new BaseRelation( target.name, src.metadata.header )
+							val baserel = new BaseRelation( base.name, src.metadata.header )
 
-							baseRelations(target.name) = base
-							(base, Some( target.name ))
-						case Some( base ) =>
-							if (!src.metadata.attributes.subsetOf( base.metadata.attributes ))
-								problem( relation.pos, "attributes must be a subset of target" )
+							baseRelations(base.name) = baserel
+							(baserel, Some( base.name ))
+						case Some( b ) =>
+							if (!src.metadata.attributes.subsetOf( b.metadata.attributes ))
+								problem( relation.pos, "attributes must be a subset of base" )
 
-							(base, None)
+							(b, None)
 					}
 				val (l, c) = dst.insertRelation( src )
 
 				InsertResult( l, c, created )
+			case DeleteStatement( base, condition ) =>
+				baseRelations get base.name match {
+					case None => problem( base.pos, "unknown base relation" )
+					case Some( b ) =>
+						val cond = evalLogical( b.metadata, condition )
+
+						DeleteResult( b.delete(this, cond) )
+				}
 			case r: RelationExpression =>
 				RelationResult( evalRelation(r) )
 		}
@@ -213,4 +221,5 @@ case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: Value
 
 trait StatementResult
 case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
+case class DeleteResult( count: Int ) extends StatementResult
 case class RelationResult( relation: Relation ) extends StatementResult

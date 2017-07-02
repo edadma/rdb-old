@@ -15,6 +15,13 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	override def size = rows.length
 
+	private [rdb] def delete( conn: Connection, cond: ConditionResult ) = {
+		var count = 0
+
+		rows
+		count
+	}
+
 	private [rdb] def insertRow( row: Vector[AnyRef] ): Option[Map[String, AnyRef]] = {
 		rows += row
 		Some( Map.empty )
