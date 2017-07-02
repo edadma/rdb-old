@@ -7,6 +7,8 @@ trait Relation extends Iterable[Vector[AnyRef]] {
 
 	def metadata: Metadata
 
+	def list = new ListRelation( metadata.header, iterator.toList )
+
 }
 
 case class Column( table: String, column: String, typ: Type )
@@ -15,15 +17,13 @@ abstract class AbstractRelation extends Relation
 
 object Type {
 
-	def fromSpec( pos: Position, spec: String ) = {
-
+	def fromSpec( pos: Position, spec: String ) =
 		spec match {
 			case "integer" => IntegerType
 			case "float" => FloatType
 			case "string" => StringType
 			case _ => problem( pos, s"unrecognized type name '$spec'" )
 		}
-	}
 
 }
 

@@ -50,20 +50,27 @@ object REPLMain extends App {
 				case _ =>
 					conn.executeStatement( line1 ) match {
 						case RelationResult( rel ) =>
+							val l = rel.list
 							val t =
 								new TextTable {
-									headerSeq( rel.metadata.header map (_.column) )
+									headerSeq( l.metadata.header map (_.column) )
 									line
 
-									for (i <- 1 to rel.metadata.header.length)
-										if (rel.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
+									for (i <- 1 to l.metadata.header.length)
+										if (l.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
 											rightAlignment( i )
 
-									for (r <- rel)
+									for (r <- l)
 										rowSeq( r )
 								}
 
 							print( t )
+
+							l.size match {
+								case 0 => println( "empty relation" )
+								case 1 => println( "1 row" )
+								case s => println( s"$s rows" )
+							}
 						case InsertResult( _, count, created ) =>
 							println(
 								(count, created) match {
@@ -74,6 +81,9 @@ object REPLMain extends App {
 									case (_, Some(name)) => s"base relation '$name' was created with $count rows"
 									case (_, None) => s"$count rows were inserted"
 								} )
+						case DeleteResult( 0 ) => println( "no rows were deleted" )
+						case DeleteResult( 1 ) => println( "1 row was deleted" )
+						case DeleteResult( count ) => println( s"$count rows were deleted" )
 					}
 			}
 		} catch {

@@ -18,7 +18,12 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 	private [rdb] def delete( conn: Connection, cond: ConditionResult ) = {
 		var count = 0
 
-		rows
+		for (i <- rows.length - 1 to 0 by -1)
+			if (conn.evalCondition( rows(i), cond )) {
+				rows.remove( i )
+				count += 1
+			}
+
 		count
 	}
 
