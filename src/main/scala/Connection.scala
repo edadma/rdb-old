@@ -17,7 +17,7 @@ class Connection {
 				baseRelations get target.name match {
 					case None => problem( target.pos, "base relation cannot be created from tuple set" )
 					case Some( base ) =>
-						val types = base.header map (_.typ) toArray
+						val types = base.metadata.header map (_.typ) toArray
 						val body = evalTupleset( types, tupleset )
 						val (l, c) = base.insertTupleset( body )
 
@@ -28,12 +28,12 @@ class Connection {
 				val (dst, created) =
 					baseRelations get target.name match {
 						case None =>
-							val base = new BaseRelation( target.name, src.header )
+							val base = new BaseRelation( target.name, src.metadata.header )
 
 							baseRelations(target.name) = base
 							(base, Some( target.name ))
 						case Some( base ) =>
-							if (!src.attributes.subsetOf( base.attributes ))
+							if (!src.metadata.attributes.subsetOf( base.metadata.attributes ))
 								problem( relation.pos, "attributes must be a subset of target" )
 
 							(base, None)
@@ -92,15 +92,13 @@ class Connection {
 		ast match {
 			case InnerJoinRelationExpression( left, condition, right ) =>
 				val lrel = evalRelation( left )
-				val lmap = lrel.columnMap
-				val lmapsize = lmap.size
 				val rrel = evalRelation( right )
-				val shiftedrmap = rrel.columnMap map {case (k, v) => (k, v + lmapsize)}
+				val metadata = new Metadata( lrel.metadata.header ++ rrel.metadata.header )
 
-				new InnerJoinRelation( this, lrel, evalLogical(lmap ++ shiftedrmap, condition), rrel )
+				new InnerJoinRelation( this, metadata, lrel, evalLogical(metadata, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
-				val cond = evalLogical( rel, condition )
+				val cond = evalLogical( rel.metadata, condition )
 
 				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
@@ -114,7 +112,7 @@ class Connection {
 				val cs = new ListBuffer[String]
 
 				for (Ident( p, n ) <- columns)
-					if (!rel.columnMap.contains( n ))
+					if (!rel.metadata.columnMap.contains( n ))
 						problem( p, "unknown column name" )
 					else if (s(n))
 						problem( p, "duplicate column name" )
@@ -158,22 +156,22 @@ class Connection {
 		}
 	}
 
-	def evalExpression( rel: Relation, ast: ValueExpression ): ValueResult =
+	def evalExpression( metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => NumberValue( java.lang.Double.parseDouble(n) )
 			case IntegerLit( n ) => NumberValue( Integer.parseInt(n) )
 			case StringLit( s ) => StringValue( s )
 			case MarkLit( m ) => MarkedValue( m )
 			case ValueVariableExpression( n ) =>
-				rel.columnMap get n.name match {
+				metadata.columnMap get n.name match {
 					case None => problem( n.pos, "no such column" )
 					case Some( ind ) => FieldValue( ind )
 				}
 			case ValueColumnExpression( t, c ) =>
-				if (!rel.tableSet(t.name))
+				if (!metadata.tableSet(t.name))
 					problem( t.pos, "unknown table" )
 				else
-					rel.tableColumnMap get (t.name, c.name) match {
+					metadata.tableColumnMap get (t.name, c.name) match {
 						case None => problem( c.pos, "no such column" )
 						case Some( ind ) => FieldValue( ind )
 					}
@@ -193,11 +191,11 @@ class Connection {
 				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]
 		}
 
-	def evalLogical( rel: Relation, ast: LogicalExpression ): ConditionResult = {
+	def evalLogical( metadata: Metadata, ast: LogicalExpression ): ConditionResult = {
 		ast match {
 			case ComparisonExpression( left, List((comp, pred, right)) ) =>
-				val l = evalExpression( rel, left )
-				val r = evalExpression( rel, right )
+				val l = evalExpression( metadata, left )
+				val r = evalExpression( metadata, right )
 
 				ComparisonLogical( l, pred, r )
 		}

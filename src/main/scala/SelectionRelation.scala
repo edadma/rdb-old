@@ -5,11 +5,11 @@ import java.util.NoSuchElementException
 
 class SelectionRelation( conn: Connection, relation: Relation, condition: ConditionResult ) extends AbstractRelation {
 
-	def header = relation.header
+	def metadata = relation.metadata
 
 	def iterator = relation.iterator filter (conn.evalCondition( _, condition ))
 
-	//	def iterator = {
+//	def iterator = {
 //		new Iterator[Vector[AnyRef]] {
 //			val it = relation.iterator
 //			var row: Vector[AnyRef] = _

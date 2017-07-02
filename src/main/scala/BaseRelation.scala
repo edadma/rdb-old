@@ -9,7 +9,7 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	private val rows = new ArrayBuffer[Vector[AnyRef]]
 
-	def header = cols toIndexedSeq
+	val metadata = new Metadata( cols toIndexedSeq )
 
 	def iterator = rows.iterator
 
@@ -23,8 +23,8 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 	private [rdb] def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[AnyRef]
 
-		for (c <- header)
-			mapping += rel.columnMap.getOrElse( c.column, I ).asInstanceOf[AnyRef]
+		for (c <- metadata.header)
+			mapping += rel.metadata.columnMap.getOrElse( c.column, I ).asInstanceOf[AnyRef]
 
 		val res = new ListBuffer[Map[String, AnyRef]]
 		var count = 0

@@ -5,8 +5,8 @@ class ProjectionRelation( relation: Relation, columns: List[String] ) extends Ab
 
 	require( columns.toSet.size == columns.length, "columns contains duplicate" )
 
-	val ind = columns map relation.columnMap toVector
-	val header = ind map relation.header
+	val ind = columns map relation.metadata.columnMap toVector
+	val metadata = new Metadata( ind map relation.metadata.header )
 
 	def iterator =
 		new Iterator[Vector[AnyRef]] {

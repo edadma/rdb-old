@@ -52,11 +52,11 @@ object REPLMain extends App {
 						case RelationResult( rel ) =>
 							val t =
 								new TextTable {
-									headerSeq( rel.header map (_.column) )
+									headerSeq( rel.metadata.header map (_.column) )
 									line
 
-									for (i <- 1 to rel.header.length)
-										if (rel.header( i - 1 ).typ.isInstanceOf[NumericalType])
+									for (i <- 1 to rel.metadata.header.length)
+										if (rel.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
 											rightAlignment( i )
 
 									for (r <- rel)
