@@ -9,10 +9,10 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	private val rows = new ArrayBuffer[Vector[AnyRef]]
 
-	private val indexes = new HashMap[String, TreeMap[AnyRef, Int]]
-
-	for (Column( _, col, _, pk ) <- definition if pk)
-		indexes(col) = new TreeMap[AnyRef, Int]
+//	private val indexes = new HashMap[String, TreeMap[AnyRef, Int]]
+//
+//	for (Column( _, col, _, pk ) <- definition if pk)
+//		indexes(col) = new TreeMap[AnyRef, Int]
 
 	val metadata = new Metadata( cols toIndexedSeq )
 

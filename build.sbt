@@ -61,9 +61,9 @@ libraryDependencies ++= Seq(
 	"jline" % "jline" % "2.14.3"
 )
 
-mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
+mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
 
-mainClass in assembly := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
+mainClass in assembly := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
 
 assemblyJarName in assembly := name.value + "-" + version.value + ".jar"
 

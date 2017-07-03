@@ -9,8 +9,8 @@ class Metadata( val header: IndexedSeq[Column] ) {
 
 	lazy val columnMap = (header map (_.column) zipWithIndex) toMap
 
-	lazy val tableColumnMap = (header map {case Column(t, c, _) => (t, c)} zipWithIndex) toMap
+	lazy val tableColumnMap = (header map {case Column(t, c, _, _) => (t, c)} zipWithIndex) toMap
 
-	lazy val attributes = header map {case Column(_, n, t) => (n, t)} toSet
+	lazy val attributes = header map {case Column(_, n, t, _) => (n, t)} toSet
 
 }
