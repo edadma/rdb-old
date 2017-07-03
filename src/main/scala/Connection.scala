@@ -28,6 +28,12 @@ class Connection {
 				val (dst, created) =
 					baseRelations get base.name match {
 						case None =>
+//							var pk = false
+//
+//							for (c <- src.metadata.header)
+//								if (c.pk)
+//									if (pk)
+//										problem( c.c)
 							val baserel = new BaseRelation( base.name, src.metadata.header )
 
 							baseRelations(base.name) = baserel
@@ -132,8 +138,9 @@ class Connection {
 				new ProjectionRelation( rel, cs toList )
 			case ListRelationExpression( columns, data ) =>
 				var hset = Set[String]()
+				var pk = false
 
-				for (ColumnSpec( Ident(p, n), _, _, _ ) <- columns)
+				for (ColumnSpec( Ident(p, n), _, _, pk, _, _ ) <- columns)
 					if (hset(n))
 						problem( p, s"duplicate $n" )
 					else
@@ -141,8 +148,8 @@ class Connection {
 
 				val types: Array[Type] =
 					columns map {
-						case ColumnSpec( _, _, None, _ ) => null
-						case ColumnSpec( _, p, Some(t), _ ) => Type.fromSpec( p, t )
+						case ColumnSpec( _, _, None, _, _, _ ) => null
+						case ColumnSpec( _, p, Some(t), _, _, _ ) => Type.fromSpec( p, t )
 					} toArray
 				val body =
 					if (data isEmpty)
@@ -156,8 +163,8 @@ class Connection {
 				val tab = "_" + anonymous
 				val header =
 					columns zip types map {
-						case (ColumnSpec( _, p, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( tab, n, t, pk )
+						case (ColumnSpec( _, p, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnSpec( Ident(_, n), _ , _, pk, _, _), t) => Column( tab, n, t, pk ne null )
 					}
 
 				new ListRelation( header toIndexedSeq, body )
