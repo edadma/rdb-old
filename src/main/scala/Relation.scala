@@ -11,7 +11,7 @@ trait Relation extends Iterable[Vector[AnyRef]] {
 
 }
 
-case class Column( table: String, column: String, typ: Type )
+case class Column( table: String, column: String, typ: Type, pk: Boolean )
 
 abstract class AbstractRelation extends Relation
 

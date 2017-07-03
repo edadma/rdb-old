@@ -1,13 +1,18 @@
 package xyz.hyperreal.rdb
 
-import collection.mutable.{ArrayBuffer, ListBuffer}
+import collection.mutable.{ArrayBuffer, ListBuffer, HashMap, TreeMap}
 
 
 class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRelation {
 
-	private val cols = ArrayBuffer[Column]( definition map {case Column( _, col, typ ) => Column( name, col, typ )}: _* )
+	private val cols = ArrayBuffer[Column]( definition map {case Column( _, col, typ, pk ) => Column( name, col, typ, pk )}: _* )
 
 	private val rows = new ArrayBuffer[Vector[AnyRef]]
+
+	private val indexes = new HashMap[String, TreeMap[AnyRef, Int]]
+
+	for (Column( _, col, _, pk ) <- definition if pk)
+		indexes(col) = new TreeMap[AnyRef, Int]
 
 	val metadata = new Metadata( cols toIndexedSeq )
 

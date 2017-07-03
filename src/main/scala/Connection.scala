@@ -133,7 +133,7 @@ class Connection {
 			case ListRelationExpression( columns, data ) =>
 				var hset = Set[String]()
 
-				for (ColumnSpec( Ident(p, n), _, _, pk ) <- columns)
+				for (ColumnSpec( Ident(p, n), _, _, _ ) <- columns)
 					if (hset(n))
 						problem( p, s"duplicate $n" )
 					else
@@ -141,8 +141,8 @@ class Connection {
 
 				val types: Array[Type] =
 					columns map {
-						case ColumnSpec( _, _, None, pk ) => null
-						case ColumnSpec( _, p, Some(t), pk ) => Type.fromSpec( p, t )
+						case ColumnSpec( _, _, None, _ ) => null
+						case ColumnSpec( _, p, Some(t), _ ) => Type.fromSpec( p, t )
 					} toArray
 				val body =
 					if (data isEmpty)
@@ -156,8 +156,8 @@ class Connection {
 				val tab = "_" + anonymous
 				val header =
 					columns zip types map {
-						case (ColumnSpec( _, p, _, pk ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( tab, n, t )
+						case (ColumnSpec( _, p, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnSpec( Ident(_, n), _ , _, pk), t) => Column( tab, n, t, pk )
 					}
 
 				new ListRelation( header toIndexedSeq, body )
