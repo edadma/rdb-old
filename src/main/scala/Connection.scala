@@ -140,11 +140,18 @@ class Connection {
 				var hset = Set[String]()
 				var pk = false
 
-				for (ColumnSpec( Ident(p, n), _, _, pk, _, _ ) <- columns)
-					if (hset(n))
+				for (ColumnSpec( Ident(p, n), _, _, pkpos, _, _ ) <- columns)
+					if (hset( n ))
 						problem( p, s"duplicate $n" )
-					else
+					else {
 						hset += n
+
+						if (pkpos != null)
+							if (pk)
+								problem( pkpos, "a relation must have exactly on primary key (rs-8)" )
+							else
+								pk = true
+					}
 
 				val types: Array[Type] =
 					columns map {
@@ -162,9 +169,10 @@ class Connection {
 
 				val tab = "_" + anonymous
 				val header =
-					columns zip types map {
-						case (ColumnSpec( _, p, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnSpec( Ident(_, n), _ , _, pk, _, _), t) => Column( tab, n, t, pk ne null )
+					(columns zip types).zipWithIndex map {
+						case ((ColumnSpec( _, p, _, _, _, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
+						case ((ColumnSpec( Ident(_, n), _ , _, _, _, _), t), 0) if !pk => Column( tab, n, t, true )
+						case ((ColumnSpec( Ident(_, n), _ , _, pkpos, _, _), t), _) => Column( tab, n, t, pkpos ne null )
 					}
 
 				new ListRelation( header toIndexedSeq, body )
@@ -208,7 +216,7 @@ class Connection {
 
 	def evalLogical( metadata: Metadata, ast: LogicalExpression ): ConditionResult = {
 		ast match {
-			case ComparisonExpression( left, List((comp, pred, right)) ) =>
+			case ComparisonExpression( left, List((_, pred, right)) ) =>
 				val l = evalExpression( metadata, left )
 				val r = evalExpression( metadata, right )
 

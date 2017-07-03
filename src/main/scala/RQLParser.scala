@@ -64,10 +64,12 @@ class RQLParser extends RegexParsers {
 	def columns = "[" ~> rep1sep(column, ",") <~ "]"
 
 	def column =
-		(	ident <~ ":") ~ ident ~ opt( "(" ~ "pk" ~ ")" ) ^^ {
-				case (n ~ t ~ pk) => ColumnSpec( n, t.pos, Some(t.name), pk isDefined )} |
-			ident ~ pos ~ opt( "fk" ) ^^ {
-				case (n ~ p ~ pk) => ColumnSpec( n, p, None, pk isDefined ) }
+		ident ~ (":" ~> ident) ~ opt(pos <~ "*") ^^ {
+			case n ~ t ~ None => ColumnSpec( n, t.pos, Some(t.name), null, null, null )
+			case n ~ t ~ Some(p) => ColumnSpec( n, t.pos, Some(t.name), p, null, null ) } |
+		ident ~ pos ~ opt(pos <~ "*") ^^ {
+			case n ~ tp ~ None => ColumnSpec( n, tp, None, null, null, null )
+			case n ~ tp ~ Some(pkp) => ColumnSpec( n, tp, None, pkp, null, null ) }
 
 	def tuple = "(" ~> rep1sep(valueExpression, ",") <~ ")"
 
