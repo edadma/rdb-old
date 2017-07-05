@@ -32,7 +32,7 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 		count
 	}
 
-	private [rdb] def insertRow( row: Vector[AnyRef] ): Option[Map[String, AnyRef]] = {
+	private [rdb] def insertRow( row: Tuple ): Option[Map[String, AnyRef]] = {
 		rows += row
 		Some( Map.empty )
 	}

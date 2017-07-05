@@ -12,7 +12,7 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Condit
 //	def iterator = {
 //		new Iterator[Vector[AnyRef]] {
 //			val it = relation.iterator
-//			var row: Vector[AnyRef] = _
+//			var row: Tuple = _
 //
 //			def hasNext: Boolean =
 //				if (row ne null)

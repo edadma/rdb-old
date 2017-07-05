@@ -50,7 +50,7 @@ object REPLMain extends App {
 				case _ =>
 					conn.executeStatement( line1 ) match {
 						case RelationResult( rel ) =>
-							val l = rel.list
+							val l = rel.collect
 							val t =
 								new TextTable {
 									headerSeq( l.metadata.header map (_.column) )

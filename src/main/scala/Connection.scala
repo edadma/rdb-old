@@ -8,17 +8,26 @@ class Connection {
 
 	val baseRelations = new HashMap[String, BaseRelation]
 
+	var anoncount = 1
+
+	def anonymous = {
+		val res = anoncount
+
+		anoncount += 1
+		s"_$res"
+	}
+
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
 		val ast = p.parseFromString( statement, p.statement )
 
 		ast match {
-			case InsertTuplesetStatement( base, tupleset ) =>
+			case InsertTuplelistStatement( base, tupleset ) =>
 				baseRelations get base.name match {
 					case None => problem( base.pos, "base relation cannot be created from tuple set" )
 					case Some( b ) =>
 						val types = b.metadata.header map (_.typ) toArray
-						val body = evalTupleset( types, tupleset )
+						val body = evalTuplelist( types, tupleset )
 						val (l, c) = b.insertTupleset( body )
 
 						InsertResult( l, c, None )
@@ -60,14 +69,14 @@ class Connection {
 		}
 	}
 
-	def evalTupleset( types: Array[Type], data: List[List[ValueExpression]] ): List[Vector[AnyRef]] = {
+	def evalTuplelist( types: Array[Type], data: List[TupleLit] ): List[Vector[AnyRef]] = {
 		val body = new ArrayBuffer[Vector[AnyRef]]
 
-		for (r <- data) {
+		for (t@TupleLit( r ) <- data) {
 			val row = new ArrayBuffer[AnyRef]
 
 			if (r.length < types.length)
-				problem( r.last.pos, "unexpected last value (row too short)")
+				problem( t.pos, "not enough values")
 
 			for ((v, i) <- r zipWithIndex) {
 				if (i == types.length)
@@ -165,9 +174,9 @@ class Connection {
 							case ind => problem( columns(ind).typepos, "missing type specification in empty relation" )
 						}
 					else
-						evalTupleset( types, data )
+						evalTuplelist( types, data )
 
-				val tab = "_" + anonymous
+				val tab = anonymous
 				val header =
 					(columns zip types).zipWithIndex map {
 						case ((ColumnSpec( _, p, _, _, _, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
@@ -200,7 +209,7 @@ class Connection {
 					}
 		}
 
-	def evalValue( row: Vector[AnyRef], result: ValueResult ): AnyRef =
+	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
 			case NumberValue( n: Number ) => n
 			case FieldValue( index: Int ) => row(index)
@@ -208,7 +217,7 @@ class Connection {
 			case StringValue( s: String ) => s
 		}
 
-	def evalCondition( row: Vector[AnyRef], cond: ConditionResult ): Boolean =
+	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
 		cond match {
 			case ComparisonLogical( left, pred, right ) =>
 				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]

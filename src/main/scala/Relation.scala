@@ -7,7 +7,7 @@ trait Relation extends Iterable[Vector[AnyRef]] {
 
 	def metadata: Metadata
 
-	def list = new ListRelation( metadata.header, iterator.toList )
+	def collect = new ListRelation( metadata.header, iterator.toList )
 
 }
 

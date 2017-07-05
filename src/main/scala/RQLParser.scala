@@ -28,14 +28,14 @@ class RQLParser extends RegexParsers {
 	def insertStatement =
 		(ident <~ "<-") ~ columns ^^ { case n ~ c => InsertRelationStatement( n, ListRelationExpression(c, Nil) ) } |
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
-		(ident <~ "<-") ~ tupleset ^^ { case n ~ t => InsertTuplesetStatement( n, t ) } |
-		(ident <~ "<-") ~ tuple ^^ { case n ~ t => InsertTuplesetStatement( n, List(t) ) }
+		(ident <~ "<-") ~ tuplelist ^^ { case n ~ t => InsertTuplelistStatement( n, t ) } |
+		(ident <~ "<-") ~ tuple ^^ { case n ~ t => InsertTuplelistStatement( n, List(t) ) }
 
 	def deleteStatement =
 		(ident <~ "->") ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
 
-	def tupleset =
-		"{" ~> rep1sep(tuple, ",") <~ "}"
+	def tuplelist =
+		"[" ~> rep1sep(tuple, ",") <~ "]"
 
 	def relation: Parser[RelationExpression] =
 		projectionRelation
@@ -71,7 +71,7 @@ class RQLParser extends RegexParsers {
 			case n ~ tp ~ None => ColumnSpec( n, tp, None, null, null, null )
 			case n ~ tp ~ Some(pkp) => ColumnSpec( n, tp, None, pkp, null, null ) }
 
-	def tuple = "(" ~> rep1sep(valueExpression, ",") <~ ")"
+	def tuple = positioned( "(" ~> rep1sep(valueExpression, ",") <~ ")" ^^ TupleLit )
 
 	def valueExpression =
 		valuePrimary
