@@ -1,7 +1,7 @@
 package xyz.hyperreal.rdb
 
 
-trait Sequence extends Seq[Vector[AnyRef]] {
+trait Sequence extends Seq[Tuple] {
 
 	def metadata: Metadata
 
