@@ -7,6 +7,7 @@ import xyz.hyperreal.lia.{FunctionMap, Math}
 class Connection {
 
 	val baseRelations = new HashMap[String, BaseRelation]
+	val varRelations = new HashMap[String, Relation]
 
 	var anoncount = 1
 
@@ -22,6 +23,15 @@ class Connection {
 		val ast = p.parseFromString( statement, p.statement )
 
 		ast match {
+			case AssignRelationStatement( Ident(pos, name), relation ) =>
+				if (baseRelations contains name)
+					problem( pos, "a base relation by that name already exists" )
+
+				val rel = evalRelation( relation )
+				val res = AssignResult( name, varRelations contains name, rel size )
+
+				varRelations(name) = rel
+				res
 			case InsertTuplelistStatement( base, tupleset ) =>
 				baseRelations get base.name match {
 					case None => problem( base.pos, "base relation cannot be created from tuple set" )
@@ -32,21 +42,18 @@ class Connection {
 
 						InsertResult( l, c, None )
 				}
-			case InsertRelationStatement( base, relation ) =>
+			case InsertRelationStatement( Ident(pos, name), relation ) =>
 				val src = evalRelation( relation )
 				val (dst, created) =
-					baseRelations get base.name match {
+					baseRelations get name match {
 						case None =>
-//							var pk = false
-//
-//							for (c <- src.metadata.header)
-//								if (c.pk)
-//									if (pk)
-//										problem( c.c)
-							val baserel = new BaseRelation( base.name, src.metadata.header )
+							if (varRelations contains name)
+								problem( pos, "a variable relation by that name already exists" )
 
-							baseRelations(base.name) = baserel
-							(baserel, Some( base.name ))
+							val baserel = new BaseRelation( name, src.metadata.header )
+
+							baseRelations(name) = baserel
+							(baserel, Some( name ))
 						case Some( b ) =>
 							if (!src.metadata.attributes.subsetOf( b.metadata.attributes ))
 								problem( relation.pos, "attributes must be a subset of base" )
@@ -126,7 +133,12 @@ class Connection {
 				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
-					case None => problem( p, "unknown base relation" )
+					case None =>
+						varRelations get n match {
+							case None => problem( p, "unknown base or variable relation" )
+							case Some( r ) => r
+						}
+
 					case Some( r ) => r
 				}
 			case ProjectionRelationExpression( relation, columns ) =>
@@ -244,6 +256,7 @@ trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
 
 trait StatementResult
+case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult
 case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
 case class DeleteResult( count: Int ) extends StatementResult
 case class RelationResult( relation: Relation ) extends StatementResult

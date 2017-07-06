@@ -8,6 +8,7 @@ import xyz.hyperreal.lia.FunctionMap
 trait AST
 
 trait StatementAST extends AST
+case class AssignRelationStatement( variable: Ident, relation: RelationExpression ) extends StatementAST
 case class InsertRelationStatement( base: Ident, relation: RelationExpression ) extends StatementAST
 case class InsertTuplelistStatement( base: Ident, tupleset: List[TupleLit] ) extends StatementAST
 case class DeleteStatement( base: Ident, condition: LogicalExpression ) extends StatementAST

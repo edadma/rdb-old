@@ -21,18 +21,22 @@ class RQLParser extends RegexParsers {
 	def ident = pos ~ """[a-zA-Z_$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def statement: Parser[StatementAST] =
+		assignStatement |
 		insertStatement |
 		deleteStatement |
 		relation
 
+	def assignStatement =
+		(ident <~ "<-") ~ relation ^^ { case n ~ r => AssignRelationStatement( n, r ) }
+
 	def insertStatement =
-		(ident <~ "<-") ~ columns ^^ { case n ~ c => InsertRelationStatement( n, ListRelationExpression(c, Nil) ) } |
-		(ident <~ "<-") ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
-		(ident <~ "<-") ~ tuplelist ^^ { case n ~ t => InsertTuplelistStatement( n, t ) } |
-		(ident <~ "<-") ~ tuple ^^ { case n ~ t => InsertTuplelistStatement( n, List(t) ) }
+		("create" ~> ident) ~ columns ^^ { case n ~ c => InsertRelationStatement( n, ListRelationExpression(c, Nil) ) } |
+		("insert" ~> ident) ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
+		("insert" ~> ident) ~ tuplelist ^^ { case n ~ t => InsertTuplelistStatement( n, t ) } |
+		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTuplelistStatement( n, List(t) ) }
 
 	def deleteStatement =
-		(ident <~ "->") ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
+		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
 
 	def tuplelist =
 		"[" ~> rep1sep(tuple, ",") <~ "]"

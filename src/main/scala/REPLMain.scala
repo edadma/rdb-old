@@ -71,6 +71,16 @@ object REPLMain extends App {
 								case 1 => println( "1 row" )
 								case s => println( s"$s rows" )
 							}
+						case AssignResult( name, update, count ) =>
+							println(
+								(count, update) match {
+									case (0, false) => s"empty variable relation '$name' was created"
+									case (0, true) => s"variable relation '$name' was updated with empty relation"
+									case (1, false) => s"variable relation '$name' was created with 1 row"
+									case (1, true) => s"variable relation '$name' was updated with 1 row"
+									case (_, false) => s"variable relation '$name' was created with $count rows"
+									case (_, true) => s"variable relation '$name' was updated with $count rows"
+								} )
 						case InsertResult( _, count, created ) =>
 							println(
 								(count, created) match {
