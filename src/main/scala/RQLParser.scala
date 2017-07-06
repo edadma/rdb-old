@@ -24,7 +24,8 @@ class RQLParser extends RegexParsers {
 		assignStatement |
 		insertStatement |
 		deleteStatement |
-		relation
+		relation |
+		tupleseq
 
 	def assignStatement =
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => AssignRelationStatement( n, r ) }
@@ -32,14 +33,18 @@ class RQLParser extends RegexParsers {
 	def insertStatement =
 		("create" ~> ident) ~ columns ^^ { case n ~ c => InsertRelationStatement( n, ListRelationExpression(c, Nil) ) } |
 		("insert" ~> ident) ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
-		("insert" ~> ident) ~ tuplelist ^^ { case n ~ t => InsertTuplelistStatement( n, t ) } |
-		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTuplelistStatement( n, List(t) ) }
+		("insert" ~> ident) ~ tupleseq ^^ { case n ~ t => InsertTupleseqStatement( n, t ) } |
+		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTupleseqStatement( n, TupleseqLit(List(t)) ) }
 
 	def deleteStatement =
 		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
 
-	def tuplelist =
-		"[" ~> rep1sep(tuple, ",") <~ "]"
+	def tupleseq =
+		relation ~ ("(" ~> rep1sep(valueExpression, ",") <~ ")") ^^ { case r ~ c => ProjectionTupleseqExpression( r, c ) } |
+		tupleseqLit
+
+	def tupleseqLit =
+		"[" ~> rep1sep(tuple, ",") <~ "]" ^^ TupleseqLit
 
 	def relation: Parser[RelationExpression] =
 		projectionRelation
@@ -75,7 +80,7 @@ class RQLParser extends RegexParsers {
 			case n ~ tp ~ None => ColumnSpec( n, tp, None, null, null, null )
 			case n ~ tp ~ Some(pkp) => ColumnSpec( n, tp, None, pkp, null, null ) }
 
-	def tuple = positioned( "(" ~> rep1sep(valueExpression, ",") <~ ")" ^^ TupleLit )
+	def tuple = positioned( "(" ~> rep1sep(valueExpression, ",") <~ ")" ^^ TupleExpression )
 
 	def valueExpression =
 		valuePrimary

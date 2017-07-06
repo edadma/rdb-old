@@ -53,6 +53,14 @@ object REPLMain extends App {
 				case _ if line1 startsWith "?" =>
 				case _ =>
 					conn.executeStatement( line1 ) match {
+						case TupleseqResult( l ) =>
+							val t =
+								new TextTable {
+									for (r <- l)
+										rowSeq( r )
+								}
+
+							print( t )
 						case RelationResult( rel ) =>
 							val l = rel.collect
 							val t =

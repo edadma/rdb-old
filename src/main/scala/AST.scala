@@ -10,7 +10,7 @@ trait AST
 trait StatementAST extends AST
 case class AssignRelationStatement( variable: Ident, relation: RelationExpression ) extends StatementAST
 case class InsertRelationStatement( base: Ident, relation: RelationExpression ) extends StatementAST
-case class InsertTuplelistStatement( base: Ident, tupleset: List[TupleLit] ) extends StatementAST
+case class InsertTupleseqStatement( base: Ident, tupleseq: TupleseqExpression ) extends StatementAST
 case class DeleteStatement( base: Ident, condition: LogicalExpression ) extends StatementAST
 
 trait ValueExpression extends AST with Positional
@@ -20,14 +20,18 @@ case class StringLit( s: String ) extends ValueExpression
 case class MarkLit( m: Mark ) extends ValueExpression
 case class ValueVariableExpression( name: Ident ) extends ValueExpression
 case class ValueColumnExpression( table: Ident, column: Ident ) extends ValueExpression
-case class TupleLit( t: List[ValueExpression] ) extends ValueExpression
+case class TupleExpression( t: List[ValueExpression] ) extends ValueExpression
 
 trait RelationExpression extends StatementAST with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression
-case class ListRelationExpression( columns: List[ColumnSpec], data: List[TupleLit] ) extends RelationExpression
+case class ListRelationExpression( columns: List[ColumnSpec], data: List[TupleExpression] ) extends RelationExpression
 case class ProjectionRelationExpression( relation: RelationExpression, columns: List[Ident] ) extends RelationExpression
 case class SelectionRelationExpression( relation: RelationExpression, condition: LogicalExpression ) extends RelationExpression
 case class InnerJoinRelationExpression( left: RelationExpression, condition: LogicalExpression, right: RelationExpression ) extends RelationExpression
+
+trait TupleseqExpression extends StatementAST with Positional
+case class ProjectionTupleseqExpression( relation: RelationExpression, columns: List[ValueExpression] ) extends TupleseqExpression
+case class TupleseqLit( data: List[TupleExpression] ) extends TupleseqExpression
 
 trait LogicalExpression extends Positional
 case class LogicalLit( l: Logical ) extends LogicalExpression

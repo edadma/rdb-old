@@ -33,12 +33,12 @@ class Connection {
 
 				varRelations(name) = rel
 				res
-			case InsertTuplelistStatement( base, tupleset ) =>
+			case InsertTupleseqStatement( base, tupleseq ) =>
 				baseRelations get base.name match {
 					case None => problem( base.pos, "base relation cannot be created from tuple set" )
 					case Some( b ) =>
 						val types = b.metadata.header map (_.typ) toArray
-						val body = evalTuplelist( types, tupleset )
+						val body = evalTupleseq( types, tupleseq )
 						val (l, c) = b.insertTupleset( body )
 
 						InsertResult( l, c, None )
@@ -74,13 +74,21 @@ class Connection {
 				}
 			case r: RelationExpression =>
 				RelationResult( evalRelation(r) )
+			case s: TupleseqLit =>
+				TupleseqResult( evalTupleseq(new Array[Type](s.data.length), s) )
 		}
 	}
 
-	def evalTuplelist( types: Array[Type], data: List[TupleLit] ): List[Vector[AnyRef]] = {
-		val body = new ArrayBuffer[Vector[AnyRef]]
+	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ): List[Tuple] = {
+		tupleseq match {
+			case TupleseqLit( data ) => evalTupleList( types, data )
+		}
+	}
 
-		for (t@TupleLit( r ) <- data) {
+	def evalTupleList( types: Array[Type], data: List[TupleExpression] ): List[Tuple] = {
+		val body = new ArrayBuffer[Tuple]
+
+		for (t@TupleExpression( r ) <- data) {
 			val row = new ArrayBuffer[AnyRef]
 
 			if (r.length < types.length)
@@ -187,7 +195,7 @@ class Connection {
 							case ind => problem( columns(ind).typepos, "missing type specification" )
 						}
 					else
-						evalTuplelist( types, data )
+						evalTupleList( types, data )
 
 				val tab = anonymous
 				val header =
@@ -261,3 +269,4 @@ case class AssignResult( name: String, update: Boolean, count: Int ) extends Sta
 case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
 case class DeleteResult( count: Int ) extends StatementResult
 case class RelationResult( relation: Relation ) extends StatementResult
+case class TupleseqResult( tupleseq: List[Tuple] ) extends StatementResult
