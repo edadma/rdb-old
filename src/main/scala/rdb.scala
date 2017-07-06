@@ -14,6 +14,15 @@ package object rdb {
 		else
 			sys.error( pos.line + ": " + error + "\n" + pos.longString )
 
+	var anoncount = 1
+
+	def anonymous = {
+		val res = anoncount
+
+		anoncount += 1
+		s"_$res"
+	}
+
 	object TRUE extends Logical {
 		def not = FALSE
 

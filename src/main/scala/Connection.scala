@@ -10,15 +10,6 @@ class Connection {
 	val baseRelations = new HashMap[String, BaseRelation]
 	val varRelations = new HashMap[String, Relation]
 
-	var anoncount = 1
-
-	def anonymous = {
-		val res = anoncount
-
-		anoncount += 1
-		s"_$res"
-	}
-
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
 		val ast = p.parseFromString( statement, p.statement )
@@ -38,8 +29,8 @@ class Connection {
 					case None => problem( base.pos, "base relation cannot be created from tuple set" )
 					case Some( b ) =>
 						val types = b.metadata.header map (_.typ) toArray
-						val body = evalTupleseq( types, tupleseq )
-						val (l, c) = b.insertTupleset( body )
+						val seq = evalTupleseq( types, tupleseq )
+						val (l, c) = b.insertTupleseq( seq )
 
 						InsertResult( l, c, None )
 				}
@@ -74,14 +65,30 @@ class Connection {
 				}
 			case r: RelationExpression =>
 				RelationResult( evalRelation(r) )
-			case s: TupleseqLit =>
-				TupleseqResult( evalTupleseq(new Array[Type](s.data.length), s) )
+			case t: TupleseqExpression =>
+				TupleseqResult( evalTupleseq(null, t) )
 		}
 	}
 
-	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ): List[Tuple] = {
+	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ) = {
 		tupleseq match {
-			case TupleseqLit( data ) => evalTupleList( types, data )
+			case TupleseqLit( data ) =>
+				val types1 =
+					if (types eq null)
+						new Array[Type]( data.length )
+					else
+						types
+
+				new ListTupleseq( types1, evalTupleList(types1, data) )
+			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
+				val types1 =
+					if (types eq null)
+						new Array[Type]( columns.length )
+					else
+						types
+				val rel = evalRelation( relation )
+
+
 		}
 	}
 
@@ -269,4 +276,4 @@ case class AssignResult( name: String, update: Boolean, count: Int ) extends Sta
 case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
 case class DeleteResult( count: Int ) extends StatementResult
 case class RelationResult( relation: Relation ) extends StatementResult
-case class TupleseqResult( tupleseq: List[Tuple] ) extends StatementResult
+case class TupleseqResult( tupleseq: Tupleseq ) extends StatementResult

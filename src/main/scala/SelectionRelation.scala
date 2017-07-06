@@ -10,7 +10,7 @@ class SelectionRelation( conn: Connection, relation: Relation, condition: Condit
 	def iterator = relation.iterator filter (conn.evalCondition( _, condition ))
 
 //	def iterator = {
-//		new Iterator[Vector[AnyRef]] {
+//		new Iterator[Tuple] {
 //			val it = relation.iterator
 //			var row: Tuple = _
 //

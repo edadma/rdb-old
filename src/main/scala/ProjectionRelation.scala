@@ -9,7 +9,7 @@ class ProjectionRelation( relation: Relation, columns: List[String] ) extends Ab
 	val metadata = new Metadata( ind map relation.metadata.header )
 
 	def iterator =
-		new Iterator[Vector[AnyRef]] {
+		new Iterator[Tuple] {
 			val it = relation.iterator
 
 			def hasNext = it.hasNext

@@ -7,7 +7,7 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	private val cols = ArrayBuffer[Column]( definition map {case Column( _, col, typ, pk ) => Column( name, col, typ, pk )}: _* )
 
-	private val rows = new ArrayBuffer[Vector[AnyRef]]
+	private val rows = new ArrayBuffer[Tuple]
 
 	val metadata = new Metadata( cols toIndexedSeq )
 
@@ -73,7 +73,7 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 		(res toList, count)
 	}
 
-	private [rdb] def insertTupleset( data: List[Vector[AnyRef]] ) = {
+	private [rdb] def insertTupleseq( data: Tupleseq ) = {
 		val res = new ListBuffer[Map[String, AnyRef]]
 		var count = 0
 
