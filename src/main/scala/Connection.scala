@@ -80,15 +80,15 @@ class Connection {
 						types
 
 				new ListTupleseq( types1, evalTupleList(types1, data) )
-			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
-				val types1 =
-					if (types eq null)
-						new Array[Type]( columns.length )
-					else
-						types
-				val rel = evalRelation( relation )
-
-
+//			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
+//				val types1 =
+//					if (types eq null)
+//						new Array[Type]( columns.length )
+//					else
+//						types
+//				val rel = evalRelation( relation )
+//
+//
 		}
 	}
 
