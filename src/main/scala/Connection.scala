@@ -218,14 +218,14 @@ class Connection {
 
 	def evalExpression( metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
-			case FloatLit( n ) => NumberValue( java.lang.Double.parseDouble(n) )
-			case IntegerLit( n ) => NumberValue( Integer.parseInt(n) )
-			case StringLit( s ) => StringValue( s )
-			case MarkLit( m ) => MarkedValue( m )
+			case FloatLit( n ) => LiteralValue( FloatType, java.lang.Double.valueOf(n) )
+			case IntegerLit( n ) => LiteralValue( IntegerType, Integer.valueOf(n) )
+			case StringLit( s ) => LiteralValue( StringType, s )
+			case MarkLit( m ) => MarkedValue( null, m )
 			case ValueVariableExpression( n ) =>
 				metadata.columnMap get n.name match {
 					case None => problem( n.pos, "no such column" )
-					case Some( ind ) => FieldValue( ind )
+					case Some( ind ) => FieldValue( metadata.header(ind).typ, ind )
 				}
 			case ValueColumnExpression( t, c ) =>
 				if (!metadata.tableSet(t.name))
@@ -233,22 +233,21 @@ class Connection {
 				else
 					metadata.tableColumnMap get (t.name, c.name) match {
 						case None => problem( c.pos, "no such column" )
-						case Some( ind ) => FieldValue( ind )
+						case Some( ind ) => FieldValue( metadata.header(ind).typ, ind )
 					}
 		}
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
-			case NumberValue( n: Number ) => n
-			case FieldValue( index: Int ) => row(index)
-			case MarkedValue( m: Mark ) => m
-			case StringValue( s: String ) => s
+			case LiteralValue( _, l ) => l
+			case FieldValue( _, index: Int ) => row(index)
+			case MarkedValue( _, m ) => m
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
 		cond match {
 			case ComparisonLogical( left, pred, right ) =>
-				Math( pred, evalValue(row, left), evalValue(row, right) ).asInstanceOf[Boolean]
+				Math.predicate( pred, evalValue(row, left), evalValue(row, right) )
 		}
 
 	def evalLogical( metadata: Metadata, ast: LogicalExpression ): ConditionResult = {
@@ -262,11 +261,13 @@ class Connection {
 	}
 }
 
-trait ValueResult
-case class NumberValue( n: Number ) extends ValueResult
-case class FieldValue( index: Int ) extends ValueResult
-case class MarkedValue( m: Mark ) extends ValueResult
-case class StringValue( s: String ) extends ValueResult
+trait ValueResult {
+	val typ: Type
+}
+
+case class LiteralValue( typ: Type, l: AnyRef ) extends ValueResult
+case class FieldValue( typ: Type, index: Int ) extends ValueResult
+case class MarkedValue( typ: Type, m: Mark ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
