@@ -4,8 +4,6 @@ version := "0.1"
 
 scalaVersion := "2.12.2"
 
-crossScalaVersions := Seq( "2.11.11" )
-
 scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
 incOptions := incOptions.value.withNameHashing( true )
@@ -53,7 +51,7 @@ libraryDependencies ++= {
 libraryDependencies ++= Seq(
 	"xyz.hyperreal" %% "json" % "0.7",
 	"xyz.hyperreal" %% "table" % "0.5",
-	"xyz.hyperreal" %% "lia" % "0.20",
+	"xyz.hyperreal" %% "lia" % "0.21",
 	"xyz.hyperreal" %% "options" % "0.2"
 )
 

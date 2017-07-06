@@ -37,12 +37,16 @@ object REPLMain extends App {
 					"""
 						|:help (h)                             print this summary
 						|:quit (q)                             exit the REPL
+						|:relations (r)                        print the relations currently accessible
 						|:trace (t) on/off                     turn exception stack trace on or off
 						|<RQL>                                 execute <RQL> query
 						|?<expression>                         evaluate <expression>
 					""".trim.stripMargin.lines foreach out.println
 				case List( ":quit"|":q" ) =>
 					sys.exit
+				case List( ":relations"|":r" ) =>
+					println( conn.baseRelations )
+					println( conn.varRelations )
 				case List( ":trace"|":t", "on" ) => stacktrace = true
 				case List( ":trace"|":t", "off" ) => stacktrace = false
 				case Nil|List( "" ) =>

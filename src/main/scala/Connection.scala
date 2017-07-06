@@ -1,6 +1,7 @@
 package xyz.hyperreal.rdb
 
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, ListBuffer}
+
 import xyz.hyperreal.lia.{FunctionMap, Math}
 
 
@@ -183,7 +184,7 @@ class Connection {
 					if (data isEmpty)
 						types indexOf null match {
 							case -1 => Nil
-							case ind => problem( columns(ind).typepos, "missing type specification in empty relation" )
+							case ind => problem( columns(ind).typepos, "missing type specification" )
 						}
 					else
 						evalTuplelist( types, data )
