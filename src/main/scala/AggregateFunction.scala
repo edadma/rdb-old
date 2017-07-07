@@ -2,6 +2,8 @@ package xyz.hyperreal.rdb
 
 import xyz.hyperreal.lia.Math
 
+import collection.mutable.PriorityQueue
+
 
 trait AggregateFunction {
 
@@ -84,3 +86,19 @@ class MaxAggregateFunction extends AbstractAggregateFunction[Number]( "max" ) {
 	}
 
 }
+
+class ListAggregateFunction extends AbstractAggregateFunction[String]( "list" ) {
+
+	override def compute( next: AnyRef ) = if (intermediate eq null) next.toString else s"$intermediate, $next"
+
+}
+
+//class MedianAggregateFunction extends AbstractAggregateFunction[Number]( "median" ) {
+//
+//	val q = new PriorityQueue[Number].reverse
+//
+//	override def compute( next: AnyRef ) =
+//
+//}
+
+// Mode
