@@ -82,10 +82,22 @@ class RQLParser extends RegexParsers {
 
 	def tuple = positioned( "(" ~> rep1sep(valueExpression, ",") <~ ")" ^^ TupleExpression )
 
-	def valueExpression =
-		valuePrimary
+	def valueExpression: Parser[ValueExpression] =
+		additiveExpression
 
-	def valuePrimary =
+	def additiveExpression: Parser[ValueExpression] = multiplicativeExpression ~ rep("+" ~ multiplicativeExpression | "-" ~ multiplicativeExpression) ^^ {
+		case expr ~ list => list.foldLeft( expr ) {
+			case (x, o ~ y) => BinaryValueExpression( x, o, lookup(o), y )
+		}
+	}
+
+	def multiplicativeExpression: Parser[ValueExpression] = valuePrimary ~ rep("*" ~ valuePrimary | "/" ~ valuePrimary) ^^ {
+		case expr ~ list => list.foldLeft( expr ) {
+			case (x, o ~ y) => BinaryValueExpression( x, o, lookup(o), y )
+		}
+	}
+
+	def valuePrimary: Parser[ValueExpression] =
 		number |
 		string |
 		positioned( "A" ^^^ MarkLit(A) ) |

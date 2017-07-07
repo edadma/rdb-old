@@ -216,6 +216,13 @@ class Connection {
 		}
 	}
 
+	def value2type( v: Any ) =
+		v match {
+			case _: Int => IntegerType
+			case _: Double => FloatType
+			case _: String => StringType
+		}
+
 	def evalExpression( metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => LiteralValue( n, FloatType, java.lang.Double.valueOf(n) )
@@ -235,13 +242,26 @@ class Connection {
 						case None => problem( c.pos, "no such column" )
 						case Some( ind ) => FieldValue( t.name + '.' + c.name, metadata.header(ind).typ, ind )
 					}
+			case BinaryValueExpression( left, operation, func, right ) =>
+				val l = evalExpression( metadata, left )
+				val r = evalExpression( metadata, right )
+
+				(l, r) match {
+					case (LiteralValue(_, _, x), LiteralValue(_, _, y)) =>
+						val res = Math( func, x, y )
+						val typ = value2type( res )
+
+						LiteralValue( res.toString, typ, res )
+					case _ => BinaryValue( s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r )//todo: handle type promotion correctly
+				}
 		}
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
-			case LiteralValue( _, _, l ) => l
+			case LiteralValue( _, _, v ) => v
 			case FieldValue( _, _, index: Int ) => row(index)
 			case MarkedValue( _, _, m ) => m
+			case BinaryValue( _, _, l, _, f, r ) => Math( f, evalValue(row, l), evalValue(row, r) )
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
@@ -266,9 +286,10 @@ trait ValueResult {
 	val typ: Type
 }
 
-case class LiteralValue( heading: String, typ: Type, l: AnyRef ) extends ValueResult
+case class LiteralValue( heading: String, typ: Type, value: AnyRef ) extends ValueResult
 case class FieldValue( heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( heading: String, typ: Type, m: Mark ) extends ValueResult
+case class BinaryValue( heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
