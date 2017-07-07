@@ -3,7 +3,8 @@ package xyz.hyperreal.rdb
 
 class ProjectionTupleseq( conn: Connection, relation: Relation, columns: Vector[ValueResult] ) extends AbstractTupleseq {
 
-	val metadata = new Metadata( columns map (c => Column("", c.toString, c.typ, None)) )
+	val header = Some( columns map (_.heading) )
+	val types = columns map (_.typ)
 
 	def iterator =
 		relation.iterator map { t =>

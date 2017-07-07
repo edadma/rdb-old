@@ -53,14 +53,31 @@ object REPLMain extends App {
 				case _ if line1 startsWith "?" =>
 				case _ =>
 					conn.executeStatement( line1 ) match {
-						case TupleseqResult( l ) =>
+						case TupleseqResult( tupleseq ) =>
 							val t =
 								new TextTable {
-									for (r <- l)
+									tupleseq.header match {
+										case None =>
+										case Some( h ) =>
+											headerSeq( h )
+											line
+
+											for (i <- 1 to h.length)
+												if (tupleseq.types( i - 1 ).isInstanceOf[NumericalType])
+													rightAlignment( i )
+									}
+
+									for (r <- tupleseq)
 										rowSeq( r )
 								}
 
 							print( t )
+
+							tupleseq.size match {
+								case 0 => println( "empty tupleseq" )
+								case 1 => println( "1 tuple" )
+								case s => println( s"$s tuples" )
+							}
 						case RelationResult( rel ) =>
 							val l = rel.collect
 							val t =

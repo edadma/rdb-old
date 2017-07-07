@@ -3,7 +3,9 @@ package xyz.hyperreal.rdb
 
 trait Tupleseq extends Seq[Tuple] {
 
-	def metadata: Metadata
+	def header: Option[IndexedSeq[String]]
+
+	def types: IndexedSeq[Type]
 
 }
 
