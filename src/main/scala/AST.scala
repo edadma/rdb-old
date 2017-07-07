@@ -21,7 +21,7 @@ case class MarkLit( m: Mark ) extends ValueExpression
 case class ValueVariableExpression( name: Ident ) extends ValueExpression
 case class ValueColumnExpression( table: Ident, column: Ident ) extends ValueExpression
 case class TupleExpression( t: List[ValueExpression] ) extends ValueExpression
-case class BinaryValueExpression( left: ValueExpression, operation: String, func: FunctionMap, right: ValueExpression ) extends ValueExpression
+case class BinaryValueExpression( left: ValueExpression, oppos: Position, operation: String, func: FunctionMap, right: ValueExpression ) extends ValueExpression
 case class ApplicativeValueExpression( func: ValueExpression, args: List[ValueExpression] ) extends ValueExpression
 
 trait RelationExpression extends StatementAST with Positional

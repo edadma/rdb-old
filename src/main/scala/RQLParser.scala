@@ -85,15 +85,15 @@ class RQLParser extends RegexParsers {
 	def valueExpression: Parser[ValueExpression] =
 		additiveExpression
 
-	def additiveExpression: Parser[ValueExpression] = multiplicativeExpression ~ rep("+" ~ multiplicativeExpression | "-" ~ multiplicativeExpression) ^^ {
+	def additiveExpression: Parser[ValueExpression] = multiplicativeExpression ~ rep(pos ~ "+" ~ multiplicativeExpression | pos ~ "-" ~ multiplicativeExpression) ^^ {
 		case expr ~ list => list.foldLeft( expr ) {
-			case (x, o ~ y) => BinaryValueExpression( x, o, lookup(o), y )
+			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
 		}
 	}
 
-	def multiplicativeExpression: Parser[ValueExpression] = valuePrimary ~ rep("*" ~ valuePrimary | "/" ~ valuePrimary) ^^ {
+	def multiplicativeExpression: Parser[ValueExpression] = valuePrimary ~ rep(pos ~ "*" ~ valuePrimary | pos ~ "/" ~ valuePrimary) ^^ {
 		case expr ~ list => list.foldLeft( expr ) {
-			case (x, o ~ y) => BinaryValueExpression( x, o, lookup(o), y )
+			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
 		}
 	}
 
