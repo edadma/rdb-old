@@ -7,5 +7,11 @@ trait Tupleseq extends Seq[Tuple] {
 
 }
 
-abstract class AbstractTupleseq extends Tupleseq
+abstract class AbstractTupleseq extends Tupleseq {
+
+	def apply( idx: Int ) = iterator drop idx next
+
+	def length = iterator length
+
+}
 

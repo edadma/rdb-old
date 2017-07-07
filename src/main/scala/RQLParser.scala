@@ -24,8 +24,8 @@ class RQLParser extends RegexParsers {
 		assignStatement |
 		insertStatement |
 		deleteStatement |
-		relation |
-		tupleseq
+		tupleseq |
+		relation
 
 	def assignStatement =
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => AssignRelationStatement( n, r ) }
