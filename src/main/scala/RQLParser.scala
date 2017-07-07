@@ -97,6 +97,11 @@ class RQLParser extends RegexParsers {
 		}
 	}
 
+	def applicativeExpression: Parser[ValueExpression] =
+		valuePrimary ~ ("(" ~> repsep(valueExpression, ",") <~ ")") ^^ {
+			case f ~ args => ApplicativeValueExpression( f, args ) } |
+		valuePrimary
+
 	def valuePrimary: Parser[ValueExpression] =
 		number |
 		string |
