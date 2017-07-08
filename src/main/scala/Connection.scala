@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb
 
+import scala.util.parsing.input.Position
+
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, ListBuffer}
 
 import xyz.hyperreal.lia.{FunctionMap, Math}
@@ -8,7 +10,7 @@ import xyz.hyperreal.lia.{FunctionMap, Math}
 class Connection {
 
 	val baseRelations = new HashMap[String, BaseRelation]
-	val varRelations = new HashMap[String, Relation]
+	val variables = new HashMap[String, AnyRef]
 
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
@@ -20,9 +22,9 @@ class Connection {
 					problem( pos, "a base relation by that name already exists" )
 
 				val rel = evalRelation( relation )
-				val res = AssignResult( name, varRelations contains name, rel size )
+				val res = AssignResult( name, variables contains name, rel size )
 
-				varRelations(name) = rel
+				variables(name) = rel
 				res
 			case InsertTupleseqStatement( base, tupleseq ) =>
 				baseRelations get base.name match {
@@ -39,7 +41,7 @@ class Connection {
 				val (dst, created) =
 					baseRelations get name match {
 						case None =>
-							if (varRelations contains name)
+							if (variables contains name)
 								problem( pos, "a variable relation by that name already exists" )
 
 							val baserel = new BaseRelation( name, src.metadata.header )
@@ -80,15 +82,12 @@ class Connection {
 						types
 
 				new ListTupleseq( types1, evalTupleList(types1, data) )
-//			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
-//				val types1 =
-//					if (types eq null)
-//						new Array[Type]( columns.length )
-//					else
-//						types
-//				val rel = evalRelation( relation )
-//
-//
+			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
+				val rel = evalRelation( relation )
+				val cols = columns map (evalExpression(rel.metadata, _))
+
+
+				new ProjectionTupleseq( this, rel, cols toVector )
 		}
 	}
 
@@ -150,9 +149,9 @@ class Connection {
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None =>
-						varRelations get n match {
-							case None => problem( p, "unknown base or variable relation" )
-							case Some( r ) => r
+						variables get n match {
+							case Some( r: Relation ) => r
+							case _ => problem( p, "unknown base or variable relation" )
 						}
 
 					case Some( r ) => r
@@ -216,16 +215,23 @@ class Connection {
 		}
 	}
 
+	def value2type( v: Any ) =
+		v match {
+			case _: Int => IntegerType
+			case _: Double => FloatType
+			case _: String => StringType
+		}
+
 	def evalExpression( metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
-			case FloatLit( n ) => LiteralValue( FloatType, java.lang.Double.valueOf(n) )
-			case IntegerLit( n ) => LiteralValue( IntegerType, Integer.valueOf(n) )
-			case StringLit( s ) => LiteralValue( StringType, s )
-			case MarkLit( m ) => MarkedValue( null, m )
+			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
+			case IntegerLit( n ) => LiteralValue( ast.pos, n, IntegerType, Integer.valueOf(n) )
+			case StringLit( s ) => LiteralValue( ast.pos, '"' + s + "'", StringType, s )
+			case MarkLit( m ) => MarkedValue( ast.pos, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
 				metadata.columnMap get n.name match {
 					case None => problem( n.pos, "no such column" )
-					case Some( ind ) => FieldValue( metadata.header(ind).typ, ind )
+					case Some( ind ) => FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
 				}
 			case ValueColumnExpression( t, c ) =>
 				if (!metadata.tableSet(t.name))
@@ -233,15 +239,35 @@ class Connection {
 				else
 					metadata.tableColumnMap get (t.name, c.name) match {
 						case None => problem( c.pos, "no such column" )
-						case Some( ind ) => FieldValue( metadata.header(ind).typ, ind )
+						case Some( ind ) => FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
 					}
+			case BinaryValueExpression( left, oppos, operation, func, right ) =>
+				val l = evalExpression( metadata, left )
+				val r = evalExpression( metadata, right )
+
+				(l, r) match {
+					case (LiteralValue(p, _, _, x), LiteralValue(_, _, _, y)) =>
+						val res = Math( func, x, y )
+						val typ = value2type( res )
+
+						LiteralValue( p, res.toString, typ, res )
+					case _ => BinaryValue( s"${l.heading} $operation ${r.heading}", l.typ, l, oppos, operation, func, r )//todo: handle type promotion correctly
+				}
+			case a@ApplicativeValueExpression( func, args ) =>
+
 		}
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
-			case LiteralValue( _, l ) => l
-			case FieldValue( _, index: Int ) => row(index)
-			case MarkedValue( _, m ) => m
+			case LiteralValue( _, _, _, v ) => v
+			case FieldValue( _, _, _, index: Int ) => row(index)
+			case MarkedValue( _, _, _, m ) => m
+			case BinaryValue( _, _, l, p, _, f, r ) =>
+				try {
+					Math( f, evalValue( row, l ), evalValue( row, r ) )
+				} catch {
+					case _: Exception => problem( p, "error performing operation" )
+				}
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
@@ -262,12 +288,17 @@ class Connection {
 }
 
 trait ValueResult {
+	val pos: Position
+	val heading: String
 	val typ: Type
 }
 
-case class LiteralValue( typ: Type, l: AnyRef ) extends ValueResult
-case class FieldValue( typ: Type, index: Int ) extends ValueResult
-case class MarkedValue( typ: Type, m: Mark ) extends ValueResult
+case class LiteralValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
+case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
+case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
+case class BinaryValue( heading: String, typ: Type, left: ValueResult, pos: Position, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
+case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, arg: ValueResult ) extends ValueResult
+//case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult

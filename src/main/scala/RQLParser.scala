@@ -24,8 +24,8 @@ class RQLParser extends RegexParsers {
 		assignStatement |
 		insertStatement |
 		deleteStatement |
-		relation |
-		tupleseq
+		tupleseq |
+		relation
 
 	def assignStatement =
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => AssignRelationStatement( n, r ) }
@@ -82,10 +82,27 @@ class RQLParser extends RegexParsers {
 
 	def tuple = positioned( "(" ~> rep1sep(valueExpression, ",") <~ ")" ^^ TupleExpression )
 
-	def valueExpression =
+	def valueExpression: Parser[ValueExpression] =
+		additiveExpression
+
+	def additiveExpression: Parser[ValueExpression] = multiplicativeExpression ~ rep(pos ~ "+" ~ multiplicativeExpression | pos ~ "-" ~ multiplicativeExpression) ^^ {
+		case expr ~ list => list.foldLeft( expr ) {
+			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
+		}
+	}
+
+	def multiplicativeExpression: Parser[ValueExpression] = valuePrimary ~ rep(pos ~ "*" ~ valuePrimary | pos ~ "/" ~ valuePrimary) ^^ {
+		case expr ~ list => list.foldLeft( expr ) {
+			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
+		}
+	}
+
+	def applicativeExpression: Parser[ValueExpression] =
+		valuePrimary ~ ("(" ~> repsep(valueExpression, ",") <~ ")") ^^ {
+			case f ~ args => ApplicativeValueExpression( f, args ) } |
 		valuePrimary
 
-	def valuePrimary =
+	def valuePrimary: Parser[ValueExpression] =
 		number |
 		string |
 		positioned( "A" ^^^ MarkLit(A) ) |
