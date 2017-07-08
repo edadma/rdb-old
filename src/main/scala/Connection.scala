@@ -10,7 +10,7 @@ import xyz.hyperreal.lia.{FunctionMap, Math}
 class Connection {
 
 	val baseRelations = new HashMap[String, BaseRelation]
-	val varRelations = new HashMap[String, Relation]
+	val variables = new HashMap[String, AnyRef]
 
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
@@ -22,9 +22,9 @@ class Connection {
 					problem( pos, "a base relation by that name already exists" )
 
 				val rel = evalRelation( relation )
-				val res = AssignResult( name, varRelations contains name, rel size )
+				val res = AssignResult( name, variables contains name, rel size )
 
-				varRelations(name) = rel
+				variables(name) = rel
 				res
 			case InsertTupleseqStatement( base, tupleseq ) =>
 				baseRelations get base.name match {
@@ -41,7 +41,7 @@ class Connection {
 				val (dst, created) =
 					baseRelations get name match {
 						case None =>
-							if (varRelations contains name)
+							if (variables contains name)
 								problem( pos, "a variable relation by that name already exists" )
 
 							val baserel = new BaseRelation( name, src.metadata.header )
@@ -83,14 +83,11 @@ class Connection {
 
 				new ListTupleseq( types1, evalTupleList(types1, data) )
 			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
-				val types1 =
-					if (types eq null)
-						new Array[Type]( columns.length )
-					else
-						types
 				val rel = evalRelation( relation )
+				val cols = columns map (evalExpression(rel.metadata, _))
 
-				new ProjectionTupleseq( this, rel, columns map (evalExpression(rel.metadata, _)) toVector )
+
+				new ProjectionTupleseq( this, rel, cols toVector )
 		}
 	}
 
@@ -152,9 +149,9 @@ class Connection {
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None =>
-						varRelations get n match {
-							case None => problem( p, "unknown base or variable relation" )
-							case Some( r ) => r
+						variables get n match {
+							case Some( r: Relation ) => r
+							case _ => problem( p, "unknown base or variable relation" )
 						}
 
 					case Some( r ) => r
@@ -256,6 +253,8 @@ class Connection {
 						LiteralValue( p, res.toString, typ, res )
 					case _ => BinaryValue( s"${l.heading} $operation ${r.heading}", l.typ, l, oppos, operation, func, r )//todo: handle type promotion correctly
 				}
+			case a@ApplicativeValueExpression( func, args ) =>
+
 		}
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
@@ -298,6 +297,8 @@ case class LiteralValue( pos: Position, heading: String, typ: Type, value: AnyRe
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( heading: String, typ: Type, left: ValueResult, pos: Position, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
+case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, arg: ValueResult ) extends ValueResult
+//case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult

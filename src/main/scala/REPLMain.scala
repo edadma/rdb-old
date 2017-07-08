@@ -46,7 +46,7 @@ object REPLMain extends App {
 					sys.exit
 				case List( ":relations"|":r" ) =>
 					println( conn.baseRelations )
-					println( conn.varRelations )
+					println( conn.variables )
 				case List( ":trace"|":t", "on" ) => stacktrace = true
 				case List( ":trace"|":t", "off" ) => stacktrace = false
 				case Nil|List( "" ) =>
