@@ -9,6 +9,8 @@ trait AggregateFunction {
 
 	def name: String
 
+	def typ( input: Type ): Type
+
 	def next( args: List[AnyRef] ): Unit
 
 	def result: AnyRef
@@ -41,17 +43,23 @@ object AbstractAggregateFunction {
 
 class CountAggregateFunction extends AbstractAggregateFunction[java.lang.Integer]( "count" ) {
 
+	def typ( input: Type ) = IntegerType
+
 	override def result = count
 
 }
 
 class SumAggregateFunction extends AbstractAggregateFunction[Number]( "sum" ) {
 
+	def typ( input: Type ) = input
+
 	override def compute( next: AnyRef ) = Math( AbstractAggregateFunction.add, intermediate, next ).asInstanceOf[Number]
 
 }
 
 class AvgAggregateFunction extends AbstractAggregateFunction[Number]( "avg" ) {
+
+	def typ( input: Type ) = FloatType//todo: do this properly
 
 	override def compute( next: AnyRef ) = Math( AbstractAggregateFunction.add, intermediate, next ).asInstanceOf[Number]
 
@@ -60,6 +68,8 @@ class AvgAggregateFunction extends AbstractAggregateFunction[Number]( "avg" ) {
 }
 
 class MinAggregateFunction extends AbstractAggregateFunction[Number]( "min" ) {
+
+	def typ( input: Type ) = input
 
 	override def compute( next: AnyRef ) = {
 		if (intermediate eq null)
@@ -75,6 +85,8 @@ class MinAggregateFunction extends AbstractAggregateFunction[Number]( "min" ) {
 
 class MaxAggregateFunction extends AbstractAggregateFunction[Number]( "max" ) {
 
+	def typ( input: Type ) = input
+
 	override def compute( next: AnyRef ) = {
 		if (intermediate eq null)
 			next.asInstanceOf[Number]
@@ -88,6 +100,8 @@ class MaxAggregateFunction extends AbstractAggregateFunction[Number]( "max" ) {
 }
 
 class ListAggregateFunction extends AbstractAggregateFunction[String]( "list" ) {
+
+	def typ( input: Type ) = StringType
 
 	override def compute( next: AnyRef ) = if (intermediate eq null) next.toString else s"$intermediate, $next"
 

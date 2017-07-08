@@ -258,7 +258,7 @@ class Connection {
 				val a = args map (evalExpression( metadata, _ ))
 
 				f match {
-					case af: AggregateFunction => AggregateFunctionValue( e.pos, func.toString, null, af, a.head )
+					case af: AggregateFunction => AggregateFunctionValue( e.pos, func.toString, af.typ(a.head.typ), af, a.head )//todo: handle multiple args properly
 //					case sf: ScalarFunction =>
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
