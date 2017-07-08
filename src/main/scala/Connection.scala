@@ -253,8 +253,15 @@ class Connection {
 						LiteralValue( p, res.toString, typ, res )
 					case _ => BinaryValue( s"${l.heading} $operation ${r.heading}", l.typ, l, oppos, operation, func, r )//todo: handle type promotion correctly
 				}
-			case a@ApplicativeValueExpression( func, args ) =>
+			case e@ApplicativeValueExpression( func, args ) =>
+				val f = evalExpression( metadata, func )
+				val a = args map (evalExpression( metadata, _ ))
 
+				f match {
+					case af: AggregateFunction => AggregateFunctionValue( e.pos, func.toString, null, af, a.head )
+//					case sf: ScalarFunction =>
+					case _ => problem( e.pos, s"'$f' is not a function" )
+				}
 		}
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
@@ -298,7 +305,7 @@ case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) e
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( heading: String, typ: Type, left: ValueResult, pos: Position, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
 case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, arg: ValueResult ) extends ValueResult
-//case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
+case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
