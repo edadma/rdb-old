@@ -91,7 +91,7 @@ class RQLParser extends RegexParsers {
 		}
 	}
 
-	def multiplicativeExpression: Parser[ValueExpression] = valuePrimary ~ rep(pos ~ "*" ~ valuePrimary | pos ~ "/" ~ valuePrimary) ^^ {
+	def multiplicativeExpression: Parser[ValueExpression] = applicativeExpression ~ rep(pos ~ "*" ~ applicativeExpression | pos ~ "/" ~ applicativeExpression) ^^ {
 		case expr ~ list => list.foldLeft( expr ) {
 			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
 		}

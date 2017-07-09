@@ -1,8 +1,9 @@
 package xyz.hyperreal.rdb
 
 
-class ProjectionTupleseq( conn: Connection, relation: Relation, columns: Vector[ValueResult] ) extends AbstractTupleseq {
+class ProjectionTupleseq( conn: Connection, relation: Relation, columns: Vector[ValueResult], afuse: AggregateFunctionUseState ) extends AbstractTupleseq {
 
+	println( afuse)
 	val header = Some( columns map (_.heading) )
 	val types = columns map (_.typ)
 

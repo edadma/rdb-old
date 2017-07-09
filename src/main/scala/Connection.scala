@@ -84,10 +84,10 @@ class Connection {
 				new ListTupleseq( types1, evalTupleList(types1, data) )
 			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
 				val rel = evalRelation( relation )
-				val state = AFUseOrField( NoFieldOrAFUsed )
-				val cols = columns map (evalExpression(state, rel.metadata, _))
+				val afuse = AFUseOrField( NoFieldOrAFUsed )
+				val cols = columns map (evalExpression(afuse, rel.metadata, _))
 
-				new ProjectionTupleseq( this, rel, cols toVector )
+				new ProjectionTupleseq( this, rel, cols toVector, afuse.state )
 		}
 	}
 
@@ -230,8 +230,18 @@ class Connection {
 			case MarkLit( m ) => MarkedValue( ast.pos, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
 				metadata.columnMap get n.name match {
-					case None => problem( n.pos, "no such column" )
-					case Some( ind ) => FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
+					case None =>
+						variables get n.name match {
+							case None => problem( n.pos, "no such column or variable" )
+							case Some( v ) => VariableValue( n.pos, n.name, null, v )//todo: set type properly
+						}
+					case Some( ind ) =>
+						afuse match {
+							case AFUseOrField( AFUsed ) => problem( n.pos, "column not allowed here (since aggregate function already referred to)" )
+							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
+						}
+
+						FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
 				}
 			case ValueColumnExpression( t, c ) =>
 				if (!metadata.tableSet(t.name))
@@ -239,7 +249,13 @@ class Connection {
 				else
 					metadata.tableColumnMap get (t.name, c.name) match {
 						case None => problem( c.pos, "no such column" )
-						case Some( ind ) => FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
+						case Some( ind ) =>
+							afuse match {
+								case AFUseOrField( AFUsed ) => problem( t.pos, "column not allowed here (since aggregate function already referred to)" )
+								case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
+							}
+
+							FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
 					}
 			case BinaryValueExpression( left, oppos, operation, func, right ) =>
 				val l = evalExpression( afuse, metadata, left )
@@ -317,6 +333,7 @@ trait ValueResult {
 }
 
 case class LiteralValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
+case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( heading: String, typ: Type, left: ValueResult, pos: Position, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
