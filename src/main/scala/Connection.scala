@@ -61,7 +61,7 @@ class Connection {
 				baseRelations get base.name match {
 					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
-						val cond = evalLogical( b.metadata, condition )
+						val cond = evalLogical( AFUseNotAllowed, b.metadata, condition )
 
 						DeleteResult( b.delete(this, cond) )
 				}
@@ -84,8 +84,8 @@ class Connection {
 				new ListTupleseq( types1, evalTupleList(types1, data) )
 			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
 				val rel = evalRelation( relation )
-				val cols = columns map (evalExpression(rel.metadata, _))
-
+				val state = AFUseOrField( NoFieldOrAFUsed )
+				val cols = columns map (evalExpression(state, rel.metadata, _))
 
 				new ProjectionTupleseq( this, rel, cols toVector )
 		}
@@ -104,7 +104,7 @@ class Connection {
 				if (i == types.length)
 					problem( v.pos, "too many values")
 
-				var x = evalValue( null, evalExpression(null, v) )
+				var x = evalValue( null, evalExpression(AFUseNotAllowed, null, v) )
 
 				x match {
 					case _: Mark =>
@@ -114,13 +114,13 @@ class Connection {
 							case IntegerType =>
 							case FloatType =>
 								x = a.toDouble.asInstanceOf[Number]
-							case t => problem( v.pos, s"expected $t, not integer" )
+							case typ => problem( v.pos, s"expected $typ, not integer" )
 						}
 					case _: String =>
 						types(i) match {
 							case null => types( i ) = StringType
 							case StringType =>
-							case t => problem( v.pos, s"expected $t, not string" )
+							case typ => problem( v.pos, s"expected $typ, not string" )
 						}
 				}
 
@@ -140,10 +140,10 @@ class Connection {
 				val rrel = evalRelation( right )
 				val metadata = new Metadata( lrel.metadata.header ++ rrel.metadata.header )
 
-				new InnerJoinRelation( this, metadata, lrel, evalLogical(metadata, condition), rrel )
+				new InnerJoinRelation( this, metadata, lrel, evalLogical(AFUseNotAllowed, metadata, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
-				val cond = evalLogical( rel.metadata, condition )
+				val cond = evalLogical( AFUseNotAllowed, rel.metadata, condition )
 
 				new SelectionRelation( this, rel, cond )
 			case RelationVariableExpression( Ident(p, n) ) =>
@@ -222,7 +222,7 @@ class Connection {
 			case _: String => StringType
 		}
 
-	def evalExpression( metadata: Metadata, ast: ValueExpression ): ValueResult =
+	def evalExpression( afuse: AggregateFunctionUse, metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
 			case IntegerLit( n ) => LiteralValue( ast.pos, n, IntegerType, Integer.valueOf(n) )
@@ -242,8 +242,8 @@ class Connection {
 						case Some( ind ) => FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
 					}
 			case BinaryValueExpression( left, oppos, operation, func, right ) =>
-				val l = evalExpression( metadata, left )
-				val r = evalExpression( metadata, right )
+				val l = evalExpression( afuse, metadata, left )
+				val r = evalExpression( afuse, metadata, right )
 
 				(l, r) match {
 					case (LiteralValue(p, _, _, x), LiteralValue(_, _, _, y)) =>
@@ -254,11 +254,18 @@ class Connection {
 					case _ => BinaryValue( s"${l.heading} $operation ${r.heading}", l.typ, l, oppos, operation, func, r )//todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
-				val f = evalExpression( metadata, func )
-				val a = args map (evalExpression( metadata, _ ))
+				val f = evalExpression( afuse, metadata, func )
+				val a = args map (evalExpression( afuse, metadata, _ ))
 
 				f match {
-					case af: AggregateFunction => AggregateFunctionValue( e.pos, func.toString, af.typ(a.head.typ), af, a.head )//todo: handle multiple args properly
+					case af: AggregateFunction =>
+						afuse match {
+							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
+							case AFUseOrField( FieldUsed ) => problem( e.pos, "aggregate function not allowed here (since column already referred to)" )
+							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = AFUsed
+						}
+
+						AggregateFunctionValue( e.pos, func.toString, af.typ(a.head.typ), af, a.head )//todo: handle multiple args properly
 //					case sf: ScalarFunction =>
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
@@ -283,16 +290,25 @@ class Connection {
 				Math.predicate( pred, evalValue(row, left), evalValue(row, right) )
 		}
 
-	def evalLogical( metadata: Metadata, ast: LogicalExpression ): ConditionResult = {
+	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): ConditionResult = {
 		ast match {
 			case ComparisonExpression( left, List((_, pred, right)) ) =>
-				val l = evalExpression( metadata, left )
-				val r = evalExpression( metadata, right )
+				val l = evalExpression( afuse, metadata, left )
+				val r = evalExpression( afuse, metadata, right )
 
 				ComparisonLogical( l, pred, r )
 		}
 	}
 }
+
+trait AggregateFunctionUseState
+case object NoFieldOrAFUsed extends AggregateFunctionUseState
+case object FieldUsed extends AggregateFunctionUseState
+case object AFUsed extends AggregateFunctionUseState
+
+trait AggregateFunctionUse
+case object AFUseNotAllowed extends AggregateFunctionUse
+case class AFUseOrField( var state: AggregateFunctionUseState ) extends AggregateFunctionUse
 
 trait ValueResult {
 	val pos: Position
