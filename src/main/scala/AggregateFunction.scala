@@ -49,11 +49,23 @@ class CountAggregateFunction extends AbstractAggregateFunction[java.lang.Integer
 
 }
 
+trait AggregateFunctionObject extends (() => AggregateFunction)
+
+object SumAggregateFunction extends AggregateFunctionObject {
+
+	def apply = new SumAggregateFunction
+
+}
+
 class SumAggregateFunction extends AbstractAggregateFunction[Number]( "sum" ) {
 
 	def typ( input: Type ) = input
 
-	override def compute( next: AnyRef ) = Math( AbstractAggregateFunction.add, intermediate, next ).asInstanceOf[Number]
+	override def compute( next: AnyRef ) =
+		if (intermediate eq null)
+			next.asInstanceOf[Number]
+		else
+			Math( AbstractAggregateFunction.add, intermediate, next ).asInstanceOf[Number]
 
 }
 
@@ -61,7 +73,11 @@ class AvgAggregateFunction extends AbstractAggregateFunction[Number]( "avg" ) {
 
 	def typ( input: Type ) = FloatType//todo: do this properly
 
-	override def compute( next: AnyRef ) = Math( AbstractAggregateFunction.add, intermediate, next ).asInstanceOf[Number]
+	override def compute( next: AnyRef ) =
+		if (intermediate eq null)
+			next.asInstanceOf[Number]
+		else
+			Math( AbstractAggregateFunction.add, intermediate, next ).asInstanceOf[Number]
 
 	override def result = Math( AbstractAggregateFunction.div, intermediate, count ).asInstanceOf[Number]
 

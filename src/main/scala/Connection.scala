@@ -12,6 +12,8 @@ class Connection {
 	val baseRelations = new HashMap[String, BaseRelation]
 	val variables = new HashMap[String, AnyRef]
 
+	variables("sum") = SumAggregateFunction
+
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
 		val ast = p.parseFromString( statement, p.statement )
@@ -226,19 +228,20 @@ class Connection {
 		ast match {
 			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
 			case IntegerLit( n ) => LiteralValue( ast.pos, n, IntegerType, Integer.valueOf(n) )
-			case StringLit( s ) => LiteralValue( ast.pos, '"' + s + "'", StringType, s )
+			case StringLit( s ) => LiteralValue( ast.pos, '"' + s + '"', StringType, s )
 			case MarkLit( m ) => MarkedValue( ast.pos, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
 				metadata.columnMap get n.name match {
 					case None =>
 						variables get n.name match {
 							case None => problem( n.pos, "no such column or variable" )
-							case Some( v ) => VariableValue( n.pos, n.name, null, v )//todo: set type properly
+							case Some( a: AggregateFunctionObject ) => VariableValue( n.pos, n.name, null, a )//todo: set type properly
 						}
 					case Some( ind ) =>
 						afuse match {
 							case AFUseOrField( AFUsed ) => problem( n.pos, "column not allowed here (since aggregate function already referred to)" )
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
+							case AFUseNotAllowed =>
 						}
 
 						FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
@@ -267,21 +270,23 @@ class Connection {
 						val typ = value2type( res )
 
 						LiteralValue( p, res.toString, typ, res )
-					case _ => BinaryValue( s"${l.heading} $operation ${r.heading}", l.typ, l, oppos, operation, func, r )//todo: handle type promotion correctly
+					case _ => BinaryValue( oppos, s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r )//todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
 				val f = evalExpression( afuse, metadata, func )
-				val a = args map (evalExpression( afuse, metadata, _ ))
+				val a = args map (evalExpression( AFUseNotAllowed, metadata, _ ))
 
 				f match {
-					case af: AggregateFunction =>
+					case VariableValue( _, _, _, afo: AggregateFunctionObject ) =>
 						afuse match {
 							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
 							case AFUseOrField( FieldUsed ) => problem( e.pos, "aggregate function not allowed here (since column already referred to)" )
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = AFUsed
 						}
 
-						AggregateFunctionValue( e.pos, func.toString, af.typ(a.head.typ), af, a.head )//todo: handle multiple args properly
+						val af = afo.apply
+
+						AggregateFunctionValue( e.pos, s"${f.heading}( ${a map (_.heading) mkString ","} )", af.typ(a.head.typ), af, a.head )//todo: handle multiple args properly
 //					case sf: ScalarFunction =>
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
@@ -292,12 +297,24 @@ class Connection {
 			case LiteralValue( _, _, _, v ) => v
 			case FieldValue( _, _, _, index: Int ) => row(index)
 			case MarkedValue( _, _, _, m ) => m
-			case BinaryValue( _, _, l, p, _, f, r ) =>
-				try {
-					Math( f, evalValue( row, l ), evalValue( row, r ) )
-				} catch {
-					case _: Exception => problem( p, "error performing operation" )
+			case BinaryValue( p, _, _, l, _, f, r ) =>
+				val lv = evalValue( row, l )
+				val rv = evalValue( row, r )
+
+				(lv, rv) match {
+					case (I, _)|(_, I) => I
+					case (A, _)|(_, A) => A
+					case _ =>
+						try {
+							Math( f, lv, rv )
+						} catch {
+							case _: Exception => problem( p, "error performing operation" )
+						}
 				}
+			case AggregateFunctionValue( _, _, _, func, arg ) if row eq null => func.result
+			case AggregateFunctionValue( _, _, _, func, arg ) =>
+				func.next( List(evalValue( row, arg )) )
+				A
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
@@ -336,7 +353,7 @@ case class LiteralValue( pos: Position, heading: String, typ: Type, value: AnyRe
 case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
-case class BinaryValue( heading: String, typ: Type, left: ValueResult, pos: Position, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
+case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
 case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, arg: ValueResult ) extends ValueResult
 case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
 
