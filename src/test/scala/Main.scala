@@ -27,5 +27,6 @@ object Main extends App {
 
 	{[a, b] (1, 2), (3, 4)} (a)
 	{[a, b] (1, 2), (3, 4)} (sum(a))
+	{[a, b] (1, 2), (3, 4)} (count())
 	*/
 }

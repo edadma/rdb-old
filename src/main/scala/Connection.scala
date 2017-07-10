@@ -12,7 +12,11 @@ class Connection {
 	val baseRelations = new HashMap[String, BaseRelation]
 	val variables = new HashMap[String, AnyRef]
 
-	variables("sum") = SumAggregateFunction
+	variables("count") = classOf[CountAggregateFunction]
+	variables("sum") = classOf[SumAggregateFunction]
+	variables("avg") = classOf[AvgAggregateFunction]
+	variables("min") = classOf[MinAggregateFunction]
+	variables("max") = classOf[MaxAggregateFunction]
 
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
@@ -235,7 +239,7 @@ class Connection {
 					case None =>
 						variables get n.name match {
 							case None => problem( n.pos, "no such column or variable" )
-							case Some( a: AggregateFunctionObject ) => VariableValue( n.pos, n.name, null, a )//todo: set type properly
+							case Some( a: Class[_] ) if classOf[AggregateFunction] isAssignableFrom a => VariableValue( n.pos, n.name, null, a )//todo: set type properly
 						}
 					case Some( ind ) =>
 						afuse match {
@@ -277,16 +281,21 @@ class Connection {
 				val a = args map (evalExpression( AFUseNotAllowed, metadata, _ ))
 
 				f match {
-					case VariableValue( _, _, _, afo: AggregateFunctionObject ) =>
+					case VariableValue( _, _, _, afc: Class[_] ) if classOf[AggregateFunction] isAssignableFrom afc =>
 						afuse match {
 							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
 							case AFUseOrField( FieldUsed ) => problem( e.pos, "aggregate function not allowed here (since column already referred to)" )
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = AFUsed
 						}
 
-						val af = afo.apply
+						val af = afc.newInstance.asInstanceOf[AggregateFunction]
+						val heading =
+							if (a == Nil)
+								s"${f.heading}()"
+							else
+								s"${f.heading}( ${a map (_.heading) mkString ","} )"
 
-						AggregateFunctionValue( e.pos, s"${f.heading}( ${a map (_.heading) mkString ","} )", af.typ(a.head.typ), af, a.head )//todo: handle multiple args properly
+						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
 //					case sf: ScalarFunction =>
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
@@ -311,9 +320,9 @@ class Connection {
 							case _: Exception => problem( p, "error performing operation" )
 						}
 				}
-			case AggregateFunctionValue( _, _, _, func, arg ) if row eq null => func.result
-			case AggregateFunctionValue( _, _, _, func, arg ) =>
-				func.next( List(evalValue( row, arg )) )
+			case AggregateFunctionValue( _, _, _, func, args ) if row eq null => func.result
+			case AggregateFunctionValue( _, _, _, func, args ) =>
+				func.next( args map (evalValue( row, _ )) )
 				A
 		}
 
@@ -354,7 +363,7 @@ case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyR
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
-case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, arg: ValueResult ) extends ValueResult
+case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, args: List[ValueResult] ) extends ValueResult
 case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
 
 trait ConditionResult
