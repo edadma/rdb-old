@@ -229,7 +229,7 @@ class Connection {
 
 	private val oporder = List( List("b^"), List("u-"), List("b*", "b/"), List("b+", "b-") )
 
-	private def brackets( p: ValueExpression, c: ValueExpression ): Boolean = {
+	private def brackets( p: ValueExpression, c: ValueExpression, right: Boolean ): Boolean = {
 		def s( e: ValueExpression ) =
 			e match {
 				case BinaryValueExpression( _, _, operation, _, _ ) => Some( 'b' + operation )
@@ -246,7 +246,10 @@ class Connection {
 			for (l <- oporder)
 				if (l contains p1.get)
 					if (l contains c1.get)
-						return false
+						if (right)
+							return true
+						else
+							return false
 					else
 						return true
 				else if (l contains c1.get)
@@ -306,12 +309,12 @@ class Connection {
 					case _ =>
 						val space = if (Set("+", "-")( operation )) " " else ""
 						val lh =
-							if (brackets(e, left))
+							if (brackets(e, left, false))
 								s"(${l.heading})"
 							else
 								l.heading
 						val rh =
-							if (brackets(e, right))
+							if (brackets(e, right, true))
 								s"(${r.heading})"
 							else
 								r.heading
