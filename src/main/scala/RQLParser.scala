@@ -41,7 +41,13 @@ class RQLParser extends RegexParsers {
 
 	def tupleseq =
 		relation ~ ("(" ~> rep1sep(valueExpression, ",") <~ ")") ^^ { case r ~ c => ProjectionTupleseqExpression( r, c ) } |
+		relation ~ ("//" ~> columnList) ~ ("(" ~> rep1sep(valueExpression, ",") <~ ")") ^^ {
+			case r ~ c ~ e => AggregationTupleseqExpression( r, c, e ) } |
 		tupleseqLit
+
+	def columnList =
+		ident ^^ (List( _ )) |
+		"(" ~> rep1sep(ident, ",") <~ ")"
 
 	def tupleseqLit =
 		"[" ~> rep1sep(tuple, ",") <~ "]" ^^ TupleseqLit

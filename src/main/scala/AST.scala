@@ -35,6 +35,7 @@ case class InnerJoinRelationExpression( left: RelationExpression, condition: Log
 trait TupleseqExpression extends StatementAST with Positional
 case class ProjectionTupleseqExpression( relation: RelationExpression, columns: List[ValueExpression] ) extends TupleseqExpression
 case class TupleseqLit( data: List[TupleExpression] ) extends TupleseqExpression
+case class AggregationTupleseqExpression( relation: RelationExpression, discriminators: List[Ident], columns: List[ValueExpression] ) extends TupleseqExpression
 
 trait LogicalExpression extends Positional
 case class LogicalLit( l: Logical ) extends LogicalExpression
