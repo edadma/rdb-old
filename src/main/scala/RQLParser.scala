@@ -91,11 +91,19 @@ class RQLParser extends RegexParsers {
 		}
 	}
 
-	def multiplicativeExpression: Parser[ValueExpression] = applicativeExpression ~ rep(pos ~ "*" ~ applicativeExpression | pos ~ "/" ~ applicativeExpression) ^^ {
+	def multiplicativeExpression: Parser[ValueExpression] = negativeExpression ~ rep(pos ~ "*" ~ negativeExpression | pos ~ "/" ~ negativeExpression) ^^ {
 		case expr ~ list => list.foldLeft( expr ) {
 			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
 		}
 	}
+
+	def negativeExpression: Parser[ValueExpression] =
+		"-" ~> exponentialExpression ^^ (NegativeValueExpression( _, lookup("-") )) |
+		exponentialExpression
+
+	def exponentialExpression: Parser[ValueExpression] =
+		applicativeExpression ~ pos ~ ("^" ~> applicativeExpression) ^^ { case l ~ p ~ r => BinaryValueExpression( l, p, "^", lookup("^"), r ) } |
+		applicativeExpression
 
 	def applicativeExpression: Parser[ValueExpression] =
 		positioned( valuePrimary ~ ("(" ~> repsep(valueExpression, ",") <~ ")") ^^ {

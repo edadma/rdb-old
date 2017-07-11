@@ -227,13 +227,6 @@ class Connection {
 		}
 	}
 
-	def value2type( v: Any ) =
-		v match {
-			case _: Int => IntegerType
-			case _: Double => FloatType
-			case _: String => StringType
-		}
-
 	def evalExpression( afuse: AggregateFunctionUse, metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
@@ -279,10 +272,19 @@ class Connection {
 				(l, r) match {
 					case (LiteralValue(p, _, _, x), LiteralValue(_, _, _, y)) =>
 						val res = Math( func, x, y )
-						val typ = value2type( res )
 
-						LiteralValue( p, res.toString, typ, res )
+						LiteralValue( p, res.toString, Type.fromValue( res ).get, res )
 					case _ => BinaryValue( oppos, s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r )//todo: handle type promotion correctly
+				}
+			case NegativeValueExpression( expr, func ) =>
+				val ex = evalExpression( afuse, metadata, expr )
+
+				ex match {
+					case LiteralValue( p, _, _, x ) =>
+						val res = Math( func, x )
+
+						LiteralValue( p, res.toString, Type.fromValue( res ).get, res )
+					case _ => BinaryValue( oppos, s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r ) //todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
 				val f = evalExpression( afuse, metadata, func )
