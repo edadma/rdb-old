@@ -17,6 +17,11 @@ class Connection {
 	variables("avg") = classOf[AvgAggregateFunction]
 	variables("min") = classOf[MinAggregateFunction]
 	variables("max") = classOf[MaxAggregateFunction]
+	variables("list") = classOf[ListAggregateFunction]
+
+	variables("pi") = BuiltinScalarFunctions.piFunction
+	variables("abs") = BuiltinScalarFunctions.absFunction
+	variables("sqrt") = BuiltinScalarFunctions.sqrtFunction
 
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
@@ -198,7 +203,8 @@ class Connection {
 				val types: Array[Type] =
 					columns map {
 						case ColumnSpec( _, _, None, _, _, _ ) => null
-						case ColumnSpec( _, p, Some(t), _, _, _ ) => Type.fromSpec( p, t )
+						case ColumnSpec( _, p, Some(t), _, _, _ ) =>
+							Type.names.getOrElse( t, problem( p, s"unrecognized type name '$t'" ) )
 					} toArray
 				val body =
 					if (data isEmpty)
@@ -239,7 +245,9 @@ class Connection {
 					case None =>
 						variables get n.name match {
 							case None => problem( n.pos, "no such column or variable" )
-							case Some( a: Class[_] ) if classOf[AggregateFunction] isAssignableFrom a => VariableValue( n.pos, n.name, null, a )//todo: set type properly
+							case Some( v ) => VariableValue( n.pos, n.name, null, v )//todo: set type properly
+//						case Some( s: ScalarFunction ) => VariableValue( n.pos, n.name, null, s )
+//						case Some( a: Class[_] ) if classOf[AggregateFunction] isAssignableFrom a => VariableValue( n.pos, n.name, null, a )//todo: set type properly
 						}
 					case Some( ind ) =>
 						afuse match {
@@ -297,6 +305,14 @@ class Connection {
 
 						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
 //					case sf: ScalarFunction =>
+					case VariableValue( _, _, _, sf: ScalarFunction ) =>
+						val heading =
+							if (a == Nil)
+								s"${f.heading}()"
+							else
+								s"${f.heading}( ${a map (_.heading) mkString ","} )"
+
+						ScalarFunctionValue(e.pos, heading, sf.typ(a map (_.typ)), sf, a )
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
 		}
@@ -320,6 +336,7 @@ class Connection {
 							case _: Exception => problem( p, "error performing operation" )
 						}
 				}
+			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
 			case AggregateFunctionValue( _, _, _, func, args ) if row eq null => func.result
 			case AggregateFunctionValue( _, _, _, func, args ) =>
 				func.next( args map (evalValue( row, _ )) )
@@ -364,7 +381,7 @@ case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) e
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
 case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, args: List[ValueResult] ) extends ValueResult
-case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, arg: ValueResult ) extends ValueResult
+case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, args: List[ValueResult] ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult

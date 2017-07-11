@@ -5,14 +5,25 @@ import scala.util.parsing.input.Position
 
 object Type {
 
-	def fromSpec( pos: Position, spec: String ) =
-		spec match {
-			case "integer" => IntegerType
-			case "float" => FloatType
-			case "string" => StringType
-			case _ => problem( pos, s"unrecognized type name '$spec'" )
+	val names =
+		Map(
+			"integer" -> IntegerType,
+			"float" -> FloatType,
+			"string" -> StringType
+		)
+
+	def fromValue( v: Any ) = {
+		def _fromValue: PartialFunction[Any, Type] = {
+			case _: Int => IntegerType
+			case _: Double => FloatType
+			case _: String => StringType
 		}
 
+		if (_fromValue isDefinedAt v)
+			Some( _fromValue( v ) )
+		else
+			None
+	}
 }
 
 trait Type extends Ordering[AnyRef]

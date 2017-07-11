@@ -9,7 +9,7 @@ import xyz.hyperreal.lia.Math
 class RQLParser extends RegexParsers {
 	def pos = positioned( success(new Positional{}) ) ^^ { _.pos }
 
-	def number: Parser[ValueExpression] = positioned( """\d+(\.\d*)?""".r ^^ {
+	def number: Parser[ValueExpression] = positioned( """\-?\d+(\.\d*)?""".r ^^ {
 		case n if n contains '.' => FloatLit( n )
 		case n => IntegerLit( n ) } )
 

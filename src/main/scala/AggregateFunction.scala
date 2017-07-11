@@ -31,6 +31,8 @@ abstract class AbstractAggregateFunction[T <: AnyRef ]( val name: String ) exten
 
 	def result = intermediate
 
+	override def toString = s"<aggregate function '$name'>"
+
 }
 
 object AbstractAggregateFunction {
