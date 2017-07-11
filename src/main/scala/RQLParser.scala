@@ -15,10 +15,10 @@ class RQLParser extends RegexParsers {
 
 	def string: Parser[ValueExpression] =
 		positioned(
-			(("'" ~> """[^'\n]+""".r <~ "'") |
-			("\"" ~> """[^"\n]+""".r <~ "\"")) ^^ StringLit )
+			(("'" ~> """[^'\n]*""".r <~ "'") |
+			("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit )
 
-	def ident = pos ~ """[a-zA-Z_$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
+	def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def statement: Parser[StatementAST] =
 		assignStatement |

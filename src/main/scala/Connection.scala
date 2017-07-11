@@ -352,7 +352,6 @@ class Connection {
 								s"${f.heading}( ${a map (_.heading) mkString ","} )"
 
 						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
-//					case sf: ScalarFunction =>
 					case VariableValue( _, _, _, sf: ScalarFunction ) =>
 						val heading =
 							if (a == Nil)
@@ -381,17 +380,17 @@ class Connection {
 						try {
 							Math( f, lv, rv )
 						} catch {
-							case _: Exception => problem( p, "error performing operation" )
+							case _: Exception => problem( p, "error performing binary operation" )
 						}
 				}
 			case UnaryValue( p, _, _, v, _, f ) =>
 				try {
 					Math( f, evalValue(row, v) )
 				} catch {
-					case _: Exception => problem( p, "error performing operation" )
+					case _: Exception => problem( p, "error performing unary operation" )
 				}
 			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
-			case AggregateFunctionValue( _, _, _, func, args ) if row eq null => func.result
+			case AggregateFunctionValue( _, _, _, func, _ ) if row eq null => func.result
 			case AggregateFunctionValue( _, _, _, func, args ) =>
 				func.next( args map (evalValue( row, _ )) )
 				A
