@@ -98,7 +98,7 @@ class RQLParser extends RegexParsers {
 	}
 
 	def negativeExpression: Parser[ValueExpression] =
-		"-" ~> exponentialExpression ^^ (NegativeValueExpression( _, lookup("-") )) |
+		(pos <~ "-") ~ exponentialExpression ^^ { case p ~ e => UnaryValueExpression( p, "-", lookup("-"), e ) } |
 		exponentialExpression
 
 	def exponentialExpression: Parser[ValueExpression] =
@@ -113,6 +113,7 @@ class RQLParser extends RegexParsers {
 	def valuePrimary: Parser[ValueExpression] =
 		number |
 		string |
+		"(" ~> valueExpression <~ ")" |
 		positioned( "A" ^^^ MarkLit(A) ) |
 		positioned( "I" ^^^ MarkLit(I) ) |
 		positioned( ident ~ ("." ~> ident) ^^ { case t ~ c => ValueColumnExpression( t, c ) } ) |

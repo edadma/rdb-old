@@ -246,7 +246,7 @@ class Connection {
 						afuse match {
 							case AFUseOrField( AFUsed ) => problem( n.pos, "column not allowed here (since aggregate function already referred to)" )
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
-							case AFUseNotAllowed =>
+							case AFUseNotAllowed|AFUseOrField( FieldUsed ) =>
 						}
 
 						FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
@@ -261,6 +261,7 @@ class Connection {
 							afuse match {
 								case AFUseOrField( AFUsed ) => problem( t.pos, "column not allowed here (since aggregate function already referred to)" )
 								case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
+								case AFUseNotAllowed|AFUseOrField( FieldUsed ) =>
 							}
 
 							FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
@@ -276,15 +277,15 @@ class Connection {
 						LiteralValue( p, res.toString, Type.fromValue( res ).get, res )
 					case _ => BinaryValue( oppos, s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r )//todo: handle type promotion correctly
 				}
-			case NegativeValueExpression( expr, func ) =>
-				val ex = evalExpression( afuse, metadata, expr )
+			case UnaryValueExpression( oppos, operation, func, expr ) =>
+				val e = evalExpression( afuse, metadata, expr )
 
-				ex match {
+				e match {
 					case LiteralValue( p, _, _, x ) =>
 						val res = Math( func, x )
 
 						LiteralValue( p, res.toString, Type.fromValue( res ).get, res )
-					case _ => BinaryValue( oppos, s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r ) //todo: handle type promotion correctly
+					case _ => UnaryValue( oppos, s"$operation${e.heading}", e.typ, e, operation, func ) //todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
 				val f = evalExpression( afuse, metadata, func )
@@ -296,6 +297,7 @@ class Connection {
 							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
 							case AFUseOrField( FieldUsed ) => problem( e.pos, "aggregate function not allowed here (since column already referred to)" )
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = AFUsed
+							case AFUseOrField( AFUsed ) =>
 						}
 
 						val af = afc.newInstance.asInstanceOf[AggregateFunction]
@@ -337,6 +339,12 @@ class Connection {
 						} catch {
 							case _: Exception => problem( p, "error performing operation" )
 						}
+				}
+			case UnaryValue( p, _, _, v, _, f ) =>
+				try {
+					Math( f, evalValue(row, v) )
+				} catch {
+					case _: Exception => problem( p, "error performing operation" )
 				}
 			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
 			case AggregateFunctionValue( _, _, _, func, args ) if row eq null => func.result
@@ -384,6 +392,7 @@ case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) ext
 case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
 case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, args: List[ValueResult] ) extends ValueResult
 case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, args: List[ValueResult] ) extends ValueResult
+case class UnaryValue( pos: Position, heading: String, typ: Type, v: ValueResult, operation: String, func: FunctionMap ) extends ValueResult
 
 trait ConditionResult
 case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
