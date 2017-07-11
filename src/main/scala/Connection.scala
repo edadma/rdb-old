@@ -227,6 +227,34 @@ class Connection {
 		}
 	}
 
+	private val oporder = List( List("b^"), List("u-"), List("b*", "b/"), List("b+", "b-") )
+
+	private def brackets( p: ValueExpression, c: ValueExpression ): Boolean = {
+		def s( e: ValueExpression ) =
+			e match {
+				case BinaryValueExpression( _, _, operation, _, _ ) => Some( 'b' + operation )
+				case UnaryValueExpression( _, operation, _, _ ) => Some( 'u' + operation )
+				case _ => None
+			}
+
+		val p1 = s( p )
+		val c1 = s( c )
+
+		if (c1 isEmpty)
+			return false
+		else
+			for (l <- oporder)
+				if (l contains p1.get)
+					if (l contains c1.get)
+						return false
+					else
+						return true
+				else if (l contains c1.get)
+					return false
+
+		sys.error( s"no found: $p1, $c1")
+	}
+
 	def evalExpression( afuse: AggregateFunctionUse, metadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
@@ -266,7 +294,7 @@ class Connection {
 
 							FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
 					}
-			case BinaryValueExpression( left, oppos, operation, func, right ) =>
+			case e@BinaryValueExpression( left, oppos, operation, func, right ) =>
 				val l = evalExpression( afuse, metadata, left )
 				val r = evalExpression( afuse, metadata, right )
 
@@ -274,8 +302,21 @@ class Connection {
 					case (LiteralValue(p, _, _, x), LiteralValue(_, _, _, y)) =>
 						val res = Math( func, x, y )
 
-						LiteralValue( p, res.toString, Type.fromValue( res ).get, res )
-					case _ => BinaryValue( oppos, s"${l.heading} $operation ${r.heading}", l.typ, l, operation, func, r )//todo: handle type promotion correctly
+						LiteralValue( p, res.toString, Type.fromValue(res).get, res )
+					case _ =>
+						val space = if (Set("+", "-")( operation )) " " else ""
+						val lh =
+							if (brackets(e, left))
+								s"(${l.heading})"
+							else
+								l.heading
+						val rh =
+							if (brackets(e, right))
+								s"(${r.heading})"
+							else
+								r.heading
+
+						BinaryValue( oppos, s"$lh$space$operation$space$rh", l.typ, l, operation, func, r )//todo: handle type promotion correctly
 				}
 			case UnaryValueExpression( oppos, operation, func, expr ) =>
 				val e = evalExpression( afuse, metadata, expr )
@@ -284,7 +325,7 @@ class Connection {
 					case LiteralValue( p, _, _, x ) =>
 						val res = Math( func, x )
 
-						LiteralValue( p, res.toString, Type.fromValue( res ).get, res )
+						LiteralValue( p, res.toString, Type.fromValue(res).get, res )
 					case _ => UnaryValue( oppos, s"$operation${e.heading}", e.typ, e, operation, func ) //todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
