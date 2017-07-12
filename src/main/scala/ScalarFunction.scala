@@ -5,13 +5,13 @@ import math.Pi
 import xyz.hyperreal.lia.Math
 
 
-trait ScalarFunction extends (List[AnyRef] => AnyRef) {
+trait ScalarFunction extends (List[Any] => Any) {
 
 	def name: String
 
 	def typ( inputs: List[Type] ): Type
 
-	def apply( args: List[AnyRef] ): AnyRef
+	def apply( args: List[Any] ): Any
 
 }
 
@@ -23,24 +23,27 @@ abstract class AbstractScalarFunction( val name: String ) extends ScalarFunction
 
 }
 
-object BuiltinScalarFunctions {
+object PiScalarFunction extends AbstractScalarFunction( "pi" ) {
+	def apply( args: List[Any] ) = Pi
+}
 
-	val piFunction =
-		new AbstractScalarFunction( "pi" ) {
-			def apply( args: List[AnyRef] ) = Pi.asInstanceOf[Number]
+object FloatScalarFunction extends AbstractScalarFunction( "float" ) {
+	def apply( args: List[Any] ) =
+		args match {
+			case List( a: Number ) => a.doubleValue
 		}
-	val absFunction =
-		new AbstractScalarFunction( "abs" ) {
-			def apply( args: List[AnyRef] ) =
-				args match {
-					case List( a ) => Math.absFunction( a )
-				}
+}
+
+object AbsScalarFunction extends AbstractScalarFunction( "abs" ) {
+	def apply( args: List[Any] ) =
+		args match {
+			case List( a ) => Math.absFunction( a )
 		}
-	val sqrtFunction =
-		new AbstractScalarFunction( "sqrt" ) {
-			def apply( args: List[AnyRef] ) =
-				args match {
-					case List( a ) => Math.sqrtFunction( a )
-				}
+}
+
+object sqrtFunction extends AbstractScalarFunction( "sqrt" ) {
+	def apply( args: List[Any] ) =
+		args match {
+			case List( a ) => Math.sqrtFunction( a )
 		}
 }

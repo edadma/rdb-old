@@ -147,7 +147,7 @@ object ListAggregateFunction extends AbstractAggregateFunction( "list" ) {
 //
 //	val q = new PriorityQueue[Number].reverse
 //
-//	override def compute( next: AnyRef ) =
+//	override def compute( next: Any ) =
 //
 //}
 

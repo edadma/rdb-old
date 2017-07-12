@@ -1,7 +1,6 @@
 package xyz.hyperreal.rdb
 
 import scala.util.parsing.input.Position
-
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, ListBuffer}
 
 import xyz.hyperreal.lia.{FunctionMap, Math}
@@ -12,16 +11,8 @@ class Connection {
 	val baseRelations = new HashMap[String, BaseRelation]
 	val variables = new HashMap[String, AnyRef]
 
-	variables("count") = CountAggregateFunction
-	variables("sum") = SumAggregateFunction
-	variables("avg") = AvgAggregateFunction
-	variables("min") = MinAggregateFunction
-	variables("max") = MaxAggregateFunction
-	variables("list") = ListAggregateFunction
-
-	variables("pi") = BuiltinScalarFunctions.piFunction
-	variables("abs") = BuiltinScalarFunctions.absFunction
-	variables("sqrt") = BuiltinScalarFunctions.sqrtFunction
+	variables ++= Builtins.aggregateFunctions
+	variables ++= Builtins.scalarFunctions
 
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
@@ -341,7 +332,6 @@ class Connection {
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
 				val f = evalExpression( afuse, metadata, func )
-				val a = args map (evalExpression( AFUseNotAllowed, metadata, _ ))
 
 				f match {
 					case VariableValue( _, _, _, af: AggregateFunction ) =>
@@ -352,19 +342,21 @@ class Connection {
 							case AFUseOrField( OnlyAFUsed|FieldAndAFUsed ) =>
 						}
 
+						val a = args map (evalExpression( AFUseNotAllowed, metadata, _ ))
 						val heading =
 							if (a == Nil)
 								s"${f.heading}()"
 							else
-								s"${f.heading}( ${a map (_.heading) mkString ","} )"
+								s"${f.heading}(${a map (_.heading) mkString ","})"
 
 						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
 					case VariableValue( _, _, _, sf: ScalarFunction ) =>
+						val a = args map (evalExpression( afuse, metadata, _ ))
 						val heading =
 							if (a == Nil)
 								s"${f.heading}()"
 							else
-								s"${f.heading}( ${a map (_.heading) mkString ","} )"
+								s"${f.heading}(${a map (_.heading) mkString ","})"
 
 						ScalarFunctionValue(e.pos, heading, sf.typ(a map (_.typ)), sf, a )
 					case _ => problem( e.pos, s"'$f' is not a function" )
@@ -392,6 +384,9 @@ class Connection {
 				aggregate( row, v )
 			case a@AggregateFunctionValue( _, _, _, _, args ) =>
 				a.func.next( args map (evalValue( row, _ )) )
+			case ScalarFunctionValue( _, _, _, _, args ) =>
+				for (a <- args)
+					aggregate( row, a )
 			case LogicalValue( _, _, _, l ) =>
 				aggregate( row, l )
 			case _ =>
@@ -414,6 +409,9 @@ class Connection {
 				initAggregation( v )
 			case a@AggregateFunctionValue( _, _, _, af, _ ) =>
 				a.func = af.instance
+			case ScalarFunctionValue( _, _, _, _, args ) =>
+				for (a <- args)
+					initAggregation( a )
 			case LogicalValue( _, _, _, l ) =>
 				initAggregation( l )
 			case _ =>
@@ -452,7 +450,7 @@ class Connection {
 				} catch {
 					case _: Exception => problem( p, "error performing unary operation" )
 				}
-			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
+			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) ).asInstanceOf[AnyRef]
 			case a: AggregateFunctionValue => a.func.result.asInstanceOf[AnyRef]
 			case LogicalValue( _, _, _, l ) => evalCondition( row, l )
 		}
