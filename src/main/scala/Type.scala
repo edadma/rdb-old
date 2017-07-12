@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb
 
+import xyz.hyperreal.numbers.ComplexBigInt
+
 
 object Type {
 
@@ -16,6 +18,7 @@ object Type {
 			case _: Logical => LogicalType
 			case _: Int => IntegerType
 			case _: Double => FloatType
+			case _: ComplexBigInt => ComplexBigIntType
 			case _: String => StringType
 		}
 
@@ -84,10 +87,21 @@ case object FloatType extends PrimitiveType( "float" ) with OrderedNumericalType
 
 }
 
-
 //case object DecimalType extends PrimitiveType
 //case object RationalType extends PrimitiveType
-//case object ComplexIntegerType extends PrimitiveType
+case object ComplexBigIntType extends PrimitiveType( "complex bigint" ) with NumericalType {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (x: ComplexBigInt, y: ComplexBigInt) =>
+				x.re compareTo y.re match {
+					case 0 => x.im compareTo y.im
+					case c => c
+				}
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
 //case object ComplexBigintType extends PrimitiveType
 //case object ComplexFloatType extends PrimitiveType
 //case object ComplexRationalType extends PrimitiveType

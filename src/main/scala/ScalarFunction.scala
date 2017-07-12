@@ -1,7 +1,5 @@
 package xyz.hyperreal.rdb
 
-import math.Pi
-
 import xyz.hyperreal.lia.Math
 
 
@@ -21,10 +19,6 @@ abstract class AbstractScalarFunction( val name: String ) extends ScalarFunction
 
 	override def toString = s"<scalar function '$name'>"
 
-}
-
-object PiScalarFunction extends AbstractScalarFunction( "pi" ) {
-	def apply( args: List[Any] ) = Pi
 }
 
 object FloatScalarFunction extends AbstractScalarFunction( "float" ) {

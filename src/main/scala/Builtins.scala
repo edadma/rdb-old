@@ -1,5 +1,8 @@
 package xyz.hyperreal.rdb
 
+import math.Pi
+
+import xyz.hyperreal.numbers.ComplexBigInt.i
 
 object Builtins {
 
@@ -14,10 +17,14 @@ object Builtins {
 		)
 	val scalarFunctions =
 		List(
-			"pi" -> PiScalarFunction,
 			"float" -> FloatScalarFunction,
 			"abs" -> AbsScalarFunction,
 			"sqrt" -> sqrtFunction
 		)
+	val constants =
+		List(
+			"pi" -> Pi,
+			"i" -> i
+		).asInstanceOf[List[(String, AnyRef)]]
 
 }

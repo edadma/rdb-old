@@ -13,6 +13,7 @@ class Connection {
 
 	variables ++= Builtins.aggregateFunctions
 	variables ++= Builtins.scalarFunctions
+	variables ++= Builtins.constants
 
 	def executeStatement( statement: String ): StatementResult = {
 		val p = new RQLParser
@@ -91,7 +92,7 @@ class Connection {
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
 				val cols = columns map (evalExpression(afuse, rel.metadata, _))
 
-				new ProjectionTupleseq( this, rel, cols toVector, afuse.state )
+				new ProjectionRelation( this, rel, cols toVector, afuse.state )
 //			case AggregationTupleseqExpression( relation, discriminator, columns ) =>
 //				val rel = evalRelation( relation )
 //				val dis = discriminator map (evalExpression(AFUseNotAllowed, rel.metadata, _))
@@ -181,7 +182,7 @@ class Connection {
 						cs += n
 					}
 
-				new ProjectionRelation( rel, cs toList )
+				new ProjectionRelationx( rel, cs toList )
 			case ListRelationExpression( columns, data ) =>
 				var hset = Set[String]()
 				var pk = false
@@ -268,9 +269,8 @@ class Connection {
 					case None =>
 						variables get n.name match {
 							case None => problem( n.pos, "no such column or variable" )
-							case Some( v ) => VariableValue( n.pos, n.name, null, v )//todo: set type properly
-//						case Some( s: ScalarFunction ) => VariableValue( n.pos, n.name, null, s )
-//						case Some( a: Class[_] ) if classOf[AggregateFunction] isAssignableFrom a => VariableValue( n.pos, n.name, null, a )//todo: set type properly
+							case Some( v ) =>
+								VariableValue( n.pos, n.name, Type.fromValue(v).orNull, v )//todo: handle function types correctly
 						}
 					case Some( ind ) =>
 						afuse match {
@@ -428,9 +428,10 @@ class Connection {
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
 			case LiteralValue( _, _, _, v ) => v
+			case VariableValue( _, _, _, v ) => v
 			case FieldValue( _, _, _, index: Int ) => row(index)
 			case MarkedValue( _, _, _, m ) => m
-			case BinaryValue( p, _, _, l, _, f, r ) =>
+			case BinaryValue( p, _, _, l, o, f, r ) =>
 				val lv = evalValue( row, l )
 				val rv = evalValue( row, r )
 
