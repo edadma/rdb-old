@@ -99,6 +99,11 @@ class Connection {
 				val cols = columns map (evalExpression(afuse, rel.metadata, _))
 
 				new ProjectionTupleseq( this, rel, cols toVector, afuse.state )
+//			case AggregationTupleseqExpression( relation, discriminator, columns ) =>
+//				val rel = evalRelation( relation )
+//				val dis = discriminator map (evalExpression(AFUseNotAllowed, rel.metadata, _))
+//
+//				AggregationTupleseq
 		}
 	}
 
@@ -364,6 +369,18 @@ class Connection {
 				}
 		}
 
+	def aggregate( row: Tuple, result: ValueResult ): Unit =
+		result match {
+			case BinaryValue( _, _, _, l, _, _, r ) =>
+				aggregate( row, l )
+				aggregate( row, r )
+			case UnaryValue( _, _, _, v, _, _ ) =>
+				aggregate( row, v )
+			case AggregateFunctionValue( _, _, _, func, args ) =>
+				func.next( args map (evalValue( row, _ )) )
+			case _ =>
+		}
+
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
 			case LiteralValue( _, _, _, v ) => v
@@ -390,10 +407,7 @@ class Connection {
 					case _: Exception => problem( p, "error performing unary operation" )
 				}
 			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
-			case AggregateFunctionValue( _, _, _, func, _ ) if row eq null => func.result
-			case AggregateFunctionValue( _, _, _, func, args ) =>
-				func.next( args map (evalValue( row, _ )) )
-				A
+			case AggregateFunctionValue( _, _, _, func, _ ) => func.result
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
@@ -417,6 +431,7 @@ trait AggregateFunctionUseState
 case object NoFieldOrAFUsed extends AggregateFunctionUseState
 case object FieldUsed extends AggregateFunctionUseState
 case object AFUsed extends AggregateFunctionUseState
+case object FieldAndAFUsed extends AggregateFunctionUseState
 
 trait AggregateFunctionUse
 case object AFUseNotAllowed extends AggregateFunctionUse
