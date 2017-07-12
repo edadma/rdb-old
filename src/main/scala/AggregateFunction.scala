@@ -11,13 +11,25 @@ trait AggregateFunction {
 
 	def typ( inputs: List[Type] ): Type
 
+	def instance: AggregateFunctionInstance
+
+}
+
+abstract class AbstractAggregateFunction( val name: String, val instance: AggregateFunctionInstance ) extends AggregateFunction {
+
+
+
+}
+
+trait AggregateFunctionInstance {
+
 	def next( args: List[AnyRef] ): Unit
 
 	def result: AnyRef
 
 }
 
-abstract class AbstractAggregateFunction[T <: AnyRef ]( val name: String ) extends AggregateFunction {
+abstract class AbstractAggregateFunctionInstance[T <: AnyRef ] extends AggregateFunctionInstance {
 
 	protected var intermediate: T = _
 	protected var count = 0

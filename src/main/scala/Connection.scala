@@ -349,14 +349,13 @@ class Connection {
 							case AFUseOrField( AFUsed ) =>
 						}
 
-						val af = afc.newInstance.asInstanceOf[AggregateFunction]
 						val heading =
 							if (a == Nil)
 								s"${f.heading}()"
 							else
 								s"${f.heading}( ${a map (_.heading) mkString ","} )"
 
-						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
+						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), afc, a )
 					case VariableValue( _, _, _, sf: ScalarFunction ) =>
 						val heading =
 							if (a == Nil)
@@ -376,8 +375,8 @@ class Connection {
 				aggregate( row, r )
 			case UnaryValue( _, _, _, v, _, _ ) =>
 				aggregate( row, v )
-			case AggregateFunctionValue( _, _, _, func, args ) =>
-				func.next( args map (evalValue( row, _ )) )
+			case a@AggregateFunctionValue( _, _, _, _, args ) =>
+				a.func.next( args map (evalValue( row, _ )) )
 			case _ =>
 		}
 
@@ -407,7 +406,7 @@ class Connection {
 					case _: Exception => problem( p, "error performing unary operation" )
 				}
 			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
-			case AggregateFunctionValue( _, _, _, func, _ ) => func.result
+			case a: AggregateFunctionValue => a.func.result
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
@@ -448,7 +447,9 @@ case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyR
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
-case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, func: AggregateFunction, args: List[ValueResult] ) extends ValueResult
+case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, clazz: Class[AggregateFunction], args: List[ValueResult] ) extends ValueResult {
+	var func: AggregateFunction = _
+	}
 case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, args: List[ValueResult] ) extends ValueResult
 case class UnaryValue( pos: Position, heading: String, typ: Type, v: ValueResult, operation: String, func: FunctionMap ) extends ValueResult
 
