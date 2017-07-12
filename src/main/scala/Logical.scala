@@ -1,6 +1,11 @@
 package xyz.hyperreal.rdb
 
 
+object Logical {
+
+	def fromBoolean( b: Boolean ) = if (b) TRUE else FALSE
+
+}
 abstract class Logical {
 
 	def not: Logical

@@ -35,6 +35,8 @@ package object rdb {
 			}
 
 		def or( that: Logical ) = TRUE
+
+		override def toString = "true"
 	}
 
 	object FALSE extends Logical {
@@ -49,6 +51,8 @@ package object rdb {
 				case MAYBE_A => MAYBE_A
 				case MAYBE_I => FALSE
 			}
+
+		override def toString = "false"
 	}
 
 	object MAYBE_A extends Logical {
@@ -66,6 +70,8 @@ package object rdb {
 				case TRUE => TRUE
 				case FALSE | MAYBE_A | MAYBE_I => MAYBE_A
 			}
+
+		override def toString = "maybe_a"
 	}
 
 	object MAYBE_I extends Logical {
@@ -84,6 +90,8 @@ package object rdb {
 				case MAYBE_A => MAYBE_A
 				case MAYBE_I => MAYBE_I
 			}
+
+		override def toString = "maybe_i"
 	}
 
 	object A extends Mark( "a-marked" ) {

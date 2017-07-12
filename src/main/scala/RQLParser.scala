@@ -87,12 +87,17 @@ class RQLParser extends RegexParsers {
 	def expressions = rep1sep(valueExpression, ",")
 
 	def valueExpression: Parser[ValueExpression] =
+		logicalExpression ^^ LogicalValueExpression |
 		additiveExpression
 
-	def additiveExpression: Parser[ValueExpression] = multiplicativeExpression ~ rep(pos ~ "+" ~ multiplicativeExpression | pos ~ "-" ~ multiplicativeExpression) ^^ {
-		case expr ~ list => list.foldLeft( expr ) {
-			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
-		}
+	def nonLogicalValueExpression: Parser[ValueExpression] =
+		additiveExpression
+
+	def additiveExpression: Parser[ValueExpression] =
+		multiplicativeExpression ~ rep(pos ~ "+" ~ multiplicativeExpression | pos ~ "-" ~ multiplicativeExpression) ^^ {
+			case expr ~ list => list.foldLeft( expr ) {
+				case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
+			}
 	}
 
 	def multiplicativeExpression: Parser[ValueExpression] = negativeExpression ~ rep(pos ~ "*" ~ negativeExpression | pos ~ "/" ~ negativeExpression) ^^ {
@@ -134,7 +139,7 @@ class RQLParser extends RegexParsers {
 	def comparison = "<" | "<=" | "=" | "/=" | ">" | ">="
 
 	def logicalExpression =
-		valueExpression ~ rep1(comparison ~ valueExpression) ^^ {
+		nonLogicalValueExpression ~ rep1(comparison ~ nonLogicalValueExpression) ^^ {
 			case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, lookup(c), v)} ) } |
 		logicalPrimary
 

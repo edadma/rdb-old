@@ -366,6 +366,10 @@ class Connection {
 						ScalarFunctionValue(e.pos, heading, sf.typ(a map (_.typ)), sf, a )
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
+			case e@LogicalValueExpression( logical ) =>
+				val log = evalLogical( afuse, metadata, logical )
+
+				LogicalValue( e.pos, log.heading, LogicalType, log )
 		}
 
 	def aggregate( row: Tuple, result: ValueResult ): Unit =
@@ -419,21 +423,24 @@ class Connection {
 				}
 			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
 			case a: AggregateFunctionValue => a.func.result.asInstanceOf[AnyRef]
+			case LogicalValue( _, _, _, l ) => evalCondition( row, l )
 		}
 
-	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
+	def evalCondition( row: Tuple, cond: LogicalResult ): Logical =
 		cond match {
-			case ComparisonLogical( left, pred, right ) =>
-				Math.predicate( pred, evalValue(row, left), evalValue(row, right) )
+			case LiteralLogical( _, lit ) => lit
+			case ComparisonLogical( _, left, pred, right ) =>
+				Logical.fromBoolean( Math.predicate(pred, evalValue(row, left), evalValue(row, right)) )
 		}
 
-	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): ConditionResult = {
+	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): LogicalResult = {
 		ast match {
-			case ComparisonExpression( left, List((_, pred, right)) ) =>
+			case LogicalLit( lit ) => LiteralLogical( lit.toString, lit )
+			case ComparisonExpression( left, List((comp, pred, right)) ) =>
 				val l = evalExpression( afuse, metadata, left )
 				val r = evalExpression( afuse, metadata, right )
 
-				ComparisonLogical( l, pred, r )
+				ComparisonLogical( s"${l.heading} $comp ${r.heading}", l, pred, r )
 		}
 	}
 }
@@ -464,9 +471,14 @@ case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, af
 	}
 case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, args: List[ValueResult] ) extends ValueResult
 case class UnaryValue( pos: Position, heading: String, typ: Type, v: ValueResult, operation: String, func: FunctionMap ) extends ValueResult
+case class LogicalValue( pos: Position, heading: String, typ: Type, logical: LogicalResult ) extends ValueResult
 
-trait ConditionResult
-case class ComparisonLogical( left: ValueResult, pred: FunctionMap, right: ValueResult ) extends ConditionResult
+trait LogicalResult {
+	val heading: String
+}
+
+case class LiteralLogical( heading: String, value: Logical ) extends LogicalResult
+case class ComparisonLogical( heading: String, left: ValueResult, pred: FunctionMap, right: ValueResult ) extends LogicalResult
 
 trait StatementResult
 case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult

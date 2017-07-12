@@ -24,6 +24,7 @@ case class TupleExpression( t: List[ValueExpression] ) extends ValueExpression
 case class BinaryValueExpression( left: ValueExpression, oppos: Position, operation: String, func: FunctionMap, right: ValueExpression ) extends ValueExpression
 case class ApplicativeValueExpression( func: ValueExpression, args: List[ValueExpression] ) extends ValueExpression
 case class UnaryValueExpression( oppos: Position, operation: String, func: FunctionMap, expr: ValueExpression ) extends ValueExpression
+case class LogicalValueExpression( logical: LogicalExpression ) extends ValueExpression
 
 trait RelationExpression extends StatementAST with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression

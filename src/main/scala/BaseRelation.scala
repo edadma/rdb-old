@@ -26,11 +26,11 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	override def size = rows.length
 
-	private [rdb] def delete( conn: Connection, cond: ConditionResult ) = {
+	private [rdb] def delete( conn: Connection, cond: LogicalResult ) = {
 		var count = 0
 
 		for (i <- rows.length - 1 to 0 by -1)
-			if (conn.evalCondition( rows(i), cond )) {
+			if (conn.evalCondition( rows(i), cond ) == TRUE) {
 				rows.remove( i )
 				count += 1
 			}

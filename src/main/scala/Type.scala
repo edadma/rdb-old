@@ -1,12 +1,11 @@
 package xyz.hyperreal.rdb
 
-import scala.util.parsing.input.Position
-
 
 object Type {
 
 	val names =
 		Map(
+			"logical" -> LogicalType,
 			"integer" -> IntegerType,
 			"float" -> FloatType,
 			"string" -> StringType
@@ -14,6 +13,7 @@ object Type {
 
 	def fromValue( v: Any ) = {
 		def _fromValue: PartialFunction[Any, Type] = {
+			case _: Logical => LogicalType
 			case _: Int => IntegerType
 			case _: Double => FloatType
 			case _: String => StringType
@@ -36,6 +36,22 @@ abstract class PrimitiveType( val name: String ) extends SimpleType {
 
 trait NumericalType extends Type
 
+trait OrderedType extends Type
+
+trait OrderedNumericalType extends NumericalType with OrderedType
+
+case object LogicalType extends PrimitiveType( "logical" ) {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (java.lang.Boolean.TRUE, java.lang.Boolean.TRUE)|(java.lang.Boolean.FALSE, java.lang.Boolean.FALSE) => 0
+			case (java.lang.Boolean.FALSE, java.lang.Boolean.TRUE) => 1
+			case (java.lang.Boolean.TRUE, java.lang.Boolean.FALSE) => -1
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
+
 //case object ByteType extends PrimitiveType( "byte" ) with NumericalType {
 //
 //	def compare( x: AnyRef, y: AnyRef ) =
@@ -46,7 +62,7 @@ trait NumericalType extends Type
 //}
 
 //case object ShortType extends PrimitiveType
-case object IntegerType extends PrimitiveType( "integer" ) with NumericalType {
+case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumericalType {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
@@ -58,7 +74,7 @@ case object IntegerType extends PrimitiveType( "integer" ) with NumericalType {
 
 //case object LongType extends PrimitiveType
 //case object BigintType extends PrimitiveType
-case object FloatType extends PrimitiveType( "float" ) with NumericalType {
+case object FloatType extends PrimitiveType( "float" ) with OrderedNumericalType {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
@@ -77,7 +93,7 @@ case object FloatType extends PrimitiveType( "float" ) with NumericalType {
 //case object ComplexRationalType extends PrimitiveType
 //case object ComplexDecimalType extends PrimitiveType
 //case object NumberType extends PrimitiveType
-case object StringType extends PrimitiveType( "string" ) {
+case object StringType extends PrimitiveType( "string" ) with OrderedType {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
