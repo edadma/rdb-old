@@ -72,8 +72,10 @@ class Connection {
 				baseRelations get base.name match {
 					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
-						val cond = evalLogical( AFUseNotAllowed, b.metadata, condition )
+						val afuse = AFUseOrField( NoFieldOrAFUsed )
+						val cond = evalLogical( afuse, b.metadata, condition )
 
+						aggregateCondition( b, cond, afuse.state )
 						DeleteResult( b.delete(this, cond) )
 				}
 			case r: RelationExpression =>
@@ -159,9 +161,10 @@ class Connection {
 				new InnerJoinRelation( this, metadata, lrel, evalLogical(AFUseNotAllowed, metadata, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
 				val rel = evalRelation( relation )
-				val cond = evalLogical( AFUseNotAllowed, rel.metadata, condition )
+				val afuse = AFUseOrField( NoFieldOrAFUsed )
+				val cond = evalLogical( afuse, rel.metadata, condition )
 
-				new SelectionRelation( this, rel, cond )
+				new SelectionRelation( this, rel, cond, afuse.state )
 			case RelationVariableExpression( Ident(p, n) ) =>
 				baseRelations get n match {
 					case None =>
@@ -282,7 +285,7 @@ class Connection {
 						afuse match {
 							case use@AFUseOrField( OnlyAFUsed ) => use.state = FieldAndAFUsed
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyFieldUsed
-							case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed ) =>
+							case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 						}
 
 						FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
@@ -297,7 +300,7 @@ class Connection {
 							afuse match {
 								case use@AFUseOrField( OnlyAFUsed ) => use.state = FieldAndAFUsed
 								case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyFieldUsed
-								case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed ) =>
+								case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 							}
 
 							FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
@@ -346,7 +349,7 @@ class Connection {
 							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
 							case use@AFUseOrField( OnlyFieldUsed ) => use.state = FieldAndAFUsed
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyAFUsed
-							case AFUseOrField( OnlyAFUsed ) =>
+							case AFUseOrField( OnlyAFUsed|FieldAndAFUsed ) =>
 						}
 
 						val heading =
@@ -372,6 +375,14 @@ class Connection {
 				LogicalValue( e.pos, log.heading, LogicalType, log )
 		}
 
+	def aggregateCondition( relation: Relation, condition: LogicalResult, afuse: AggregateFunctionUseState ) =
+		if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
+			initAggregation( condition )
+
+			for (t <- relation.iterator)
+				aggregate( t, condition )
+		}
+
 	def aggregate( row: Tuple, result: ValueResult ): Unit =
 		result match {
 			case BinaryValue( _, _, _, l, _, _, r ) =>
@@ -381,7 +392,17 @@ class Connection {
 				aggregate( row, v )
 			case a@AggregateFunctionValue( _, _, _, _, args ) =>
 				a.func.next( args map (evalValue( row, _ )) )
+			case LogicalValue( _, _, _, l ) =>
+				aggregate( row, l )
 			case _ =>
+		}
+
+	def aggregate( row: Tuple, result: LogicalResult ): Unit =
+		result match {
+			case _: LiteralLogical =>
+			case ComparisonLogical( _, left, _, right ) =>
+				aggregate( row, left )
+				aggregate( row, right )
 		}
 
 	def initAggregation( result: ValueResult ): Unit =
@@ -393,7 +414,17 @@ class Connection {
 				initAggregation( v )
 			case a@AggregateFunctionValue( _, _, _, af, _ ) =>
 				a.func = af.instance
+			case LogicalValue( _, _, _, l ) =>
+				initAggregation( l )
 			case _ =>
+		}
+
+	def initAggregation( result: LogicalResult ): Unit =
+		result match {
+			case _: LiteralLogical =>
+			case ComparisonLogical( _, left, _, right ) =>
+				initAggregation( left )
+				initAggregation( right )
 		}
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
