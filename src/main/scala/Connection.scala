@@ -12,12 +12,12 @@ class Connection {
 	val baseRelations = new HashMap[String, BaseRelation]
 	val variables = new HashMap[String, AnyRef]
 
-	variables("count") = classOf[CountAggregateFunction]
-	variables("sum") = classOf[SumAggregateFunction]
-	variables("avg") = classOf[AvgAggregateFunction]
-	variables("min") = classOf[MinAggregateFunction]
-	variables("max") = classOf[MaxAggregateFunction]
-	variables("list") = classOf[ListAggregateFunction]
+	variables("count") = CountAggregateFunction
+	variables("sum") = SumAggregateFunction
+	variables("avg") = AvgAggregateFunction
+	variables("min") = MinAggregateFunction
+	variables("max") = MaxAggregateFunction
+	variables("list") = ListAggregateFunction
 
 	variables("pi") = BuiltinScalarFunctions.piFunction
 	variables("abs") = BuiltinScalarFunctions.absFunction
@@ -280,9 +280,9 @@ class Connection {
 						}
 					case Some( ind ) =>
 						afuse match {
-							case AFUseOrField( AFUsed ) => problem( n.pos, "column not allowed here (since aggregate function already referred to)" )
-							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
-							case AFUseNotAllowed|AFUseOrField( FieldUsed ) =>
+							case use@AFUseOrField( OnlyAFUsed ) => use.state = FieldAndAFUsed
+							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyFieldUsed
+							case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed ) =>
 						}
 
 						FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
@@ -295,9 +295,9 @@ class Connection {
 						case None => problem( c.pos, "no such column" )
 						case Some( ind ) =>
 							afuse match {
-								case AFUseOrField( AFUsed ) => problem( t.pos, "column not allowed here (since aggregate function already referred to)" )
-								case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = FieldUsed
-								case AFUseNotAllowed|AFUseOrField( FieldUsed ) =>
+								case use@AFUseOrField( OnlyAFUsed ) => use.state = FieldAndAFUsed
+								case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyFieldUsed
+								case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed ) =>
 							}
 
 							FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
@@ -341,12 +341,12 @@ class Connection {
 				val a = args map (evalExpression( AFUseNotAllowed, metadata, _ ))
 
 				f match {
-					case VariableValue( _, _, _, afc: Class[_] ) if classOf[AggregateFunction] isAssignableFrom afc =>
+					case VariableValue( _, _, _, af: AggregateFunction ) =>
 						afuse match {
 							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
-							case AFUseOrField( FieldUsed ) => problem( e.pos, "aggregate function not allowed here (since column already referred to)" )
-							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = AFUsed
-							case AFUseOrField( AFUsed ) =>
+							case use@AFUseOrField( OnlyFieldUsed ) => use.state = FieldAndAFUsed
+							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyAFUsed
+							case AFUseOrField( OnlyAFUsed ) =>
 						}
 
 						val heading =
@@ -355,7 +355,7 @@ class Connection {
 							else
 								s"${f.heading}( ${a map (_.heading) mkString ","} )"
 
-						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), afc, a )
+						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
 					case VariableValue( _, _, _, sf: ScalarFunction ) =>
 						val heading =
 							if (a == Nil)
@@ -377,6 +377,18 @@ class Connection {
 				aggregate( row, v )
 			case a@AggregateFunctionValue( _, _, _, _, args ) =>
 				a.func.next( args map (evalValue( row, _ )) )
+			case _ =>
+		}
+
+	def initAggregation( result: ValueResult ): Unit =
+		result match {
+			case BinaryValue( _, _, _, l, _, _, r ) =>
+				initAggregation( l )
+				initAggregation( r )
+			case UnaryValue( _, _, _, v, _, _ ) =>
+				initAggregation( v )
+			case a@AggregateFunctionValue( _, _, _, af, _ ) =>
+				a.func = af.instance
 			case _ =>
 		}
 
@@ -406,7 +418,7 @@ class Connection {
 					case _: Exception => problem( p, "error performing unary operation" )
 				}
 			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) )
-			case a: AggregateFunctionValue => a.func.result
+			case a: AggregateFunctionValue => a.func.result.asInstanceOf[AnyRef]
 		}
 
 	def evalCondition( row: Tuple, cond: ConditionResult ): Boolean =
@@ -428,8 +440,8 @@ class Connection {
 
 trait AggregateFunctionUseState
 case object NoFieldOrAFUsed extends AggregateFunctionUseState
-case object FieldUsed extends AggregateFunctionUseState
-case object AFUsed extends AggregateFunctionUseState
+case object OnlyFieldUsed extends AggregateFunctionUseState
+case object OnlyAFUsed extends AggregateFunctionUseState
 case object FieldAndAFUsed extends AggregateFunctionUseState
 
 trait AggregateFunctionUse
@@ -447,8 +459,8 @@ case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyR
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
-case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, clazz: Class[AggregateFunction], args: List[ValueResult] ) extends ValueResult {
-	var func: AggregateFunction = _
+case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, af: AggregateFunction, args: List[ValueResult] ) extends ValueResult {
+	var func: AggregateFunctionInstance = _
 	}
 case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, args: List[ValueResult] ) extends ValueResult
 case class UnaryValue( pos: Position, heading: String, typ: Type, v: ValueResult, operation: String, func: FunctionMap ) extends ValueResult
