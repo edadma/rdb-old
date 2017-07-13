@@ -23,6 +23,7 @@ class RQLParser extends RegexParsers {
 	def statement: Parser[StatementAST] =
 		assignStatement |
 		insertStatement |
+		updateStatement |
 		deleteStatement |
 		tupleseq |
 		relation
@@ -38,6 +39,10 @@ class RQLParser extends RegexParsers {
 
 	def deleteStatement =
 		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
+
+	def updateStatement =
+		("update" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ~ ("(" ~> rep1sep(ident ~ ("=" ~> valueExpression), ",") <~ ")") ^^ {
+			case n ~ c ~ u => UpdateStatement( n, c, u map {case f ~ e => (f, e)} ) }
 
 	def tupleseq =
 		tupleseqLit

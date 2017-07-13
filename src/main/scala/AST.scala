@@ -12,6 +12,7 @@ case class AssignRelationStatement( variable: Ident, relation: RelationExpressio
 case class InsertRelationStatement( base: Ident, relation: RelationExpression ) extends StatementAST
 case class InsertTupleseqStatement( base: Ident, tupleseq: TupleseqExpression ) extends StatementAST
 case class DeleteStatement( base: Ident, condition: LogicalExpression ) extends StatementAST
+case class UpdateStatement( base: Ident, condition: LogicalExpression, updates: List[(Ident, ValueExpression)] ) extends StatementAST
 
 trait ValueExpression extends AST with Positional
 case class FloatLit( n: String ) extends ValueExpression

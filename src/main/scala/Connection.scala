@@ -70,6 +70,25 @@ class Connection {
 						aggregateCondition( b, cond, afuse.state )
 						DeleteResult( b.delete(this, cond) )
 				}
+			case UpdateStatement( base, condition, updates ) =>
+				baseRelations get base.name match {
+					case None => problem( base.pos, "unknown base relation" )
+					case Some( b ) =>
+						val afuse = AFUseOrField( NoFieldOrAFUsed )
+						val cond = evalLogical( afuse, b.metadata, condition )
+						val upds =
+							for ((col, expr) <- updates)
+								yield {
+									b.metadata.columnMap get col.name match {
+										case None => problem( col.pos, "unknown column" )
+										case Some( ind ) =>
+											(ind, evalExpression( AFUseNotAllowed, b.metadata, expr ))
+									}
+								}
+
+						aggregateCondition( b, cond, afuse.state )
+						UpdateResult( b.update(this, cond, upds) )
+				}
 			case r: RelationExpression =>
 				RelationResult( evalRelation(r) )
 			case t: TupleseqExpression =>
@@ -515,7 +534,8 @@ case class LiteralValue( pos: Position, heading: String, typ: Type, value: AnyRe
 case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
 case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
 case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
-case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap, right: ValueResult ) extends ValueResult
+case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap,
+												right: ValueResult ) extends ValueResult
 case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, af: AggregateFunction, args: List[ValueResult] ) extends ValueResult {
 	var func: AggregateFunctionInstance = _
 	}
@@ -534,5 +554,6 @@ trait StatementResult
 case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult
 case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
 case class DeleteResult( count: Int ) extends StatementResult
+case class UpdateResult( count: Int ) extends StatementResult
 case class RelationResult( relation: Relation ) extends StatementResult
 case class TupleseqResult( tupleseq: Tupleseq ) extends StatementResult

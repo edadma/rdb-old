@@ -6,7 +6,7 @@ import scala.util.parsing.input.Position
 package object rdb {
 	val VERSION = "0.1"
 
-	type Tuple = Vector[AnyRef]
+	type Tuple = IndexedSeq[AnyRef]
 
 	def problem( pos: Position, error: String ) =
 		if (pos eq null)
