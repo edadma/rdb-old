@@ -123,6 +123,9 @@ object REPLMain extends App {
 						case DeleteResult( 0 ) => println( "no rows were deleted" )
 						case DeleteResult( 1 ) => println( "1 row was deleted" )
 						case DeleteResult( count ) => println( s"$count rows were deleted" )
+						case UpdateResult( 0 ) => println( "no updates were made" )
+						case UpdateResult( 1 ) => println( "1 row was updated" )
+						case UpdateResult( count ) => println( s"$count rows were updated" )
 					}
 			}
 		} catch {
