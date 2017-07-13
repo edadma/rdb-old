@@ -142,11 +142,12 @@ class Connection {
 			case GroupingRelationExpression( relation, discriminator, columns ) =>
 				val rel = evalRelation( relation )
 				val disafuse = AFUseOrField( NoFieldOrAFUsed )
-				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _))
+				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _)) toVector
+				val dismetadata = new Metadata( dis map (c => Column( "", c.heading, c.typ, None )) )
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
-				val cols = columns map (evalExpression(colafuse, rel.metadata, _))
+				val cols = columns map (evalExpression(colafuse, dismetadata, rel.metadata, _)) toVector
 
-				new GroupingRelation( this, rel, disafuse.state, dis, colafuse.state, cols )
+				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, colafuse.state, cols )
 			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
@@ -250,13 +251,16 @@ class Connection {
 	}
 
 	def evalExpression( afuse: AggregateFunctionUse, metadata: Metadata, ast: ValueExpression ): ValueResult =
+		evalExpression( afuse, metadata, metadata, ast )
+
+	def evalExpression( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
 			case IntegerLit( n ) => LiteralValue( ast.pos, n, IntegerType, Integer.valueOf(n) )
 			case StringLit( s ) => LiteralValue( ast.pos, '"' + s + '"', StringType, s )
 			case MarkLit( m ) => MarkedValue( ast.pos, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
-				metadata.columnMap get n.name match {
+				fmetadata.columnMap get n.name match {
 					case None =>
 						variables get n.name match {
 							case None => problem( n.pos, "no such column or variable" )
@@ -270,13 +274,13 @@ class Connection {
 							case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 						}
 
-						FieldValue( ast.pos, n.name, metadata.header(ind).typ, ind )
+						FieldValue( ast.pos, n.name, fmetadata.header(ind).typ, ind )
 				}
 			case ValueColumnExpression( t, c ) =>
-				if (!metadata.tableSet(t.name))
+				if (!fmetadata.tableSet(t.name))
 					problem( t.pos, "unknown table" )
 				else
-					metadata.tableColumnMap get (t.name, c.name) match {
+					fmetadata.tableColumnMap get (t.name, c.name) match {
 						case None => problem( c.pos, "no such column" )
 						case Some( ind ) =>
 							afuse match {
@@ -285,11 +289,11 @@ class Connection {
 								case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 							}
 
-							FieldValue( ast.pos, t.name + '.' + c.name, metadata.header(ind).typ, ind )
+							FieldValue( ast.pos, t.name + '.' + c.name, fmetadata.header(ind).typ, ind )
 					}
 			case e@BinaryValueExpression( left, oppos, operation, func, right ) =>
-				val l = evalExpression( afuse, metadata, left )
-				val r = evalExpression( afuse, metadata, right )
+				val l = evalExpression( afuse, fmetadata, ametadata, left )
+				val r = evalExpression( afuse, fmetadata, ametadata, right )
 
 				(l, r) match {
 					case (LiteralValue(p, _, _, x), LiteralValue(_, _, _, y)) =>
@@ -312,7 +316,7 @@ class Connection {
 						BinaryValue( oppos, s"$lh$space$operation$space$rh", l.typ, l, operation, func, r )//todo: handle type promotion correctly
 				}
 			case UnaryValueExpression( oppos, operation, func, expr ) =>
-				val e = evalExpression( afuse, metadata, expr )
+				val e = evalExpression( afuse, fmetadata, ametadata, expr )
 
 				e match {
 					case LiteralValue( p, _, _, x ) =>
@@ -322,7 +326,7 @@ class Connection {
 					case _ => UnaryValue( oppos, s"$operation${e.heading}", e.typ, e, operation, func ) //todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
-				val f = evalExpression( afuse, metadata, func )
+				val f = evalExpression( afuse, fmetadata, ametadata, func )
 
 				f match {
 					case VariableValue( _, _, _, af: AggregateFunction ) =>
@@ -333,7 +337,7 @@ class Connection {
 							case AFUseOrField( OnlyAFUsed|FieldAndAFUsed ) =>
 						}
 
-						val a = args map (evalExpression( AFUseNotAllowed, metadata, _ ))
+						val a = args map (evalExpression( AFUseNotAllowed, ametadata, null, _ ))
 						val heading =
 							if (a == Nil)
 								s"${f.heading}()"
@@ -342,7 +346,7 @@ class Connection {
 
 						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
 					case VariableValue( _, _, _, sf: ScalarFunction ) =>
-						val a = args map (evalExpression( afuse, metadata, _ ))
+						val a = args map (evalExpression( afuse, fmetadata, ametadata, _ ))
 						val heading =
 							if (a == Nil)
 								s"${f.heading}()"
@@ -353,7 +357,7 @@ class Connection {
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
 			case e@LogicalValueExpression( logical ) =>
-				val log = evalLogical( afuse, metadata, logical )
+				val log = evalLogical( afuse, fmetadata, logical )//todo: this might not be right if there are aggregates in a boolean expression
 
 				LogicalValue( e.pos, log.heading, LogicalType, log )
 		}
@@ -364,6 +368,15 @@ class Connection {
 
 			for (t <- relation.iterator)
 				aggregate( t, condition )
+		}
+
+	def aggregateColumns( tuples: Iterable[Tuple], columns: Vector[ValueResult], afuse: AggregateFunctionUseState ) =
+		if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
+			for (c <- columns)
+				initAggregation( c )
+
+			for (t <- tuples.iterator; c <- columns)
+				aggregate( t, c )
 		}
 
 	def aggregate( row: Tuple, result: ValueResult ): Unit =
@@ -416,6 +429,8 @@ class Connection {
 				initAggregation( right )
 		}
 
+	def evalVector( row: Tuple, vector: Vector[ValueResult]) = vector map (evalValue(row, _))
+
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
 			case LiteralValue( _, _, _, v ) => v
@@ -465,12 +480,15 @@ class Connection {
 				}
 		}
 
-	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): LogicalResult = {
+	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): LogicalResult =
+		evalLogical( afuse, metadata, metadata, ast )
+
+	def evalLogical( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: LogicalExpression ): LogicalResult = {
 		ast match {
 			case LogicalLit( lit ) => LiteralLogical( lit.toString, lit )
 			case ComparisonExpression( left, List((comp, pred, right)) ) =>
-				val l = evalExpression( afuse, metadata, left )
-				val r = evalExpression( afuse, metadata, right )
+				val l = evalExpression( afuse, fmetadata, ametadata, left )
+				val r = evalExpression( afuse, fmetadata, ametadata, right )
 
 				BinaryLogical( s"${l.heading} $comp ${r.heading}", l, comp, pred, r )
 		}
