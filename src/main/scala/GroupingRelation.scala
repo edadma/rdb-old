@@ -7,6 +7,8 @@ class GroupingRelation( conn: Connection, relation: Relation, disafuse: Aggregat
 	val metadata = new Metadata( columns map (c => Column( "", c.heading, c.typ, None )) toVector )
 
 	def iterator = {
-		
+		val groups = relation.groupBy( t => discriminator map (d => conn.evalValue(t, d)) )
+
+
 	}
 }
