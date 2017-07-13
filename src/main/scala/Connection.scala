@@ -139,7 +139,15 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
-			case ProjectionRelationExpression( relation: RelationExpression, columns ) =>
+			case GroupingRelationExpression( relation, discriminator, columns ) =>
+				val rel = evalRelation( relation )
+				val disafuse = AFUseOrField( NoFieldOrAFUsed )
+				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _))
+				val colafuse = AFUseOrField( NoFieldOrAFUsed )
+				val cols = columns map (evalExpression(colafuse, rel.metadata, _))
+
+				new GroupingRelation( this, rel, disafuse.state, dis, colafuse.state, cols )
+			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
 
