@@ -40,7 +40,6 @@ class RQLParser extends RegexParsers {
 		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
 
 	def tupleseq =
-		relation ~ ("(" ~> rep1sep(valueExpression, ",") <~ ")") ^^ { case r ~ c => ProjectionTupleseqExpression( r, c ) } |
 		relation ~ ("//" ~> expressions) ~ ("(" ~> rep1sep(valueExpression, ",") <~ ")") ^^ {
 			case r ~ d ~ c => AggregationTupleseqExpression( r, d, c ) } |
 		tupleseqLit
@@ -52,7 +51,7 @@ class RQLParser extends RegexParsers {
 		projectionRelation
 
 	def projectionRelation = positioned(
-		selectionRelation ~ ("[" ~> rep1sep(ident, ",") <~ "]") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
+		selectionRelation ~ ("(" ~> rep1sep(valueExpression, ",") <~ ")") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
 		selectionRelation
 		)
 

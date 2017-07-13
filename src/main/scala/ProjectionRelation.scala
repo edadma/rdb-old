@@ -1,10 +1,9 @@
 package xyz.hyperreal.rdb
 
 
-class ProjectionRelation( conn: Connection, relation: Relation, columns: Vector[ValueResult], afuse: AggregateFunctionUseState ) extends AbstractTupleseq {
+class ProjectionRelation( conn: Connection, relation: Relation, columns: Vector[ValueResult], afuse: AggregateFunctionUseState ) extends AbstractRelation {
 
-	val header = Some( columns map (_.heading) )
-	val types = columns map (_.typ)
+	val metadata = new Metadata( columns map (c => Column( "", c.heading, c.typ, None )) )
 
 	def iterator = {
 		if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {

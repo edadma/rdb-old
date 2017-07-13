@@ -29,12 +29,11 @@ case class LogicalValueExpression( logical: LogicalExpression ) extends ValueExp
 trait RelationExpression extends StatementAST with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression
 case class ListRelationExpression( columns: List[ColumnSpec], data: List[TupleExpression] ) extends RelationExpression
-case class ProjectionRelationExpression( relation: RelationExpression, columns: List[Ident] ) extends RelationExpression
+case class ProjectionRelationExpression( relation: RelationExpression, columns: List[ValueExpression] ) extends RelationExpression
 case class SelectionRelationExpression( relation: RelationExpression, condition: LogicalExpression ) extends RelationExpression
 case class InnerJoinRelationExpression( left: RelationExpression, condition: LogicalExpression, right: RelationExpression ) extends RelationExpression
 
 trait TupleseqExpression extends StatementAST with Positional
-case class ProjectionTupleseqExpression( relation: RelationExpression, columns: List[ValueExpression] ) extends TupleseqExpression
 case class TupleseqLit( data: List[TupleExpression] ) extends TupleseqExpression
 case class AggregationTupleseqExpression( relation: RelationExpression, discriminator: List[ValueExpression], columns: List[ValueExpression] ) extends TupleseqExpression
 

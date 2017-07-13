@@ -14,6 +14,7 @@ class Metadata( val header: IndexedSeq[Column] ) {
 	lazy val primaryKey = header find (_.constraint contains PrimaryKey)
 
 	lazy val primaryKeyIndex = columnMap(primaryKey.get.column)
+
 }
 
 case class Column( table: String, column: String, typ: Type, constraint: Option[Constraint] )

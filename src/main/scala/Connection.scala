@@ -77,7 +77,7 @@ class Connection {
 		}
 	}
 
-	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ) = {
+	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ): Tupleseq = {
 		tupleseq match {
 			case TupleseqLit( data ) =>
 				val types1 =
@@ -87,12 +87,6 @@ class Connection {
 						types
 
 				new ListTupleseq( types1, evalTupleList(types1, data) )
-			case ProjectionTupleseqExpression( relation: RelationExpression, columns ) =>
-				val rel = evalRelation( relation )
-				val afuse = AFUseOrField( NoFieldOrAFUsed )
-				val cols = columns map (evalExpression(afuse, rel.metadata, _))
-
-				new ProjectionRelation( this, rel, cols toVector, afuse.state )
 //			case AggregationTupleseqExpression( relation, discriminator, columns ) =>
 //				val rel = evalRelation( relation )
 //				val dis = discriminator map (evalExpression(AFUseNotAllowed, rel.metadata, _))
@@ -145,6 +139,11 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
+			case ProjectionRelationExpression( relation: RelationExpression, columns ) =>
+				val rel = evalRelation( relation )
+				val afuse = AFUseOrField( NoFieldOrAFUsed )
+
+				new ProjectionRelation( this, rel, columns map (evalExpression(afuse, rel.metadata, _)) toVector, afuse.state )
 			case InnerJoinRelationExpression( left, condition, right ) =>
 				val lrel = evalRelation( left )
 				val rrel = evalRelation( right )
@@ -167,22 +166,6 @@ class Connection {
 
 					case Some( r ) => r
 				}
-			case ProjectionRelationExpression( relation, columns ) =>
-				val rel = evalRelation( relation )
-				val s = new HashSet[String]
-				val cs = new ListBuffer[String]
-
-				for (Ident( p, n ) <- columns)
-					if (!rel.metadata.columnMap.contains( n ))
-						problem( p, "unknown column name" )
-					else if (s(n))
-						problem( p, "duplicate column name" )
-					else {
-						s += n
-						cs += n
-					}
-
-				new ProjectionRelationx( rel, cs toList )
 			case ListRelationExpression( columns, data ) =>
 				var hset = Set[String]()
 				var pk = false
@@ -395,7 +378,7 @@ class Connection {
 	def aggregate( row: Tuple, result: LogicalResult ): Unit =
 		result match {
 			case _: LiteralLogical =>
-			case ComparisonLogical( _, left, _, right ) =>
+			case BinaryLogical( _, left, _, _, right ) =>
 				aggregate( row, left )
 				aggregate( row, right )
 		}
@@ -420,7 +403,7 @@ class Connection {
 	def initAggregation( result: LogicalResult ): Unit =
 		result match {
 			case _: LiteralLogical =>
-			case ComparisonLogical( _, left, _, right ) =>
+			case BinaryLogical( _, left, _, _, right ) =>
 				initAggregation( left )
 				initAggregation( right )
 		}
@@ -459,8 +442,19 @@ class Connection {
 	def evalCondition( row: Tuple, cond: LogicalResult ): Logical =
 		cond match {
 			case LiteralLogical( _, lit ) => lit
-			case ComparisonLogical( _, left, pred, right ) =>
-				Logical.fromBoolean( Math.predicate(pred, evalValue(row, left), evalValue(row, right)) )
+			case BinaryLogical( _, left, _, pred, right ) =>
+				val lv = evalValue( row, left )
+				val rv = evalValue( row, right )
+
+				(lv, rv) match {
+					case (`I`, _)|(_, `I`) => MAYBE_I
+					case (`A`, _)|(_, `A`) => MAYBE_A
+					case _ =>
+						if (lv.isInstanceOf[String] || rv.isInstanceOf[String]) {
+							Logical.fromBoolean( Math.predicate(pred, lv.toString compareTo rv.toString, 0) )
+						} else
+							Logical.fromBoolean( Math.predicate(pred, lv, rv) )
+				}
 		}
 
 	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): LogicalResult = {
@@ -470,7 +464,7 @@ class Connection {
 				val l = evalExpression( afuse, metadata, left )
 				val r = evalExpression( afuse, metadata, right )
 
-				ComparisonLogical( s"${l.heading} $comp ${r.heading}", l, pred, r )
+				BinaryLogical( s"${l.heading} $comp ${r.heading}", l, comp, pred, r )
 		}
 	}
 }
@@ -508,7 +502,7 @@ trait LogicalResult {
 }
 
 case class LiteralLogical( heading: String, value: Logical ) extends LogicalResult
-case class ComparisonLogical( heading: String, left: ValueResult, pred: FunctionMap, right: ValueResult ) extends LogicalResult
+case class BinaryLogical( heading: String, left: ValueResult, comp: String, pred: FunctionMap, right: ValueResult ) extends LogicalResult
 
 trait StatementResult
 case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult
