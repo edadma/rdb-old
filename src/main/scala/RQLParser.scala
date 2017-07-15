@@ -45,10 +45,17 @@ class RQLParser extends RegexParsers {
 			case n ~ c ~ u => UpdateStatement( n, c, u map {case f ~ e => (f, e)} ) }
 
 	def tupleseq =
+		relation ~ ("order" ~ "by" ~> names) ~ opt("asc" | "desc") ^^ {
+			case r ~ n ~ None => SortedTupleseqExpression( r, n, true )
+			case r ~ n ~ Some( o ) => SortedTupleseqExpression( r, n, o == "asc" ) } |
 		tupleseqLit
 
 	def tupleseqLit =
 		"[" ~> rep1sep(tuple, ",") <~ "]" ^^ TupleseqLit
+
+	def names =
+		ident ^^ (List( _ )) |
+		"(" ~> rep1sep(ident, ",") <~ ")"
 
 	def relation: Parser[RelationExpression] =
 		projectionRelation

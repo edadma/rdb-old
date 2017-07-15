@@ -108,5 +108,7 @@ object Main extends App {
 	{[a, b] (1, 2), (2, 4)} (float(avg(a)))
 	{[a, b] (1, 2), (-3, 4)} (sum(a))
 	{[a, b] (1, 2), (3, 4)} (count())
+
+	{[a, b] (1, 2), (0, 5), (3, 4)} order by a
 	*/
 }

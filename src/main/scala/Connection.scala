@@ -106,11 +106,18 @@ class Connection {
 						types
 
 				new ListTupleseq( types1, evalTupleList(types1, data) )
-//			case AggregationTupleseqExpression( relation, discriminator, columns ) =>
-//				val rel = evalRelation( relation )
-//				val dis = discriminator map (evalExpression(AFUseNotAllowed, rel.metadata, _))
-//
-//				AggregationTupleseq
+			case SortedTupleseqExpression( relation, names, ascending ) =>
+				val rel = evalRelation( relation )
+				val fields =
+					names map {
+						case Ident( pos, name ) =>
+							rel.metadata.columnMap get name match {
+								case None => problem( pos, "unknown column" )
+								case Some( ind ) => ind
+							}
+					}
+
+				new SortedTupleseq( rel, fields, ascending )
 		}
 	}
 
