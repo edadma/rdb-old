@@ -7,7 +7,7 @@ object Main extends App {
 	val conn = new Connection
 	val statement = """ {[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} <a> (a, sum(b)) """
 
-	conn.executeStatement( statement ) match {
+	conn.executeRQLStatement( statement ) match {
 		case TupleseqResult( tupleseq ) =>
 			val t =
 				new TextTable {

@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb
 
+import java.util.UUID
+
 import xyz.hyperreal.numbers.ComplexBigInt
 
 
@@ -18,7 +20,7 @@ object Type {
 			case _: Logical => LogicalType
 			case _: Int => IntegerType
 			case _: Double => FloatType
-			case _: ComplexBigInt => ComplexBigIntType
+			case _: ComplexBigInt => ComplexIntegerType
 			case _: String => StringType
 		}
 
@@ -89,7 +91,7 @@ case object FloatType extends PrimitiveType( "float" ) with OrderedNumericalType
 
 //case object DecimalType extends PrimitiveType
 //case object RationalType extends PrimitiveType
-case object ComplexBigIntType extends PrimitiveType( "complex bigint" ) with NumericalType {
+case object ComplexIntegerType extends PrimitiveType( "complex integer" ) with NumericalType {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
@@ -102,7 +104,6 @@ case object ComplexBigIntType extends PrimitiveType( "complex bigint" ) with Num
 		}
 
 }
-//case object ComplexBigintType extends PrimitiveType
 //case object ComplexFloatType extends PrimitiveType
 //case object ComplexRationalType extends PrimitiveType
 //case object ComplexDecimalType extends PrimitiveType
@@ -117,7 +118,6 @@ case object StringType extends PrimitiveType( "string" ) with OrderedType {
 
 }
 
-
 //case object TextType extends PrimitiveType
 //case object BinaryType extends PrimitiveType
 //case object BlobType extends PrimitiveType
@@ -127,7 +127,15 @@ case object StringType extends PrimitiveType( "string" ) with OrderedType {
 //case object DateTimeType extends PrimitiveType
 //case object TimeType extends PrimitiveType
 //case object TimeIntervalType extends PrimitiveType
-//case object UUIDType extends PrimitiveType
+case object UUIDType extends PrimitiveType( "uuid" ) {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (x: UUID, y: UUID) => x compareTo y
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
 
 //case class EnumeratedType( elements: List[String] ) extends SimpleType {
 //	val name = "enum(" + elements.mkString( "," ) + ")"

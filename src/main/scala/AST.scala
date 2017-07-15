@@ -48,4 +48,4 @@ case class LogicalOr( left: LogicalExpression, right: LogicalExpression )
 
 case class Ident( pos: Position, name: String )
 
-case class ColumnSpec( name: Ident, typepos: Position, typ: Option[String], pkpos: Position, fkr: Ident, fkc: Ident )
+case class ColumnSpec( name: Ident, typepos: Position, typ: Option[String], pkpos: Position, fkr: Ident, fkc: Ident/*, auto: Boolean*/ )

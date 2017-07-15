@@ -52,7 +52,7 @@ object REPLMain extends App {
 				case Nil|List( "" ) =>
 				case _ if line1 startsWith "?" =>
 				case _ =>
-					conn.executeStatement( line1 ) match {
+					(if (line1 startsWith "/") conn.executeSQLStatement( line1 substring 1 ) else conn.executeRQLStatement( line1 )) match {
 						case TupleseqResult( tupleseq ) =>
 							val t =
 								new TextTable {

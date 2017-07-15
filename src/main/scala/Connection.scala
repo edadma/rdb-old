@@ -14,10 +14,12 @@ class Connection {
 	variables ++= Builtins.scalarFunctions
 	variables ++= Builtins.constants
 
-	def executeStatement( statement: String ): StatementResult = {
-		val p = new RQLParser
-		val ast = p.parseFromString( statement, p.statement )
 
+	def executeRQLStatement( statement: String ): StatementResult = executeStatement( RQLParser.parseStatement(statement) )
+
+	def executeSQLStatement( statement: String ): StatementResult = executeStatement( SQLParser.parseStatement(statement) )
+
+	def executeStatement( ast: AST ): StatementResult =
 		ast match {
 			case AssignRelationStatement( Ident(pos, name), relation ) =>
 				if (baseRelations contains name)
@@ -93,7 +95,6 @@ class Connection {
 			case t: TupleseqExpression =>
 				TupleseqResult( evalTupleseq(null, t) )
 		}
-	}
 
 	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ): Tupleseq = {
 		tupleseq match {
@@ -172,7 +173,7 @@ class Connection {
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
 				val cols = columns map (evalExpression(colafuse, dismetadata, rel.metadata, _)) toVector
 
-				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, colafuse.state, cols )
+				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, colafuse.state, if (cols isEmpty) dis else cols )
 			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )

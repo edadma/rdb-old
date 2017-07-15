@@ -6,6 +6,16 @@ import util.parsing.combinator.RegexParsers
 import xyz.hyperreal.lia.Math
 
 
+object RQLParser {
+
+	def parseStatement( statement: String ) = {
+		val p = new RQLParser
+
+		p.parseFromString( statement, p.statement )
+	}
+
+}
+
 class RQLParser extends RegexParsers {
 	def pos = positioned( success(new Positional{}) ) ^^ { _.pos }
 
