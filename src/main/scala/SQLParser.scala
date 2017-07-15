@@ -31,13 +31,19 @@ class SQLParser extends RegexParsers {
 	def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def query =
-		("select" ~> pos ~ (expressions|"*" ^^^ Nil) <~ "from") ~ relation ~ opt(where) ~ opt(groupby) ^^ {
-			case _ ~ Nil ~ r ~ None ~ None => r
-			case _ ~ e ~ r ~ None ~ None => ProjectionRelationExpression( r, e )
-			case _ ~ Nil ~ r ~ Some( w ) ~ None => SelectionRelationExpression( r, w )
-			case _ ~ e ~ r ~ Some( w ) ~ None => ProjectionRelationExpression( SelectionRelationExpression(r, w), e )
-			case p ~ e ~ r ~ None ~ Some( d ~ h ) => GroupingRelationExpression( r, d, h, p, e )
-			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) => GroupingRelationExpression( SelectionRelationExpression(r, w), d, h, p, e )
+		("select" ~> pos ~ (expressions|"*" ^^^ Nil) <~ "from") ~ relation ~ opt(where) ~ opt(groupby) ~ opt(orderby) ^^ {
+			case _ ~ Nil ~ r ~ None ~ None ~ None => r
+			case _ ~ e ~ r ~ None ~ None ~ None => ProjectionRelationExpression( r, e )
+			case _ ~ Nil ~ r ~ Some( w ) ~ None ~ None => SelectionRelationExpression( r, w )
+			case _ ~ e ~ r ~ Some( w ) ~ None ~ None => ProjectionRelationExpression( SelectionRelationExpression(r, w), e )
+			case p ~ e ~ r ~ None ~ Some( d ~ h ) ~ None => GroupingRelationExpression( r, d, h, p, e )
+			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) ~ None => GroupingRelationExpression( SelectionRelationExpression(r, w), d, h, p, e )
+			case _ ~ Nil ~ r ~ None ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( r, s, !o.contains("desc") )
+			case _ ~ e ~ r ~ None ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( ProjectionRelationExpression(r, e), s, !o.contains("desc") )
+			case _ ~ Nil ~ r ~ Some( w ) ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( SelectionRelationExpression(r, w), s, !o.contains("desc") )
+			case _ ~ e ~ r ~ Some( w ) ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( ProjectionRelationExpression(SelectionRelationExpression(r, w), e), s, !o.contains("desc") )
+			case p ~ e ~ r ~ None ~ Some( d ~ h ) ~ Some( s ~ o ) => SortedTupleseqExpression( GroupingRelationExpression(r, d, h, p, e), s, !o.contains("desc") )
+			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) ~ Some( s ~ o ) => SortedTupleseqExpression( GroupingRelationExpression(SelectionRelationExpression(r, w), d, h, p, e), s, !o.contains("desc") )
 		}
 
 	def relation = ident ^^ RelationVariableExpression
@@ -45,6 +51,8 @@ class SQLParser extends RegexParsers {
 	def where = "where" ~> logicalExpression
 
 	def groupby = "group" ~ "by" ~> expressions ~ opt("having" ~> logicalExpression)
+
+	def orderby = "order" ~ "by" ~> rep1sep(ident, ",") ~ opt("asc"|"desc")
 
 	def expressions = rep1sep(valueExpression, ",")
 

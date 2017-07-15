@@ -1,7 +1,5 @@
 package xyz.hyperreal.rdb
 
-import collection.mutable.ArrayBuffer
-
 
 class SortedTupleseq( relation: Relation, fields: List[Int], ascending: Boolean ) extends AbstractTupleseq {
 
