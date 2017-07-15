@@ -24,11 +24,6 @@ class SortedTupleseq( relation: Relation, fields: List[Int], ascending: Boolean 
 		compare( fields )
 	}
 
-	def iterator = {
-		val rows = new ArrayBuffer[Tuple]
-
-		rows ++= relation
-		rows.sortWith( lt ).iterator
-	}
+	def iterator = relation.toArray sortWith lt iterator
 
 }
