@@ -109,6 +109,6 @@ object Main extends App {
 	{[a, b] (1, 2), (-3, 4)} (sum(a))
 	{[a, b] (1, 2), (3, 4)} (count())
 
-	{[a, b] (1, 2), (0, 5), (3, 4)} order by a
+	{[a, b, c] (1, 2, 7), (0, 5, 7), (3, 4, 6)} order by a
 	*/
 }
