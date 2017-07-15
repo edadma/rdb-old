@@ -1,7 +1,6 @@
 package xyz.hyperreal.rdb
 
-import scala.util.parsing.input.Position
-import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, ListBuffer}
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 import xyz.hyperreal.lia.{FunctionMap, Math}
 
@@ -281,6 +280,10 @@ class Connection {
 
 	def evalExpression( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
+			case AliasValueExpression( expr, alias ) =>
+				val v = evalExpression( afuse, fmetadata, ametadata, expr )
+
+				AliasValue( v.pos, alias.name, v.typ, alias.pos, v )
 			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
 			case IntegerLit( n ) => LiteralValue( ast.pos, n, IntegerType, Integer.valueOf(n) )
 			case StringLit( s ) => LiteralValue( ast.pos, '"' + s + '"', StringType, s )
@@ -459,6 +462,7 @@ class Connection {
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
+			case AliasValue( _, _, _, _, v ) => evalValue( row, v )
 			case LiteralValue( _, _, _, v ) => v
 			case VariableValue( _, _, _, v ) => v
 			case FieldValue( _, _, _, index: Int ) => row(index)
@@ -530,25 +534,6 @@ case object FieldAndAFUsed extends AggregateFunctionUseState
 trait AggregateFunctionUse
 case object AFUseNotAllowed extends AggregateFunctionUse
 case class AFUseOrField( var state: AggregateFunctionUseState ) extends AggregateFunctionUse
-
-trait ValueResult {
-	val pos: Position
-	val heading: String
-	val typ: Type
-}
-
-case class LiteralValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
-case class VariableValue( pos: Position, heading: String, typ: Type, value: AnyRef ) extends ValueResult
-case class FieldValue( pos: Position, heading: String, typ: Type, index: Int ) extends ValueResult
-case class MarkedValue( pos: Position, heading: String, typ: Type, m: Mark ) extends ValueResult
-case class BinaryValue( pos: Position, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap,
-												right: ValueResult ) extends ValueResult
-case class AggregateFunctionValue( pos: Position, heading: String, typ: Type, af: AggregateFunction, args: List[ValueResult] ) extends ValueResult {
-	var func: AggregateFunctionInstance = _
-	}
-case class ScalarFunctionValue( pos: Position, heading: String, typ: Type, func: ScalarFunction, args: List[ValueResult] ) extends ValueResult
-case class UnaryValue( pos: Position, heading: String, typ: Type, v: ValueResult, operation: String, func: FunctionMap ) extends ValueResult
-case class LogicalValue( pos: Position, heading: String, typ: Type, logical: LogicalResult ) extends ValueResult
 
 trait LogicalResult {
 	val heading: String

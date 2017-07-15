@@ -97,11 +97,19 @@ class RQLParser extends RegexParsers {
 
 	def expressions = rep1sep(valueExpression, ",")
 
+	def alias( expr: Parser[ValueExpression] ): Parser[ValueExpression] =
+		expr ~ ("=>" ~> ident) ^^ { case e ~ a => AliasValueExpression( e, a ) }
+
 	def valueExpression: Parser[ValueExpression] =
+		alias( lowPrecvalueExpression ) |
+		lowPrecvalueExpression
+
+	def lowPrecvalueExpression: Parser[ValueExpression] =
 		logicalExpression ^^ LogicalValueExpression |
 		additiveExpression
 
 	def nonLogicalValueExpression: Parser[ValueExpression] =
+		alias( additiveExpression ) |
 		additiveExpression
 
 	def additiveExpression: Parser[ValueExpression] =
