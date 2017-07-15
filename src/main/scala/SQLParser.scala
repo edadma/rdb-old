@@ -31,13 +31,13 @@ class SQLParser extends RegexParsers {
 	def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
 	def query =
-		("select" ~> (expressions|"*" ^^^ Nil) <~ "from") ~ relation ~ opt(where) ~ opt(groupby) ^^ {
-			case Nil ~ r ~ None ~ None => r
-			case e ~ r ~ None ~ None => ProjectionRelationExpression( r, e )
-			case Nil ~ r ~ Some( w ) ~ None => SelectionRelationExpression( r, w )
-			case e ~ r ~ Some( w ) ~ None => ProjectionRelationExpression( SelectionRelationExpression(r, w), e )
-			case e ~ r ~ None ~ Some( g ) => GroupingRelationExpression( r, g, e )
-			case e ~ r ~ Some( w ) ~ Some( g ) => GroupingRelationExpression( SelectionRelationExpression(r, w), g, e )
+		("select" ~> pos ~ (expressions|"*" ^^^ Nil) <~ "from") ~ relation ~ opt(where) ~ opt(groupby) ^^ {
+			case _ ~ Nil ~ r ~ None ~ None => r
+			case _ ~ e ~ r ~ None ~ None => ProjectionRelationExpression( r, e )
+			case _ ~ Nil ~ r ~ Some( w ) ~ None => SelectionRelationExpression( r, w )
+			case _ ~ e ~ r ~ Some( w ) ~ None => ProjectionRelationExpression( SelectionRelationExpression(r, w), e )
+			case p ~ e ~ r ~ None ~ Some( g ) => GroupingRelationExpression( r, g, p, e )
+			case p ~ e ~ r ~ Some( w ) ~ Some( g ) => GroupingRelationExpression( SelectionRelationExpression(r, w), g, p, e )
 		}
 
 	def relation = ident ^^ RelationVariableExpression

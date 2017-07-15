@@ -165,7 +165,7 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
-			case GroupingRelationExpression( relation, discriminator, columns ) =>
+			case GroupingRelationExpression( relation, discriminator, cpos, columns ) =>
 				val rel = evalRelation( relation )
 				val disafuse = AFUseOrField( NoFieldOrAFUsed )
 				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _)) toVector
@@ -173,7 +173,10 @@ class Connection {
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
 				val cols = columns map (evalExpression(colafuse, dismetadata, rel.metadata, _)) toVector
 
-				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, colafuse.state, if (cols isEmpty) dis else cols )
+				if (cols isEmpty)
+					problem( cpos, "at least one expression must be given for grouping" )
+
+				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, colafuse.state, cols )
 			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
