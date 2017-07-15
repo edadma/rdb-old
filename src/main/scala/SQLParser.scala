@@ -36,15 +36,15 @@ class SQLParser extends RegexParsers {
 			case _ ~ e ~ r ~ None ~ None => ProjectionRelationExpression( r, e )
 			case _ ~ Nil ~ r ~ Some( w ) ~ None => SelectionRelationExpression( r, w )
 			case _ ~ e ~ r ~ Some( w ) ~ None => ProjectionRelationExpression( SelectionRelationExpression(r, w), e )
-			case p ~ e ~ r ~ None ~ Some( g ) => GroupingRelationExpression( r, g, p, e )
-			case p ~ e ~ r ~ Some( w ) ~ Some( g ) => GroupingRelationExpression( SelectionRelationExpression(r, w), g, p, e )
+			case p ~ e ~ r ~ None ~ Some( d ~ h ) => GroupingRelationExpression( r, d, h, p, e )
+			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) => GroupingRelationExpression( SelectionRelationExpression(r, w), d, h, p, e )
 		}
 
 	def relation = ident ^^ RelationVariableExpression
 
 	def where = "where" ~> logicalExpression
 
-	def groupby = "group" ~ "by" ~> expressions
+	def groupby = "group" ~ "by" ~> expressions ~ opt("having" ~> logicalExpression)
 
 	def expressions = rep1sep(valueExpression, ",")
 

@@ -165,18 +165,20 @@ class Connection {
 
 	def evalRelation( ast: RelationExpression ): Relation = {
 		ast match {
-			case GroupingRelationExpression( relation, discriminator, cpos, columns ) =>
+			case GroupingRelationExpression( relation, discriminator, filter, cpos, columns ) =>
 				val rel = evalRelation( relation )
 				val disafuse = AFUseOrField( NoFieldOrAFUsed )
 				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _)) toVector
 				val dismetadata = new Metadata( dis map (c => Column( "", c.heading, c.typ, None )) )
+				val filtafuse = AFUseOrField( NoFieldOrAFUsed )
+				val filt = filter map (evalLogical( filtafuse, dismetadata, rel.metadata, _ ))
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
 				val cols = columns map (evalExpression(colafuse, dismetadata, rel.metadata, _)) toVector
 
 				if (cols isEmpty)
 					problem( cpos, "at least one expression must be given for grouping" )
 
-				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, colafuse.state, cols )
+				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, filtafuse.state, filt, colafuse.state, cols )
 			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
@@ -395,11 +397,11 @@ class Connection {
 				LogicalValue( e.pos, log.heading, LogicalType, log )
 		}
 
-	def aggregateCondition( relation: Relation, condition: LogicalResult, afuse: AggregateFunctionUseState ) =
+	def aggregateCondition( tuples: Iterable[Tuple], condition: LogicalResult, afuse: AggregateFunctionUseState ) =
 		if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
 			initAggregation( condition )
 
-			for (t <- relation.iterator)
+			for (t <- tuples.iterator)
 				aggregate( t, condition )
 		}
 

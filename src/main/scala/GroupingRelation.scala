@@ -2,7 +2,8 @@ package xyz.hyperreal.rdb
 
 
 class GroupingRelation( conn: Connection, relation: Relation, disafuse: AggregateFunctionUseState, discriminator: Vector[ValueResult],
-												dismetadata: Metadata, colafuse: AggregateFunctionUseState, columns: Vector[ValueResult] ) extends AbstractRelation {
+												dismetadata: Metadata, filtafuse: AggregateFunctionUseState, filter: Option[LogicalResult],
+												colafuse: AggregateFunctionUseState, columns: Vector[ValueResult] ) extends AbstractRelation {
 
 	val metadata = new Metadata( columns map (c => Column( "", c.heading, c.typ, None )) )
 
@@ -11,10 +12,14 @@ class GroupingRelation( conn: Connection, relation: Relation, disafuse: Aggregat
 
 		val groups = relation groupBy (conn.evalVector( _, discriminator ))
 
-		for ((k, g) <- groups.iterator)
-			yield {
-				conn.aggregateColumns( g, columns, colafuse )
-				conn.evalVector( k, columns )
-			}
+		groups.iterator filter {
+			case (k, g) if filter nonEmpty =>
+				conn.aggregateCondition( g, filter get, filtafuse )
+				conn.evalCondition( k, filter get ) == TRUE
+			case _ => true
+		} map { case (k, g) =>
+			conn.aggregateColumns( g, columns, colafuse )
+			conn.evalVector( k, columns )
+		}
 	}
 }

@@ -71,8 +71,8 @@ class RQLParser extends RegexParsers {
 		projectionRelation
 
 	def projectionRelation: Parser[RelationExpression] = positioned(
-		selectionRelation ~ ("<" ~> rep1sep(nonLogicalValueExpression, ",") <~ ">") ~ ("(" ~> expressions <~ ")") ^^ {
-			case r ~ d ~ c => GroupingRelationExpression( r, d, null, c ) } |
+		selectionRelation ~ ("<" ~> rep1sep(nonLogicalValueExpression, ",") <~ ">") ~ opt("[" ~> logicalExpression <~ "]") ~ ("(" ~> expressions <~ ")") ^^ {
+			case r ~ d ~ f ~ c => GroupingRelationExpression( r, d, f, null, c ) } |
 		selectionRelation ~ ("(" ~> expressions <~ ")") ^^ { case r ~ c => ProjectionRelationExpression( r, c ) } |
 		selectionRelation
 		)

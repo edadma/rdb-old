@@ -5,7 +5,7 @@ import xyz.hyperreal.table.TextTable
 
 object Main extends App {
 	val conn = new Connection
-	val statement = """ {[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} <a> (a, sum(b)) """
+	val statement = """ {[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} <a> [a < 2] (a, sum(b)) """
 
 	conn.executeRQLStatement( statement ) match {
 		case TupleseqResult( tupleseq ) =>
@@ -108,6 +108,8 @@ object Main extends App {
 	{[a, b] (1, 2), (2, 4)} (float(avg(a)))
 	{[a, b] (1, 2), (-3, 4)} (sum(a))
 	{[a, b] (1, 2), (3, 4)} (count())
+
+	{[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} <a> [a < 2] (a, sum(b))
 
 	{[a, b, c] (1, 2, 7), (0, 5, 7), (3, 4, 6)} order by a
 	*/
