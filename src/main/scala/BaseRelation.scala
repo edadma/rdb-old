@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb
 
-import collection.mutable.{ArrayBuffer, ListBuffer, HashMap, TreeMap}
+import collection.mutable.{ArrayBuffer, ListBuffer/*, HashMap, TreeMap*/}
 
 
 class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRelation {
@@ -11,16 +11,16 @@ class BaseRelation( name: String, definition: Seq[Column] ) extends AbstractRela
 
 	val metadata = new Metadata( cols toIndexedSeq )
 
-	private val indexes = new HashMap[String, TreeMap[AnyRef, Int]]
-	private val pkindex =
-		metadata primaryKey match {
-			case None => sys.error( s"attempt to create base relation '$name' with no primary key" )
-			case Some( Column( _, col, typ, _ ) ) =>
-				val index = new TreeMap[AnyRef, Int]()( typ )
-
-				indexes(col) = index
-				index
-		}
+//	private val indexes = new HashMap[String, TreeMap[AnyRef, Int]]
+//	private val pkindex =
+//		metadata primaryKey match {
+//			case None => sys.error( s"attempt to create base relation '$name' with no primary key" )
+//			case Some( Column( _, col, typ, _ ) ) =>
+//				val index = new TreeMap[AnyRef, Int]()( typ )
+//
+//				indexes(col) = index
+//				index
+//		}
 
 	def iterator = rows.iterator map (_ toVector)
 

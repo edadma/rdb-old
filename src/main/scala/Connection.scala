@@ -309,7 +309,7 @@ class Connection {
 							case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 						}
 
-						FieldValue( ast.pos, n.name, fmetadata.header(ind).typ, ind )
+						FieldValue( ast.pos, fmetadata.header(ind).table, n.name, fmetadata.header(ind).typ, ind )
 				}
 			case ValueColumnExpression( t, c ) =>
 				if (!fmetadata.tableSet(t.name))
@@ -324,17 +324,17 @@ class Connection {
 								case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 							}
 
-							FieldValue( ast.pos, t.name + '.' + c.name, fmetadata.header(ind).typ, ind )
+							FieldValue( ast.pos, t.name, c.name, fmetadata.header(ind).typ, ind )
 					}
 			case e@BinaryValueExpression( left, oppos, operation, func, right ) =>
 				val l = evalExpression( afuse, fmetadata, ametadata, left )
 				val r = evalExpression( afuse, fmetadata, ametadata, right )
 
 				(l, r) match {
-					case (LiteralValue(p, _, _, x), LiteralValue(_, _, _, y)) =>
+					case (LiteralValue(p, _, _, _, x), LiteralValue(_, _, _, _, y)) =>
 						val res = Math( func, x, y )
 
-						LiteralValue( p, res.toString, Type.fromValue(res).get, res )
+						LiteralValue( p, null, res.toString, Type.fromValue(res).get, res )
 					case _ =>
 						val space = if (Set("+", "-")( operation )) " " else ""
 						val lh =
@@ -348,23 +348,23 @@ class Connection {
 							else
 								r.heading
 
-						BinaryValue( oppos, s"$lh$space$operation$space$rh", l.typ, l, operation, func, r )//todo: handle type promotion correctly
+						BinaryValue( oppos, null, s"$lh$space$operation$space$rh", l.typ, l, operation, func, r )//todo: handle type promotion correctly
 				}
 			case UnaryValueExpression( oppos, operation, func, expr ) =>
 				val e = evalExpression( afuse, fmetadata, ametadata, expr )
 
 				e match {
-					case LiteralValue( p, _, _, x ) =>
+					case LiteralValue( p, _, _, _, x ) =>
 						val res = Math( func, x )
 
-						LiteralValue( p, res.toString, Type.fromValue(res).get, res )
-					case _ => UnaryValue( oppos, s"$operation${e.heading}", e.typ, e, operation, func ) //todo: handle type promotion correctly
+						LiteralValue( p, null, res.toString, Type.fromValue(res).get, res )
+					case _ => UnaryValue( oppos, null, s"$operation${e.heading}", e.typ, e, operation, func ) //todo: handle type promotion correctly
 				}
 			case e@ApplicativeValueExpression( func, args ) =>
 				val f = evalExpression( afuse, fmetadata, ametadata, func )
 
 				f match {
-					case VariableValue( _, _, _, af: AggregateFunction ) =>
+					case VariableValue( _, _, _, _, af: AggregateFunction ) =>
 						afuse match {
 							case AFUseNotAllowed => problem( e.pos, "aggregate function not allowed here" )
 							case use@AFUseOrField( OnlyFieldUsed ) => use.state = FieldAndAFUsed
@@ -379,8 +379,8 @@ class Connection {
 							else
 								s"${f.heading}(${a map (_.heading) mkString ","})"
 
-						AggregateFunctionValue( e.pos, heading, af.typ(a map (_.typ)), af, a )
-					case VariableValue( _, _, _, sf: ScalarFunction ) =>
+						AggregateFunctionValue( e.pos, null, heading, af.typ(a map (_.typ)), af, a )
+					case VariableValue( _, _, _, _, sf: ScalarFunction ) =>
 						val a = args map (evalExpression( afuse, fmetadata, ametadata, _ ))
 						val heading =
 							if (a == Nil)
@@ -388,13 +388,13 @@ class Connection {
 							else
 								s"${f.heading}(${a map (_.heading) mkString ","})"
 
-						ScalarFunctionValue(e.pos, heading, sf.typ(a map (_.typ)), sf, a )
+						ScalarFunctionValue(e.pos, null, heading, sf.typ(a map (_.typ)), sf, a )
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
 			case e@LogicalValueExpression( logical ) =>
 				val log = evalLogical( afuse, fmetadata, logical )//todo: this might not be right if there are aggregates in a boolean expression
 
-				LogicalValue( e.pos, log.heading, LogicalType, log )
+				LogicalValue( e.pos, null, log.heading, LogicalType, log )
 		}
 
 	def aggregateCondition( tuples: Iterable[Tuple], condition: LogicalResult, afuse: AggregateFunctionUseState ) =
@@ -416,17 +416,17 @@ class Connection {
 
 	def aggregate( row: Tuple, result: ValueResult ): Unit =
 		result match {
-			case BinaryValue( _, _, _, l, _, _, r ) =>
+			case BinaryValue( _, _, _, _, l, _, _, r ) =>
 				aggregate( row, l )
 				aggregate( row, r )
-			case UnaryValue( _, _, _, v, _, _ ) =>
+			case UnaryValue( _, _, _, _, v, _, _ ) =>
 				aggregate( row, v )
-			case a@AggregateFunctionValue( _, _, _, _, args ) =>
+			case a@AggregateFunctionValue( _, _, _, _, _, args ) =>
 				a.func.next( args map (evalValue( row, _ )) )
-			case ScalarFunctionValue( _, _, _, _, args ) =>
+			case ScalarFunctionValue( _, _, _, _, _, args ) =>
 				for (a <- args)
 					aggregate( row, a )
-			case LogicalValue( _, _, _, l ) =>
+			case LogicalValue( _, _, _, _, l ) =>
 				aggregate( row, l )
 			case _ =>
 		}
@@ -441,17 +441,17 @@ class Connection {
 
 	def initAggregation( result: ValueResult ): Unit =
 		result match {
-			case BinaryValue( _, _, _, l, _, _, r ) =>
+			case BinaryValue( _, _, _, _, l, _, _, r ) =>
 				initAggregation( l )
 				initAggregation( r )
-			case UnaryValue( _, _, _, v, _, _ ) =>
+			case UnaryValue( _, _, _, _, v, _, _ ) =>
 				initAggregation( v )
-			case a@AggregateFunctionValue( _, _, _, af, _ ) =>
+			case a@AggregateFunctionValue( _, _, _, _, af, _ ) =>
 				a.func = af.instance
-			case ScalarFunctionValue( _, _, _, _, args ) =>
+			case ScalarFunctionValue( _, _, _, _, _, args ) =>
 				for (a <- args)
 					initAggregation( a )
-			case LogicalValue( _, _, _, l ) =>
+			case LogicalValue( _, _, _, _, l ) =>
 				initAggregation( l )
 			case _ =>
 		}
@@ -468,12 +468,12 @@ class Connection {
 
 	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
 		result match {
-			case AliasValue( _, _, _, _, v ) => evalValue( row, v )
-			case LiteralValue( _, _, _, v ) => v
-			case VariableValue( _, _, _, v ) => v
-			case FieldValue( _, _, _, index: Int ) => row(index)
-			case MarkedValue( _, _, _, m ) => m
-			case BinaryValue( p, _, _, l, o, f, r ) =>
+			case AliasValue( _, _, _, _, _, v ) => evalValue( row, v )
+			case LiteralValue( _, _, _, _, v ) => v
+			case VariableValue( _, _, _, _, v ) => v
+			case FieldValue( _, _, _, _, index: Int ) => row(index)
+			case MarkedValue( _, _, _, _, m ) => m
+			case BinaryValue( p, _, _, _, l, o, f, r ) =>
 				val lv = evalValue( row, l )
 				val rv = evalValue( row, r )
 
@@ -487,15 +487,15 @@ class Connection {
 							case _: Exception => problem( p, "error performing binary operation" )
 						}
 				}
-			case UnaryValue( p, _, _, v, _, f ) =>
+			case UnaryValue( p, _, _, _, v, _, f ) =>
 				try {
 					Math( f, evalValue(row, v) )
 				} catch {
 					case _: Exception => problem( p, "error performing unary operation" )
 				}
-			case ScalarFunctionValue( _, _, _, func, args ) => func( args map (evalValue( row, _ )) ).asInstanceOf[AnyRef]
+			case ScalarFunctionValue( _, _, _, _, func, args ) => func( args map (evalValue( row, _ )) ).asInstanceOf[AnyRef]
 			case a: AggregateFunctionValue => a.func.result.asInstanceOf[AnyRef]
-			case LogicalValue( _, _, _, l ) => evalCondition( row, l )
+			case LogicalValue( _, _, _, _, l ) => evalCondition( row, l )
 		}
 
 	def evalCondition( row: Tuple, cond: LogicalResult ): Logical =
