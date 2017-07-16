@@ -500,6 +500,8 @@ class Connection {
 
 	def evalCondition( row: Tuple, cond: LogicalResult ): Logical =
 		cond match {
+			case ExistsLogical( _, relation ) =>
+				Logical.fromBoolean( relation nonEmpty )
 			case LiteralLogical( _, lit ) => lit
 			case BinaryLogical( _, left, _, pred, right ) =>
 				val lv = evalValue( row, left )
