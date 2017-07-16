@@ -169,14 +169,15 @@ class RQLParser extends RegexParsers {
 
 	def logicalExpression =
 		nonLogicalValueExpression ~ rep1(comparison ~ nonLogicalValueExpression) ^^ {
-			case l ~ cs => ComparisonExpression( l, cs map {case c ~ v => (c, lookup(c), v)} ) } |
+			case l ~ cs => ComparisonLogicalExpression( l, cs map { case c ~ v => (c, lookup(c), v)} ) } |
+		"exists" ~> relation ^^ ExistsLogicalExpression |
 		logicalPrimary
 
 	def logicalPrimary = positioned(
-		"true" ^^^ LogicalLit( TRUE ) |
-		"false" ^^^ LogicalLit( FALSE ) |
-		"maybe-a" ^^^ LogicalLit( MAYBE_A ) |
-		"maybe-i" ^^^ LogicalLit( MAYBE_I )
+		"true" ^^^ LiteralLogicalExpression( TRUE ) |
+		"false" ^^^ LiteralLogicalExpression( FALSE ) |
+		"maybe-a" ^^^ LiteralLogicalExpression( MAYBE_A ) |
+		"maybe-i" ^^^ LiteralLogicalExpression( MAYBE_I )
 		)
 
 	def parseFromString[T]( src: String, grammar: Parser[T] ) = {

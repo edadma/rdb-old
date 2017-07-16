@@ -473,7 +473,7 @@ class Connection {
 			case VariableValue( _, _, _, _, v ) => v
 			case FieldValue( _, _, _, _, index: Int ) => row(index)
 			case MarkedValue( _, _, _, _, m ) => m
-			case BinaryValue( p, _, _, _, l, o, f, r ) =>
+			case BinaryValue( p, _, _, _, l, _, f, r ) =>
 				val lv = evalValue( row, l )
 				val rv = evalValue( row, r )
 
@@ -521,8 +521,12 @@ class Connection {
 
 	def evalLogical( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: LogicalExpression ): LogicalResult = {
 		ast match {
-			case LogicalLit( lit ) => LiteralLogical( lit.toString, lit )
-			case ComparisonExpression( left, List((comp, pred, right)) ) =>
+			case ExistsLogicalExpression( relation ) =>
+				val rel = evalRelation( relation )
+
+				ExistsLogical( s"exists ($rel)", rel )
+			case LiteralLogicalExpression( lit ) => LiteralLogical( lit.toString, lit )
+			case ComparisonLogicalExpression( left, List((comp, pred, right)) ) =>
 				val l = evalExpression( afuse, fmetadata, ametadata, left )
 				val r = evalExpression( afuse, fmetadata, ametadata, right )
 
@@ -547,6 +551,7 @@ trait LogicalResult {
 
 case class LiteralLogical( heading: String, value: Logical ) extends LogicalResult
 case class BinaryLogical( heading: String, left: ValueResult, comp: String, pred: FunctionMap, right: ValueResult ) extends LogicalResult
+case class ExistsLogical( heading: String, relation: Relation ) extends LogicalResult
 
 trait StatementResult
 case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult

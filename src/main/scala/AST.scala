@@ -41,10 +41,11 @@ case class TupleseqLit( data: List[TupleExpression] ) extends TupleseqExpression
 case class SortedTupleseqExpression( relation: RelationExpression, names: List[Ident], ascending: Boolean ) extends TupleseqExpression
 
 trait LogicalExpression extends Positional
-case class LogicalLit( l: Logical ) extends LogicalExpression
-case class ComparisonExpression( left: ValueExpression, comp: List[(String, FunctionMap, ValueExpression)] ) extends LogicalExpression
-case class LogicalAnd( left: LogicalExpression, right: LogicalExpression )
-case class LogicalOr( left: LogicalExpression, right: LogicalExpression )
+case class LiteralLogicalExpression( l: Logical ) extends LogicalExpression
+case class ComparisonLogicalExpression( left: ValueExpression, comp: List[(String, FunctionMap, ValueExpression)] ) extends LogicalExpression
+case class AndLogicalExpression( left: LogicalExpression, right: LogicalExpression ) extends LogicalExpression
+case class OrLogicalExpression( left: LogicalExpression, right: LogicalExpression ) extends LogicalExpression
+case class ExistsLogicalExpression( relation: RelationExpression ) extends LogicalExpression
 
 case class Ident( pos: Position, name: String )
 
