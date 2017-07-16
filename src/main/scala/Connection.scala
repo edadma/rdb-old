@@ -289,18 +289,18 @@ class Connection {
 			case AliasValueExpression( expr, alias ) =>
 				val v = evalExpression( afuse, fmetadata, ametadata, expr )
 
-				AliasValue( v.pos, alias.name, v.typ, alias.pos, v )
-			case FloatLit( n ) => LiteralValue( ast.pos, n, FloatType, java.lang.Double.valueOf(n) )
-			case IntegerLit( n ) => LiteralValue( ast.pos, n, IntegerType, Integer.valueOf(n) )
-			case StringLit( s ) => LiteralValue( ast.pos, '"' + s + '"', StringType, s )
-			case MarkLit( m ) => MarkedValue( ast.pos, m.toString, null, m )
+				AliasValue( v.pos, v.table, alias.name, v.typ, alias.pos, v )
+			case FloatLit( n ) => LiteralValue( ast.pos, null, n, FloatType, java.lang.Double.valueOf(n) )
+			case IntegerLit( n ) => LiteralValue( ast.pos, null, n, IntegerType, Integer.valueOf(n) )
+			case StringLit( s ) => LiteralValue( ast.pos, null, '"' + s + '"', StringType, s )
+			case MarkLit( m ) => MarkedValue( ast.pos, null, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
 				fmetadata.columnMap get n.name match {
 					case None =>
 						variables get n.name match {
 							case None => problem( n.pos, "no such column or variable" )
 							case Some( v ) =>
-								VariableValue( n.pos, n.name, Type.fromValue(v).orNull, v )//todo: handle function types correctly
+								VariableValue( n.pos, null, n.name, Type.fromValue(v).orNull, v )//todo: handle function types correctly
 						}
 					case Some( ind ) =>
 						afuse match {
