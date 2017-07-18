@@ -9,6 +9,7 @@ trait AST
 
 trait StatementAST extends AST
 case class AssignRelationStatement( variable: Ident, relation: RelationExpression ) extends StatementAST
+case class CreateBaseRelationStatement( base: Ident, columns: List[ColumnDef] ) extends StatementAST
 case class InsertRelationStatement( base: Ident, relation: RelationExpression ) extends StatementAST
 case class InsertTupleseqStatement( base: Ident, tupleseq: TupleseqExpression ) extends StatementAST
 case class DeleteStatement( base: Ident, condition: LogicalExpression ) extends StatementAST
@@ -49,4 +50,5 @@ case class ExistsLogicalExpression( relation: RelationExpression ) extends Logic
 
 case class Ident( pos: Position, name: String )
 
-case class ColumnSpec( name: Ident, typepos: Position, typ: Option[String], pkpos: Position, fkr: Ident, fkc: Ident/*, auto: Boolean*/ )
+case class ColumnSpec( name: Ident, typepos: Position, typ: Option[String] )
+case class ColumnDef( name: Ident, typepos: Position, typ: Option[String], pkpos: Position, fkr: Ident, fkc: Ident/*, auto: Boolean*/ )

@@ -32,6 +32,7 @@ class RQLParser extends RegexParsers {
 
 	def statement: Parser[StatementAST] =
 		assignStatement |
+		createStatement |
 		insertStatement |
 		updateStatement |
 		deleteStatement |
@@ -41,8 +42,10 @@ class RQLParser extends RegexParsers {
 	def assignStatement =
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => AssignRelationStatement( n, r ) }
 
+	def createStatement =
+		("create" ~> ident) ~ columnsDef ^^ { case n ~ c => CreateBaseRelationStatement( n, c ) }
+
 	def insertStatement =
-		("create" ~> ident) ~ columns ^^ { case n ~ c => InsertRelationStatement( n, ListRelationExpression(c, Nil) ) } |
 		("insert" ~> ident) ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
 		("insert" ~> ident) ~ tupleseq ^^ { case n ~ t => InsertTupleseqStatement( n, t ) } |
 		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTupleseqStatement( n, TupleseqLit(List(t)) ) }
@@ -89,19 +92,27 @@ class RQLParser extends RegexParsers {
 
 	def relationPrimary: Parser[RelationExpression] = positioned(
 		"(" ~> relation <~ ")" |
-		("{" ~> columns) ~ (repsep(tuple, ",") <~ "}") ^^ { case c ~ d => ListRelationExpression( c, d ) } |
+		("{" ~> columnsSpec) ~ (repsep(tuple, ",") <~ "}") ^^ { case c ~ d => ListRelationExpression( c, d ) } |
 		ident ^^ RelationVariableExpression
 		)
 
-	def columns = "[" ~> rep1sep(column, ",") <~ "]"
+	def columnsSpec = "[" ~> rep1sep(columnSpec, ",") <~ "]"
 
-	def column =
+	def columnSpec =
+		ident ~ (":" ~> ident) ^^ {
+			case n ~ t => ColumnSpec( n, t.pos, Some(t.name) ) } |
+		ident ~ pos ^^ {
+			case n ~ tp => ColumnSpec( n, tp, None ) }
+
+	def columnsDef = "[" ~> rep1sep(columnDef, ",") <~ "]"
+
+	def columnDef =
 		ident ~ (":" ~> ident) ~ opt(pos <~ "*") ^^ {
-			case n ~ t ~ None => ColumnSpec( n, t.pos, Some(t.name), null, null, null )
-			case n ~ t ~ Some(p) => ColumnSpec( n, t.pos, Some(t.name), p, null, null ) } |
+			case n ~ t ~ None => ColumnDef( n, t.pos, Some(t.name), null, null, null )
+			case n ~ t ~ Some(p) => ColumnDef( n, t.pos, Some(t.name), p, null, null ) } |
 		ident ~ pos ~ opt(pos <~ "*") ^^ {
-			case n ~ tp ~ None => ColumnSpec( n, tp, None, null, null, null )
-			case n ~ tp ~ Some(pkp) => ColumnSpec( n, tp, None, pkp, null, null ) }
+			case n ~ tp ~ None => ColumnDef( n, tp, None, null, null, null )
+			case n ~ tp ~ Some(pkp) => ColumnDef( n, tp, None, pkp, null, null ) }
 
 	def tuple = positioned( "(" ~> expressions <~ ")" ^^ TupleExpression )
 

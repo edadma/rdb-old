@@ -12,7 +12,8 @@ object Type {
 			"logical" -> LogicalType,
 			"integer" -> IntegerType,
 			"float" -> FloatType,
-			"string" -> StringType
+			"string" -> StringType,
+			"decimal" -> DecimalType
 		)
 
 	def fromValue( v: Any ) = {
@@ -89,7 +90,16 @@ case object FloatType extends PrimitiveType( "float" ) with OrderedNumericalType
 
 }
 
-//case object DecimalType extends PrimitiveType
+case object DecimalType extends PrimitiveType( "decimal" ) with OrderedNumericalType {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (x: BigDecimal, y: BigDecimal) => x compareTo y
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
+
 //case object RationalType extends PrimitiveType
 case object ComplexIntegerType extends PrimitiveType( "complex integer" ) with NumericalType {
 

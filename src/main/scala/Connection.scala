@@ -218,7 +218,7 @@ class Connection {
 
 						if (pkpos != null)
 							if (pk)
-								problem( pkpos, "a relation must have exactly on primary key (rs-8)" )
+								problem( pkpos, "a relation must have exactly one primary key (rs-8)" )
 							else
 								pk = true
 					}
