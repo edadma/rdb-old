@@ -21,6 +21,38 @@ class Connection {
 
 	def executeStatement( ast: AST ): StatementResult =
 		ast match {
+			case CreateBaseRelationStatement( base, columns ) =>
+				var hset = Set[String]()
+				var pk = false
+
+				for (ColumnDef( Ident(p, n), _, _, pkpos, _, _ ) <- columns)
+					if (hset( n ))
+						problem( p, "duplicate column" )
+					else {
+						hset += n
+
+						if (pkpos != null)
+							if (pk)
+								problem( pkpos, "a relation must have exactly one primary key (rs-8)" )
+							else
+								pk = true
+					}
+
+				val types: Array[Type] =
+					columns map {
+						case ColumnDef( _, _, None, _, _, _ ) => null
+						case ColumnDef( _, p, Some(t), _, _, _ ) =>
+							Type.names.getOrElse( t, problem( p, s"unrecognized type name '$t'" ) )
+					} toArray
+				val header =
+					(columns zip types).zipWithIndex map {
+						case ((ColumnDef( _, p, _, _, _, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
+						case ((ColumnDef( Ident(_, n), _ , _, _, _, _), t), 0) if !pk => BaseRelationColumn( base.name, n, t, Some(PrimaryKey) )
+						case ((ColumnDef( Ident(_, n), _ , _, pkpos, _, _), t), _) => BaseRelationColumn( base.name, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
+					}
+
+				new ListRelation( header toIndexedSeq, body )
+
 			case AssignRelationStatement( Ident(pos, name), relation ) =>
 				if (baseRelations contains name)
 					problem( pos, "a base relation by that name already exists" )
@@ -169,7 +201,7 @@ class Connection {
 				val rel = evalRelation( relation )
 				val disafuse = AFUseOrField( NoFieldOrAFUsed )
 				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _)) toVector
-				val dismetadata = new Metadata( dis map (c => Column( "", c.heading, c.typ, None )) )
+				val dismetadata = new Metadata( dis map (c => SimpleColumn( "", c.heading, c.typ )) )
 				val filtafuse = AFUseOrField( NoFieldOrAFUsed )
 				val filt = filter map (evalLogical( filtafuse, dismetadata, rel.metadata, _ ))
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
@@ -210,23 +242,17 @@ class Connection {
 				var hset = Set[String]()
 				var pk = false
 
-				for (ColumnSpec( Ident(p, n), _, _, pkpos, _, _ ) <- columns)
+				for (ColumnSpec( Ident(p, n), _, _ ) <- columns)
 					if (hset( n ))
-						problem( p, s"duplicate $n" )
+						problem( p, "duplicate column" )
 					else {
 						hset += n
-
-						if (pkpos != null)
-							if (pk)
-								problem( pkpos, "a relation must have exactly one primary key (rs-8)" )
-							else
-								pk = true
 					}
 
 				val types: Array[Type] =
 					columns map {
-						case ColumnSpec( _, _, None, _, _, _ ) => null
-						case ColumnSpec( _, p, Some(t), _, _, _ ) =>
+						case ColumnSpec( _, _, None ) => null
+						case ColumnSpec( _, p, Some(t) ) =>
 							Type.names.getOrElse( t, problem( p, s"unrecognized type name '$t'" ) )
 					} toArray
 				val body =
@@ -241,9 +267,8 @@ class Connection {
 				val tab = anonymous
 				val header =
 					(columns zip types).zipWithIndex map {
-						case ((ColumnSpec( _, p, _, _, _, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
-						case ((ColumnSpec( Ident(_, n), _ , _, _, _, _), t), 0) if !pk => Column( tab, n, t, Some(PrimaryKey) )
-						case ((ColumnSpec( Ident(_, n), _ , _, pkpos, _, _), t), _) => Column( tab, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
+						case ((ColumnSpec( _, p, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
+						case ((ColumnSpec( Ident(_, n), _ , _ ), t), 0) if !pk => SimpleColumn( tab, n, t )
 					}
 
 				new ListRelation( header toIndexedSeq, body )
@@ -278,7 +303,7 @@ class Connection {
 				else if (l contains c1.get)
 					return false
 
-		sys.error( s"no found: $p1, $c1")
+		sys.error( s"not found: $p1, $c1")
 	}
 
 	def evalExpression( afuse: AggregateFunctionUse, metadata: Metadata, ast: ValueExpression ): ValueResult =

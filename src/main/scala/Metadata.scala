@@ -9,17 +9,32 @@ class Metadata( val header: IndexedSeq[Column] ) {
 
 	lazy val columnMap = (header map (_.column) zipWithIndex) toMap
 
-	lazy val tableColumnMap = (header map {case Column(t, c, _, _) => (t, c)} zipWithIndex) toMap
+	lazy val tableColumnMap = (header map {case Column( t, c, _ ) => (t, c)} zipWithIndex) toMap
 
-	lazy val attributes = header map {case Column(_, n, t, _) => (n, t)} toSet
+	lazy val attributes = header map {case Column( _, n, t ) => (n, t)} toSet
 
-	lazy val primaryKey = header find (_.constraint contains PrimaryKey)
-
-	lazy val primaryKeyIndex = columnMap(primaryKey.get.column)
+//	lazy val primaryKey = header find (_.constraint contains PrimaryKey)
+//
+//	lazy val primaryKeyIndex = columnMap(primaryKey.get.column)
 
 }
 
-case class Column( table: String, column: String, typ: Type, constraint: Option[Constraint] )
+object Column {
+
+	def unapply( c: Column ) = Some( (c.table, c.column, c.typ) )
+
+}
+
+abstract class Column {
+
+	def table: String
+	def column: String
+	def typ: Type
+
+}
+
+case class SimpleColumn( table: String, column: String, typ: Type ) extends Column
+case class BaseRelationColumn( table: String, column: String, typ: Type, constraint: Option[Constraint] ) extends Column
 
 trait Constraint
 case object PrimaryKey extends Constraint
