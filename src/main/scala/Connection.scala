@@ -59,6 +59,13 @@ class Connection {
 
 				baseRelations( base ) = new BaseRelation( base, header toIndexedSeq )
 				CreateResult( base )
+			case DropTableStatement( Ident(pos, name) ) =>
+				if (baseRelations contains name)
+					baseRelations remove name
+				else
+					problem( pos, "no base relation by that name exists" )
+
+				DropResult( name )
 			case AssignRelationStatement( Ident(pos, name), relation ) =>
 				if (baseRelations contains name)
 					problem( pos, "a base relation by that name already exists" )
@@ -579,6 +586,7 @@ case class ExistsLogical( heading: String, relation: Relation ) extends LogicalR
 
 trait StatementResult
 case class CreateResult( name: String ) extends StatementResult
+case class DropResult( name: String ) extends StatementResult
 case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult
 case class InsertResult( auto: List[Map[String, AnyRef]], count: Int ) extends StatementResult
 case class DeleteResult( count: Int ) extends StatementResult

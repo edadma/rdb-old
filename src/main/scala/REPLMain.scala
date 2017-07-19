@@ -101,6 +101,7 @@ object REPLMain extends App {
 								case s => println( s"$s rows" )
 							}
 						case CreateResult( name ) => println( s"base relation '$name' was created" )
+						case DropResult( name ) => println( s"base relation '$name' was droped" )
 						case AssignResult( name, update, count ) =>
 							println(
 								(count, update) match {

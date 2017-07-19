@@ -66,13 +66,9 @@ object Main extends App {
 					case (_, false) => s"variable relation '$name' was created with $count rows"
 					case (_, true) => s"variable relation '$name' was updated with $count rows"
 				} )
-		case InsertResult( _, count ) =>
-			println(
-				count match {
-					case 0 => "no rows were inserted"
-					case 1 => "1 row was inserted"
-					case _ => s"$count rows were inserted"
-				} )
+		case InsertResult( _, 0 ) => println( "no rows were inserted" )
+		case InsertResult( _, 1 ) => println( "1 row was inserted" )
+		case InsertResult( _, count ) => println( s"$count rows were inserted" )
 		case DeleteResult( 0 ) => println( "no rows were deleted" )
 		case DeleteResult( 1 ) => println( "1 row was deleted" )
 		case DeleteResult( count ) => println( s"$count rows were deleted" )
@@ -95,6 +91,7 @@ object Main extends App {
 
 	create r1 [a: string*, b: integer]
 	insert r1 {[a, b] ('a', 2), ('b', 2), ('c', 1)}
+	create r2 [c: integer*, d: string]
 	insert r2 {[c, d] (1, 'x'), (2, 'y'), (3, 'z')}
 
 	r1 [b = c] r2

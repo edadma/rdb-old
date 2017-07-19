@@ -10,6 +10,7 @@ trait AST
 trait StatementAST extends AST
 case class AssignRelationStatement( variable: Ident, relation: RelationExpression ) extends StatementAST
 case class CreateBaseRelationStatement( base: Ident, columns: List[ColumnDef] ) extends StatementAST
+case class DropTableStatement( base: Ident ) extends StatementAST
 case class InsertRelationStatement( base: Ident, relation: RelationExpression ) extends StatementAST
 case class InsertTupleseqStatement( base: Ident, tupleseq: TupleseqExpression ) extends StatementAST
 case class DeleteStatement( base: Ident, condition: LogicalExpression ) extends StatementAST

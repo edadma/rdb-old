@@ -32,28 +32,20 @@ class RQLParser extends RegexParsers {
 
 	def statement: Parser[StatementAST] =
 		assignStatement |
-		createStatement |
-		insertStatement |
-		updateStatement |
-		deleteStatement |
+		tableManipulationStatement |
 		tupleseq |
 		relation
 
 	def assignStatement =
 		(ident <~ "<-") ~ relation ^^ { case n ~ r => AssignRelationStatement( n, r ) }
 
-	def createStatement =
-		("create" ~> ident) ~ columnsDef ^^ { case n ~ c => CreateBaseRelationStatement( n, c ) }
-
-	def insertStatement =
+	def tableManipulationStatement =
+		("create" ~> ident) ~ columnsDef ^^ { case n ~ c => CreateBaseRelationStatement( n, c ) } |
+		"drop" ~> ident ^^ DropTableStatement |
 		("insert" ~> ident) ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
 		("insert" ~> ident) ~ tupleseq ^^ { case n ~ t => InsertTupleseqStatement( n, t ) } |
-		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTupleseqStatement( n, TupleseqLit(List(t)) ) }
-
-	def deleteStatement =
-		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) }
-
-	def updateStatement =
+		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTupleseqStatement( n, TupleseqLit(List(t)) ) } |
+		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) } |
 		("update" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ~ ("(" ~> rep1sep(ident ~ ("=" ~> valueExpression), ",") <~ ")") ^^ {
 			case n ~ c ~ u => UpdateStatement( n, c, u map {case f ~ e => (f, e)} ) }
 
