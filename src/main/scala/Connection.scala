@@ -14,14 +14,18 @@ class Connection {
 	variables ++= Builtins.scalarFunctions
 	variables ++= Builtins.constants
 
-
 	def executeRQLStatement( statement: String ): StatementResult = executeStatement( RQLParser.parseStatement(statement) )
 
 	def executeSQLStatement( statement: String ): StatementResult = executeStatement( SQLParser.parseStatement(statement) )
 
 	def executeStatement( ast: AST ): StatementResult =
 		ast match {
-			case CreateBaseRelationStatement( base, columns ) =>
+			case CreateBaseRelationStatement( Ident(pos, base), columns ) =>
+				if (baseRelations contains base)
+					problem( pos, "a base relation by that name already exists" )
+				else if (variables contains base)
+					problem( pos, "a variable relation by that name already exists" )
+
 				var hset = Set[String]()
 				var pk = false
 
@@ -33,10 +37,13 @@ class Connection {
 
 						if (pkpos != null)
 							if (pk)
-								problem( pkpos, "a relation must have exactly one primary key (rs-8)" )
+								problem( pkpos, "a second primary key is not allowed" )
 							else
 								pk = true
 					}
+
+				if (!pk)
+					problem( pos, "one of the columns must be declared to be the primary key" )
 
 				val types: Array[Type] =
 					columns map {
@@ -45,14 +52,13 @@ class Connection {
 							Type.names.getOrElse( t, problem( p, s"unrecognized type name '$t'" ) )
 					} toArray
 				val header =
-					(columns zip types).zipWithIndex map {
-						case ((ColumnDef( _, p, _, _, _, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
-						case ((ColumnDef( Ident(_, n), _ , _, _, _, _), t), 0) if !pk => BaseRelationColumn( base.name, n, t, Some(PrimaryKey) )
-						case ((ColumnDef( Ident(_, n), _ , _, pkpos, _, _), t), _) => BaseRelationColumn( base.name, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
+					columns zip types map {
+						case (ColumnDef( _, p, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
 					}
 
-				new ListRelation( header toIndexedSeq, body )
-
+				baseRelations( base ) = new BaseRelation( base, header toIndexedSeq )
+				CreateResult( base )
 			case AssignRelationStatement( Ident(pos, name), relation ) =>
 				if (baseRelations contains name)
 					problem( pos, "a base relation by that name already exists" )
@@ -64,35 +70,27 @@ class Connection {
 				res
 			case InsertTupleseqStatement( base, tupleseq ) =>
 				baseRelations get base.name match {
-					case None => problem( base.pos, "base relation cannot be created from tuple set" )
+					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
 						val types = b.metadata.header map (_.typ) toArray
 						val seq = evalTupleseq( types, tupleseq )
 						val (l, c) = b.insertTupleseq( seq )
 
-						InsertResult( l, c, None )
+						InsertResult( l, c )
 				}
 			case InsertRelationStatement( Ident(pos, name), relation ) =>
 				val src = evalRelation( relation )
-				val (dst, created) =
-					baseRelations get name match {
-						case None =>
-							if (variables contains name)
-								problem( pos, "a variable relation by that name already exists" )
 
-							val baserel = new BaseRelation( name, src.metadata.header )
+				baseRelations get name match {
+					case None => problem( pos, "unknown base relation" )
+					case Some( b ) =>
+						if (!src.metadata.attributes.subsetOf( b.metadata.attributes ))
+							problem( relation.pos, "attributes must be a subset of base" )
 
-							baseRelations(name) = baserel
-							(baserel, Some( name ))
-						case Some( b ) =>
-							if (!src.metadata.attributes.subsetOf( b.metadata.attributes ))
-								problem( relation.pos, "attributes must be a subset of base" )
+						val (l, c) = b.insertRelation( src )
 
-							(b, None)
-					}
-				val (l, c) = dst.insertRelation( src )
-
-				InsertResult( l, c, created )
+						InsertResult( l, c )
+				}
 			case DeleteStatement( base, condition ) =>
 				baseRelations get base.name match {
 					case None => problem( base.pos, "unknown base relation" )
@@ -240,7 +238,6 @@ class Connection {
 				}
 			case ListRelationExpression( columns, data ) =>
 				var hset = Set[String]()
-				var pk = false
 
 				for (ColumnSpec( Ident(p, n), _, _ ) <- columns)
 					if (hset( n ))
@@ -266,9 +263,9 @@ class Connection {
 
 				val tab = anonymous
 				val header =
-					(columns zip types).zipWithIndex map {
-						case ((ColumnSpec( _, p, _ ), null), _) => problem( p, "missing type specification in relation with missing values" )
-						case ((ColumnSpec( Ident(_, n), _ , _ ), t), 0) if !pk => SimpleColumn( tab, n, t )
+					columns zip types map {
+						case (ColumnSpec( _, p, _ ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnSpec( Ident(_, n), _ , _ ), t) => SimpleColumn( tab, n, t )
 					}
 
 				new ListRelation( header toIndexedSeq, body )
@@ -581,8 +578,9 @@ case class BinaryLogical( heading: String, left: ValueResult, comp: String, pred
 case class ExistsLogical( heading: String, relation: Relation ) extends LogicalResult
 
 trait StatementResult
+case class CreateResult( name: String ) extends StatementResult
 case class AssignResult( name: String, update: Boolean, count: Int ) extends StatementResult
-case class InsertResult( auto: List[Map[String, AnyRef]], count: Int, created: Option[String] ) extends StatementResult
+case class InsertResult( auto: List[Map[String, AnyRef]], count: Int ) extends StatementResult
 case class DeleteResult( count: Int ) extends StatementResult
 case class UpdateResult( count: Int ) extends StatementResult
 case class RelationResult( relation: Relation ) extends StatementResult

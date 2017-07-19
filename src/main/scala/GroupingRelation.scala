@@ -5,7 +5,7 @@ class GroupingRelation( conn: Connection, relation: Relation, disafuse: Aggregat
 												dismetadata: Metadata, filtafuse: AggregateFunctionUseState, filter: Option[LogicalResult],
 												colafuse: AggregateFunctionUseState, columns: Vector[ValueResult] ) extends AbstractRelation {
 
-	val metadata = new Metadata( columns map (c => Column( "", c.heading, c.typ, None )) )
+	val metadata = new Metadata( columns map (c => SimpleColumn( "", c.heading, c.typ )) )
 
 	def iterator = {
 		conn.aggregateColumns( relation, discriminator, disafuse )

@@ -55,6 +55,7 @@ object Main extends App {
 				case 1 => println( "1 row" )
 				case s => println( s"$s rows" )
 			}
+		case CreateResult( name ) => println( s"base relation '$name' was created" )
 		case AssignResult( name, update, count ) =>
 			println(
 				(count, update) match {
@@ -65,15 +66,12 @@ object Main extends App {
 					case (_, false) => s"variable relation '$name' was created with $count rows"
 					case (_, true) => s"variable relation '$name' was updated with $count rows"
 				} )
-		case InsertResult( _, count, created ) =>
+		case InsertResult( _, count ) =>
 			println(
-				(count, created) match {
-					case (0, Some(name)) => s"base relation '$name' was created"
-					case (0, None) => "no rows were inserted"
-					case (1, Some(name)) => s"base relation '$name' was created with 1 row"
-					case (1, None) => "1 row was inserted"
-					case (_, Some(name)) => s"base relation '$name' was created with $count rows"
-					case (_, None) => s"$count rows were inserted"
+				count match {
+					case 0 => "no rows were inserted"
+					case 1 => "1 row was inserted"
+					case _ => s"$count rows were inserted"
 				} )
 		case DeleteResult( 0 ) => println( "no rows were deleted" )
 		case DeleteResult( 1 ) => println( "1 row was deleted" )
@@ -95,6 +93,7 @@ object Main extends App {
 
 	[(1, 'asdf'), (3, 'zxcv')]
 
+	create r1 [a: string*, b: integer]
 	insert r1 {[a, b] ('a', 2), ('b', 2), ('c', 1)}
 	insert r2 {[c, d] (1, 'x'), (2, 'y'), (3, 'z')}
 

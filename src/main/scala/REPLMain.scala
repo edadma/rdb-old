@@ -100,6 +100,7 @@ object REPLMain extends App {
 								case 1 => println( "1 row" )
 								case s => println( s"$s rows" )
 							}
+						case CreateResult( name ) => println( s"base relation '$name' was created" )
 						case AssignResult( name, update, count ) =>
 							println(
 								(count, update) match {
@@ -110,15 +111,12 @@ object REPLMain extends App {
 									case (_, false) => s"variable relation '$name' was created with $count rows"
 									case (_, true) => s"variable relation '$name' was updated with $count rows"
 								} )
-						case InsertResult( _, count, created ) =>
+						case InsertResult( _, count ) =>
 							println(
-								(count, created) match {
-									case (0, Some(name)) => s"base relation '$name' was created"
-									case (0, None) => "no rows were inserted"
-									case (1, Some(name)) => s"base relation '$name' was created with 1 row"
-									case (1, None) => "1 row was inserted"
-									case (_, Some(name)) => s"base relation '$name' was created with $count rows"
-									case (_, None) => s"$count rows were inserted"
+								count match {
+									case 0 => "no rows were inserted"
+									case 1 => "1 row was inserted"
+									case _ => s"$count rows were inserted"
 								} )
 						case DeleteResult( 0 ) => println( "no rows were deleted" )
 						case DeleteResult( 1 ) => println( "1 row was deleted" )
