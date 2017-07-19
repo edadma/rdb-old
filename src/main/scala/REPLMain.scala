@@ -52,80 +52,7 @@ object REPLMain extends App {
 				case Nil|List( "" ) =>
 				case _ if line1 startsWith "?" =>
 				case _ =>
-					(if (line1 startsWith "/") conn.executeSQLStatement( line1 substring 1 ) else conn.executeRQLStatement( line1 )) match {
-						case TupleseqResult( tupleseq ) =>
-							val t =
-								new TextTable {
-									tupleseq.header match {
-										case None =>
-										case Some( h ) =>
-											headerSeq( h )
-											line
-
-											for (i <- 1 to h.length)
-												if (tupleseq.types( i - 1 ).isInstanceOf[NumericalType])
-													rightAlignment( i )
-									}
-
-									for (r <- tupleseq)
-										rowSeq( r )
-								}
-
-							print( t )
-
-							tupleseq.size match {
-								case 0 => println( "empty tupleseq" )
-								case 1 => println( "1 tuple" )
-								case s => println( s"$s tuples" )
-							}
-						case RelationResult( rel ) =>
-							val l = rel.collect
-							val t =
-								new TextTable {
-									headerSeq( l.metadata.header map (_.column) )
-									line
-
-									for (i <- 1 to l.metadata.header.length)
-										if (l.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
-											rightAlignment( i )
-
-									for (r <- l)
-										rowSeq( r )
-								}
-
-							print( t )
-
-							l.size match {
-								case 0 => println( "empty relation" )
-								case 1 => println( "1 row" )
-								case s => println( s"$s rows" )
-							}
-						case CreateResult( name ) => println( s"base relation '$name' was created" )
-						case DropResult( name ) => println( s"base relation '$name' was droped" )
-						case AssignResult( name, update, count ) =>
-							println(
-								(count, update) match {
-									case (0, false) => s"empty variable relation '$name' was created"
-									case (0, true) => s"variable relation '$name' was updated with empty relation"
-									case (1, false) => s"variable relation '$name' was created with 1 row"
-									case (1, true) => s"variable relation '$name' was updated with 1 row"
-									case (_, false) => s"variable relation '$name' was created with $count rows"
-									case (_, true) => s"variable relation '$name' was updated with $count rows"
-								} )
-						case InsertResult( _, count ) =>
-							println(
-								count match {
-									case 0 => "no rows were inserted"
-									case 1 => "1 row was inserted"
-									case _ => s"$count rows were inserted"
-								} )
-						case DeleteResult( 0 ) => println( "no rows were deleted" )
-						case DeleteResult( 1 ) => println( "1 row was deleted" )
-						case DeleteResult( count ) => println( s"$count rows were deleted" )
-						case UpdateResult( 0 ) => println( "no updates were made" )
-						case UpdateResult( 1 ) => println( "1 row was updated" )
-						case UpdateResult( count ) => println( s"$count rows were updated" )
-					}
+					printResult( if (line1 startsWith "/") conn.executeSQLStatement(line1 substring 1) else conn.executeRQLStatement(line1) )
 			}
 		} catch {
 			case e: Exception =>
@@ -137,5 +64,81 @@ object REPLMain extends App {
 
 		out.println
 	}
+
+	def printResult( r: StatementResult ) =
+		r match {
+			case TupleseqResult( tupleseq ) =>
+				val t =
+					new TextTable {
+						tupleseq.header match {
+							case None =>
+							case Some( h ) =>
+								headerSeq( h )
+								line
+
+								for (i <- 1 to h.length)
+									if (tupleseq.types( i - 1 ).isInstanceOf[NumericalType])
+										rightAlignment( i )
+						}
+
+						for (r <- tupleseq)
+							rowSeq( r )
+					}
+
+				print( t )
+
+				tupleseq.size match {
+					case 0 => println( "empty tupleseq" )
+					case 1 => println( "1 tuple" )
+					case s => println( s"$s tuples" )
+				}
+			case RelationResult( rel ) =>
+				val l = rel.collect
+				val t =
+					new TextTable {
+						headerSeq( l.metadata.header map (_.column) )
+						line
+
+						for (i <- 1 to l.metadata.header.length)
+							if (l.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
+								rightAlignment( i )
+
+						for (r <- l)
+							rowSeq( r )
+					}
+
+				print( t )
+
+				l.size match {
+					case 0 => println( "empty relation" )
+					case 1 => println( "1 row" )
+					case s => println( s"$s rows" )
+				}
+			case CreateResult( name ) => println( s"base relation '$name' was created" )
+			case DropResult( name ) => println( s"base relation '$name' was droped" )
+			case AssignResult( name, update, count ) =>
+				println(
+					(count, update) match {
+						case (0, false) => s"empty variable relation '$name' was created"
+						case (0, true) => s"variable relation '$name' was updated with empty relation"
+						case (1, false) => s"variable relation '$name' was created with 1 row"
+						case (1, true) => s"variable relation '$name' was updated with 1 row"
+						case (_, false) => s"variable relation '$name' was created with $count rows"
+						case (_, true) => s"variable relation '$name' was updated with $count rows"
+					} )
+			case InsertResult( _, count ) =>
+				println(
+					count match {
+						case 0 => "no rows were inserted"
+						case 1 => "1 row was inserted"
+						case _ => s"$count rows were inserted"
+					} )
+			case DeleteResult( 0 ) => println( "no rows were deleted" )
+			case DeleteResult( 1 ) => println( "1 row was deleted" )
+			case DeleteResult( count ) => println( s"$count rows were deleted" )
+			case UpdateResult( 0 ) => println( "no updates were made" )
+			case UpdateResult( 1 ) => println( "1 row was updated" )
+			case UpdateResult( count ) => println( s"$count rows were updated" )
+		}
 
 }
