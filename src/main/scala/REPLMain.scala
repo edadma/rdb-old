@@ -5,6 +5,7 @@ import java.io.PrintWriter
 import jline.console.ConsoleReader
 
 import xyz.hyperreal.table.TextTable
+import xyz.hyperreal.importer.Importer
 
 
 object REPLMain extends App {
@@ -42,11 +43,13 @@ object REPLMain extends App {
 						|<RQL>                                 execute <RQL> query
 						|?<expression>                         evaluate <expression>
 					""".trim.stripMargin.lines foreach out.println
+				case List( ":load"|":l", file ) =>
+					conn.loadFromFile( file )
 				case List( ":quit"|":q" ) =>
 					sys.exit
 				case List( ":relations"|":r" ) =>
-					println( conn.baseRelations )
-					println( conn.variables )
+					println( "base relations: " + conn.baseRelations.keys.mkString(", ") )
+					println( "variable relations: " + conn.variables.keys.mkString(", ") )
 				case List( ":trace"|":t", "on" ) => stacktrace = true
 				case List( ":trace"|":t", "off" ) => stacktrace = false
 				case Nil|List( "" ) =>

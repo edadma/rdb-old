@@ -1,15 +1,17 @@
 package xyz.hyperreal.rdb
 
-import xyz.hyperreal.table.TextTable
-
 
 object Main extends App {
 	val conn = new Connection
-	val statement = """ {[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} [b > 2] <a> [a < 2] (a, sum(b)) """
+	val statement = """ {[a, b] (1, 2), (3, 4)} [exists {[a, b] (1, 2)} [a = 1]] """
 
 	REPLMain.printResult( conn.executeRQLStatement(statement) )
 
 	/*
+	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))
+
+	{[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} [b > 2] <a> [a < 2] (a, sum(b))
+
 	{[a, b] (1, 2), (3, 4)}
 	{[a, b]}
 	{[a: integer, b]}

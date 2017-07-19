@@ -1,8 +1,8 @@
 package xyz.hyperreal.rdb
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
-
 import xyz.hyperreal.lia.{FunctionMap, Math}
+import xyz.hyperreal.importer.{Importer, Table, Column => ImpColumn}
 
 
 class Connection {
@@ -13,6 +13,35 @@ class Connection {
 	variables ++= Builtins.aggregateFunctions
 	variables ++= Builtins.scalarFunctions
 	variables ++= Builtins.constants
+
+	def loadFromFile( file: String ): Unit = {
+		val imp = new Importer
+
+		def types( t: String ) =
+			if (t == "currency")
+				DecimalType
+			else
+				Type.names(t)
+
+		for ((_, Table(name, header, data)) <- imp.importFromFile( file )) {
+			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types( typ ), None )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
+
+			for (row <- data)
+				t.insertRow( row )
+		}
+	}
+
+	def createTable( name: String, definition: Seq[BaseRelationColumn] ) = {
+		if (baseRelations contains name)
+			sys.error( s"base relation '$name' already exists" )
+		else if (variables contains name)
+			sys.error( s"variable relation '$name' already exists" )
+
+		val res = new BaseRelation( name, definition )
+
+		baseRelations( name ) = res
+		res
+	}
 
 	def executeRQLStatement( statement: String ): StatementResult = executeStatement( RQLParser.parseStatement(statement) )
 
@@ -57,7 +86,7 @@ class Connection {
 						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
 					}
 
-				baseRelations( base ) = new BaseRelation( base, header toIndexedSeq )
+				createTable( base, header )
 				CreateResult( base )
 			case DropTableStatement( Ident(pos, name) ) =>
 				if (baseRelations contains name)
