@@ -2,12 +2,14 @@ package xyz.hyperreal.rdb
 
 
 class GroupingRelation( conn: Connection, relation: Relation, disafuse: AggregateFunctionUseState, discriminator: Vector[ValueResult],
-												dismetadata: Metadata, filtafuse: AggregateFunctionUseState, filter: Option[LogicalResult],
+												filtafuse: AggregateFunctionUseState, filter: Option[LogicalResult],
 												colafuse: AggregateFunctionUseState, columns: Vector[ValueResult] ) extends AbstractRelation {
 
 	val metadata = new Metadata( columns map (c => SimpleColumn( "", c.heading, c.typ )) )
 
-	def iterator = {
+	def iterator = iterator( Nil )
+
+	def iterator( row: List[Tuple] ) = {
 		conn.aggregateColumns( relation, discriminator, disafuse )
 
 		val groups = relation groupBy (conn.evalVector( _, discriminator ))

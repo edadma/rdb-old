@@ -14,7 +14,7 @@ trait ValueResult {
 
 case class LiteralValue( pos: Position, table: String, heading: String, typ: Type, value: AnyRef ) extends ValueResult
 case class VariableValue( pos: Position, table: String, heading: String, typ: Type, value: AnyRef ) extends ValueResult
-case class FieldValue( pos: Position, table: String, heading: String, typ: Type, index: Int ) extends ValueResult
+case class FieldValue( pos: Position, table: String, heading: String, typ: Type, index: Int, depth: Int ) extends ValueResult
 case class MarkedValue( pos: Position, table: String, heading: String, typ: Type, m: Mark ) extends ValueResult
 case class BinaryValue( pos: Position, table: String, heading: String, typ: Type, left: ValueResult, operation: String, func: FunctionMap,
 												right: ValueResult ) extends ValueResult

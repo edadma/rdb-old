@@ -132,7 +132,7 @@ class Connection {
 					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
 						val afuse = AFUseOrField( NoFieldOrAFUsed )
-						val cond = evalLogical( afuse, b.metadata, condition )
+						val cond = evalLogical( afuse, List(b.metadata), condition )
 
 						aggregateCondition( b, cond, afuse.state )
 						DeleteResult( b.delete(this, cond) )
@@ -142,14 +142,14 @@ class Connection {
 					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
 						val afuse = AFUseOrField( NoFieldOrAFUsed )
-						val cond = evalLogical( afuse, b.metadata, condition )
+						val cond = evalLogical( afuse, List(b.metadata), condition )
 						val upds =
 							for ((col, expr) <- updates)
 								yield {
 									b.metadata.columnMap get col.name match {
 										case None => problem( col.pos, "unknown column" )
 										case Some( ind ) =>
-											(ind, evalExpression( AFUseNotAllowed, b.metadata, expr ))
+											(ind, evalExpression( AFUseNotAllowed, List(b.metadata), expr ))
 									}
 								}
 
@@ -229,13 +229,13 @@ class Connection {
 		body.toList
 	}
 
-	def evalRelation( ast: RelationExpression ): Relation = {
+	def evalRelation( ast: RelationExpression, outer: List[Metadata] ): Relation = {
 		ast match {
 			case GroupingRelationExpression( relation, discriminator, filter, cpos, columns ) =>
-				val rel = evalRelation( relation )
+				val rel = evalRelation( relation, outer )//todo (nested): don't know if this is right
 				val disafuse = AFUseOrField( NoFieldOrAFUsed )
-				val dis = discriminator map (evalExpression(disafuse, rel.metadata, _)) toVector
-				val dismetadata = new Metadata( dis map (c => SimpleColumn( "", c.heading, c.typ )) )
+				val dis = discriminator map (evalExpression(disafuse, rel.metadata :: outer, _)) toVector
+				val dismetadata = new Metadata( dis map (c => SimpleColumn("", c.heading, c.typ)) ) :: outer
 				val filtafuse = AFUseOrField( NoFieldOrAFUsed )
 				val filt = filter map (evalLogical( filtafuse, dismetadata, rel.metadata, _ ))
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
@@ -244,7 +244,7 @@ class Connection {
 				if (cols isEmpty)
 					problem( cpos, "at least one expression must be given for grouping" )
 
-				new GroupingRelation( this, rel, disafuse.state, dis, dismetadata, filtafuse.state, filt, colafuse.state, cols )
+				new GroupingRelation( this, rel, disafuse.state, dis, filtafuse.state, filt, colafuse.state, cols )
 			case ProjectionRelationExpression( relation, columns ) =>
 				val rel = evalRelation( relation )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
@@ -339,10 +339,10 @@ class Connection {
 		sys.error( s"not found: $p1, $c1")
 	}
 
-	def evalExpression( afuse: AggregateFunctionUse, metadata: Metadata, ast: ValueExpression ): ValueResult =
-		evalExpression( afuse, metadata, metadata, ast )
+	def evalExpression( afuse: AggregateFunctionUse, metadata: List[Metadata], ast: ValueExpression ): ValueResult =
+		evalExpression( afuse, metadata, metadata.head, ast )	//todo (nested): aggregates can't see outer scopes
 
-	def evalExpression( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: ValueExpression ): ValueResult =
+	def evalExpression( afuse: AggregateFunctionUse, fmetadata: List[Metadata], ametadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {
 			case AliasValueExpression( expr, alias ) =>
 				val v = evalExpression( afuse, fmetadata, ametadata, expr )
@@ -353,7 +353,7 @@ class Connection {
 			case StringLit( s ) => LiteralValue( ast.pos, null, '"' + s + '"', StringType, s )
 			case MarkLit( m ) => MarkedValue( ast.pos, null, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
-				fmetadata.columnMap get n.name match {
+				search( fmetadata )( _.columnMap get n.name ) match {
 					case None =>
 						variables get n.name match {
 							case None =>
@@ -361,29 +361,29 @@ class Connection {
 							case Some( v ) =>
 								VariableValue( n.pos, null, n.name, Type.fromValue(v).orNull, v )//todo: handle function types correctly
 						}
-					case Some( ind ) =>
+					case Some( (ind, depth) ) =>
 						afuse match {
 							case use@AFUseOrField( OnlyAFUsed ) => use.state = FieldAndAFUsed
 							case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyFieldUsed
 							case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 						}
 
-						FieldValue( ast.pos, fmetadata.header(ind).table, n.name, fmetadata.header(ind).typ, ind )
+						FieldValue( ast.pos, fmetadata(depth).header(ind).table, n.name, fmetadata(depth).header(ind).typ, ind, depth )
 				}
 			case ValueColumnExpression( t, c ) =>
-				if (!fmetadata.tableSet(t.name))
+				if (!fmetadata.exists(_.tableSet(t.name)))
 					problem( t.pos, "unknown table" )
 				else
-					fmetadata.tableColumnMap get (t.name, c.name) match {
+					search( fmetadata )( _.tableColumnMap get (t.name, c.name) ) match {
 						case None => problem( c.pos, "no such column" )
-						case Some( ind ) =>
+						case Some( (ind, depth) ) =>
 							afuse match {
 								case use@AFUseOrField( OnlyAFUsed ) => use.state = FieldAndAFUsed
 								case use@AFUseOrField( NoFieldOrAFUsed ) => use.state = OnlyFieldUsed
 								case AFUseNotAllowed|AFUseOrField( OnlyFieldUsed|FieldAndAFUsed ) =>
 							}
 
-							FieldValue( ast.pos, t.name, c.name, fmetadata.header(ind).typ, ind )
+							FieldValue( ast.pos, t.name, c.name, fmetadata(depth).header(ind).typ, ind, depth )
 					}
 			case e@BinaryValueExpression( left, oppos, operation, func, right ) =>
 				val l = evalExpression( afuse, fmetadata, ametadata, left )
@@ -431,7 +431,7 @@ class Connection {
 							case AFUseOrField( OnlyAFUsed|FieldAndAFUsed ) =>
 						}
 
-						val a = args map (evalExpression( AFUseNotAllowed, ametadata, null, _ ))
+						val a = args map (evalExpression( AFUseNotAllowed, List(ametadata), null, _ ))
 						val heading =
 							if (a == Nil)
 								s"${f.heading}()"
@@ -451,7 +451,7 @@ class Connection {
 					case _ => problem( e.pos, s"'$f' is not a function" )
 				}
 			case e@LogicalValueExpression( logical ) =>
-				val log = evalLogical( afuse, fmetadata, logical )//todo: this might not be right if there are aggregates in a boolean expression
+				val log = evalLogical( afuse, fmetadata, ametadata, logical )//todo: this might not be right if there are aggregates in a boolean expression
 
 				LogicalValue( e.pos, null, log.heading, LogicalType, log )
 		}
@@ -481,7 +481,7 @@ class Connection {
 			case UnaryValue( _, _, _, _, v, _, _ ) =>
 				aggregate( row, v )
 			case a@AggregateFunctionValue( _, _, _, _, _, args ) =>
-				a.func.next( args map (evalValue( row, _ )) )
+				a.func.next( args map (evalValue( List(row)/*todo (nested): this may not be right*/, _ )) )
 			case ScalarFunctionValue( _, _, _, _, _, args ) =>
 				for (a <- args)
 					aggregate( row, a )
@@ -523,14 +523,14 @@ class Connection {
 				initAggregation( right )
 		}
 
-	def evalVector( row: Tuple, vector: Vector[ValueResult]) = vector map (evalValue(row, _))
+	def evalVector( row: List[Tuple], vector: Vector[ValueResult]) = vector map (evalValue(row, _))
 
-	def evalValue( row: Tuple, result: ValueResult ): AnyRef =
+	def evalValue( row: List[Tuple], result: ValueResult ): AnyRef =
 		result match {
 			case AliasValue( _, _, _, _, _, v ) => evalValue( row, v )
 			case LiteralValue( _, _, _, _, v ) => v
 			case VariableValue( _, _, _, _, v ) => v
-			case FieldValue( _, _, _, _, index: Int ) => row(index)
+			case FieldValue( _, _, _, _, index, depth ) => row(depth)(index)
 			case MarkedValue( _, _, _, _, m ) => m
 			case BinaryValue( p, _, _, _, l, _, f, r ) =>
 				val lv = evalValue( row, l )
@@ -557,7 +557,7 @@ class Connection {
 			case LogicalValue( _, _, _, _, l ) => evalCondition( row, l )
 		}
 
-	def evalCondition( row: Tuple, cond: LogicalResult ): Logical =
+	def evalCondition( row: List[Tuple], cond: LogicalResult ): Logical =
 		cond match {
 			case ExistsLogical( _, relation ) =>
 				Logical.fromBoolean( relation nonEmpty )
@@ -581,10 +581,10 @@ class Connection {
 				evalCondition( row, l ) or evalCondition( row, r )
 		}
 
-	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): LogicalResult =
-		evalLogical( afuse, metadata, metadata, ast )
+	def evalLogical( afuse: AggregateFunctionUse, metadata: List[Metadata], ast: LogicalExpression ): LogicalResult =
+		evalLogical( afuse, metadata, metadata.head, ast )//todo (nested): aggregates can't see outer scopers
 
-	def evalLogical( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: LogicalExpression ): LogicalResult = {
+	def evalLogical( afuse: AggregateFunctionUse, fmetadata: List[Metadata], ametadata: Metadata, ast: LogicalExpression ): LogicalResult = {
 		ast match {
 			case ExistsLogicalExpression( tuples ) =>
 				val rel =

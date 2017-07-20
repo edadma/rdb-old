@@ -23,6 +23,19 @@ package object rdb {
 		s"_$res"
 	}
 
+	def search[E, R]( list: List[E] )( test: E => Option[R] ) = {
+		def _search( l: List[E], depth: Int ): Option[(R, Int)] =
+			if (l == Nil)
+				None
+			else
+				test( l.head ) match {
+					case None => _search( l.tail, depth + 1 )
+					case Some( r ) => Some( (r, depth) )
+				}
+
+		_search( list, 0 )
+	}
+
 	object TRUE extends Logical {
 		def not = FALSE
 
