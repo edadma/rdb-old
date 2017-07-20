@@ -26,7 +26,7 @@ package object rdb {
 	object TRUE extends Logical {
 		def not = FALSE
 
-		def and( that: Logical ) =
+		def and( that: => Logical ) =
 			that match {
 				case TRUE => TRUE
 				case FALSE => FALSE
@@ -34,7 +34,7 @@ package object rdb {
 				case MAYBE_I => MAYBE_I
 			}
 
-		def or( that: Logical ) = TRUE
+		def or( that: => Logical ) = TRUE
 
 		override def toString = "true"
 	}
@@ -42,9 +42,9 @@ package object rdb {
 	object FALSE extends Logical {
 		def not = TRUE
 
-		def and( that: Logical ) = FALSE
+		def and( that: => Logical ) = FALSE
 
-		def or( that: Logical ) =
+		def or( that: => Logical ) =
 			that match {
 				case TRUE => TRUE
 				case FALSE => FALSE
@@ -58,14 +58,14 @@ package object rdb {
 	object MAYBE_A extends Logical {
 		def not = MAYBE_A
 
-		def and( that: Logical ) =
+		def and( that: => Logical ) =
 			that match {
 				case TRUE | MAYBE_A => MAYBE_A
 				case FALSE => FALSE
 				case MAYBE_I => MAYBE_I
 			}
 
-		def or( that: Logical ) =
+		def or( that: => Logical ) =
 			that match {
 				case TRUE => TRUE
 				case FALSE | MAYBE_A | MAYBE_I => MAYBE_A
@@ -77,13 +77,13 @@ package object rdb {
 	object MAYBE_I extends Logical {
 		def not = MAYBE_I
 
-		def and( that: Logical ) =
+		def and( that: => Logical ) =
 			that match {
 				case TRUE | MAYBE_A | MAYBE_I => MAYBE_I
 				case FALSE => FALSE
 			}
 
-		def or( that: Logical ) =
+		def or( that: => Logical ) =
 			that match {
 				case TRUE => TRUE
 				case FALSE => FALSE

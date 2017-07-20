@@ -10,9 +10,9 @@ abstract class Logical {
 
 	def not: Logical
 
-	def and( that: Logical ): Logical
+	def and( that: => Logical ): Logical
 
-	def or( that: Logical ): Logical
+	def or( that: => Logical ): Logical
 
 }
 

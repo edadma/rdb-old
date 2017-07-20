@@ -492,7 +492,7 @@ class Connection {
 	def aggregate( row: Tuple, result: LogicalResult ): Unit =
 		result match {
 			case _: LiteralLogical =>
-			case BinaryLogical( _, left, _, _, right ) =>
+			case ComparisonLogical( _, left, _, _, right ) =>
 				aggregate( row, left )
 				aggregate( row, right )
 		}
@@ -517,7 +517,7 @@ class Connection {
 	def initAggregation( result: LogicalResult ): Unit =
 		result match {
 			case _: LiteralLogical =>
-			case BinaryLogical( _, left, _, _, right ) =>
+			case ComparisonLogical( _, left, _, _, right ) =>
 				initAggregation( left )
 				initAggregation( right )
 		}
@@ -561,7 +561,7 @@ class Connection {
 			case ExistsLogical( _, relation ) =>
 				Logical.fromBoolean( relation nonEmpty )
 			case LiteralLogical( _, lit ) => lit
-			case BinaryLogical( _, left, _, pred, right ) =>
+			case ComparisonLogical( _, left, _, pred, right ) =>
 				val lv = evalValue( row, left )
 				val rv = evalValue( row, right )
 
@@ -574,6 +574,10 @@ class Connection {
 						} else
 							Logical.fromBoolean( Math.predicate(pred, lv, rv) )
 				}
+			case AndLogical( _, l, r ) =>
+				evalCondition( row, l ) and evalCondition( row, r )
+			case OrLogical( _, l, r ) =>
+				evalCondition( row, l ) or evalCondition( row, r )
 		}
 
 	def evalLogical( afuse: AggregateFunctionUse, metadata: Metadata, ast: LogicalExpression ): LogicalResult =
@@ -581,8 +585,12 @@ class Connection {
 
 	def evalLogical( afuse: AggregateFunctionUse, fmetadata: Metadata, ametadata: Metadata, ast: LogicalExpression ): LogicalResult = {
 		ast match {
-			case ExistsLogicalExpression( relation ) =>
-				val rel = evalRelation( relation )
+			case ExistsLogicalExpression( tuples ) =>
+				val rel =
+					tuples match {
+						case r: RelationExpression => evalRelation( r )
+						case s: TupleseqExpression => evalTupleseq( null, s )
+					}
 
 				ExistsLogical( s"exists ($rel)", rel )
 			case LiteralLogicalExpression( lit ) => LiteralLogical( lit.toString, lit )
@@ -590,7 +598,25 @@ class Connection {
 				val l = evalExpression( afuse, fmetadata, ametadata, left )
 				val r = evalExpression( afuse, fmetadata, ametadata, right )
 
-				BinaryLogical( s"${l.heading} $comp ${r.heading}", l, comp, pred, r )
+				ComparisonLogical( s"${l.heading} $comp ${r.heading}", l, comp, pred, r )
+			case ComparisonLogicalExpression( left, List((compm, predm, middle), (compr, predr, right)) ) =>
+				val l = evalExpression( afuse, fmetadata, ametadata, left )
+				val m = evalExpression( afuse, fmetadata, ametadata, middle )
+				val r = evalExpression( afuse, fmetadata, ametadata, right )
+				val lc = ComparisonLogical( s"${l.heading} $compm ${m.heading}", l, compm, predm, m )
+				val rc = ComparisonLogical( s"${m.heading} $compr ${r.heading}", m, compr, predr, r )
+
+				AndLogical( s"${lc.heading} and ${rc.heading}", lc, rc )
+			case AndLogicalExpression( left, right ) =>
+				val l = evalLogical( afuse, fmetadata, ametadata, left )
+				val r = evalLogical( afuse, fmetadata, ametadata, right )
+
+				AndLogical( s"${l.heading} and ${r.heading}", l, r )
+			case OrLogicalExpression( left, right ) =>
+				val l = evalLogical( afuse, fmetadata, ametadata, left )
+				val r = evalLogical( afuse, fmetadata, ametadata, right )
+
+				OrLogical( s"${l.heading} Or ${r.heading}", l, r )
 		}
 	}
 }
@@ -610,8 +636,10 @@ trait LogicalResult {
 }
 
 case class LiteralLogical( heading: String, value: Logical ) extends LogicalResult
-case class BinaryLogical( heading: String, left: ValueResult, comp: String, pred: FunctionMap, right: ValueResult ) extends LogicalResult
-case class ExistsLogical( heading: String, relation: Relation ) extends LogicalResult
+case class AndLogical( heading: String, left: LogicalResult, right: LogicalResult ) extends LogicalResult
+case class OrLogical( heading: String, left: LogicalResult, right: LogicalResult ) extends LogicalResult
+case class ComparisonLogical( heading: String, left: ValueResult, comp: String, pred: FunctionMap, right: ValueResult ) extends LogicalResult
+case class ExistsLogical( heading: String, tuples: Iterable[Tuple] ) extends LogicalResult
 
 trait StatementResult
 case class CreateResult( name: String ) extends StatementResult

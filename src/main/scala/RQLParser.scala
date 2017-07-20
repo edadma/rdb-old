@@ -130,13 +130,14 @@ class RQLParser extends RegexParsers {
 			case expr ~ list => list.foldLeft( expr ) {
 				case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
 			}
-	}
-
-	def multiplicativeExpression: Parser[ValueExpression] = negativeExpression ~ rep(pos ~ "*" ~ negativeExpression | pos ~ "/" ~ negativeExpression) ^^ {
-		case expr ~ list => list.foldLeft( expr ) {
-			case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
 		}
-	}
+
+	def multiplicativeExpression: Parser[ValueExpression] =
+		negativeExpression ~ rep(pos ~ "*" ~ negativeExpression | pos ~ "/" ~ negativeExpression) ^^ {
+			case expr ~ list => list.foldLeft( expr ) {
+				case (x, p ~ o ~ y) => BinaryValueExpression( x, p, o, lookup(o), y )
+			}
+		}
 
 	def negativeExpression: Parser[ValueExpression] =
 		(pos <~ "-") ~ exponentialExpression ^^ { case p ~ e => UnaryValueExpression( p, "-", lookup("-"), e ) } |
@@ -171,9 +172,26 @@ class RQLParser extends RegexParsers {
 	def comparison = "<" | "<=" | "=" | "/=" | ">" | ">="
 
 	def logicalExpression =
+		orExpression
+
+	def orExpression =
+		andExpression ~ rep("or" ~> andExpression) ^^ {
+			case expr ~ list => list.foldLeft( expr ) {
+				case (l, r) => OrLogicalExpression( l, r )
+			}
+		}
+
+	def andExpression =
+		comparisonExpression ~ rep("and" ~> comparisonExpression) ^^ {
+			case expr ~ list => list.foldLeft( expr ) {
+				case (l, r) => AndLogicalExpression( l, r )
+			}
+		}
+
+	def comparisonExpression =
 		nonLogicalValueExpression ~ rep1(comparison ~ nonLogicalValueExpression) ^^ {
 			case l ~ cs => ComparisonLogicalExpression( l, cs map { case c ~ v => (c, lookup(c), v)} ) } |
-		"exists" ~> relation ^^ ExistsLogicalExpression |
+			("EXISTS"|"exists") ~> relation ^^ ExistsLogicalExpression |
 		logicalPrimary
 
 	def logicalPrimary = positioned(

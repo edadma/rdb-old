@@ -30,8 +30,8 @@ class SQLParser extends RegexParsers {
 
 	def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
-	def query =
-		("select" ~> pos ~ (expressions|"*" ^^^ Nil) <~ "from") ~ relation ~ opt(where) ~ opt(groupby) ~ opt(orderby) ^^ {
+	def query: Parser[TupleCollectionExpression] =
+		(("SELECT"|"select") ~> pos ~ (expressions|"*" ^^^ Nil) <~ ("FROM"|"from")) ~ relation ~ opt(where) ~ opt(groupby) ~ opt(orderby) ^^ {
 			case _ ~ Nil ~ r ~ None ~ None ~ None => r
 			case _ ~ e ~ r ~ None ~ None ~ None => ProjectionRelationExpression( r, e )
 			case _ ~ Nil ~ r ~ Some( w ) ~ None ~ None => SelectionRelationExpression( r, w )
@@ -48,7 +48,7 @@ class SQLParser extends RegexParsers {
 
 	def relation = ident ^^ RelationVariableExpression
 
-	def where = "where" ~> logicalExpression
+	def where = ("WHERE"|"where") ~> logicalExpression
 
 	def groupby = "group" ~ "by" ~> expressions ~ opt("having" ~> logicalExpression)
 
@@ -103,6 +103,9 @@ class SQLParser extends RegexParsers {
 			"(" ~> valueExpression <~ ")" |
 			positioned( "A" ^^^ MarkLit(A) ) |
 			positioned( "I" ^^^ MarkLit(I) ) |
+			columnPrimary
+
+	def columnPrimary =
 			positioned( ident ~ ("." ~> ident) ^^ { case t ~ c => ValueColumnExpression( t, c ) } ) |
 			positioned( ident ^^ ValueVariableExpression )
 
@@ -117,15 +120,35 @@ class SQLParser extends RegexParsers {
 	def comparison = "<" | "<=" | "=" | "/=" | ">" | ">="
 
 	def logicalExpression =
+		orExpression
+
+	def orExpression =
+		andExpression ~ rep(("OR"|"or") ~> andExpression) ^^ {
+			case expr ~ list => list.foldLeft( expr ) {
+				case (l, r) => OrLogicalExpression( l, r )
+			}
+		}
+
+	def andExpression =
+		comparisonExpression ~ rep(("AND"|"and") ~> comparisonExpression) ^^ {
+			case expr ~ list => list.foldLeft( expr ) {
+				case (l, r) => AndLogicalExpression( l, r )
+			}
+		}
+
+	def comparisonExpression =
 		nonLogicalValueExpression ~ rep1(comparison ~ nonLogicalValueExpression) ^^ {
 			case l ~ cs => ComparisonLogicalExpression( l, cs map {case c ~ v => (c, lookup(c), v)} ) } |
-			logicalPrimary
+		columnPrimary ~ (("BETWEEN"|"between") ~> nonLogicalValueExpression <~ ("AND"|"and")) ~ nonLogicalValueExpression ^^ {
+			case c ~ l ~ u => ComparisonLogicalExpression( l, List(("<=", lookup("<="), c), ("<=", lookup("<="), u)) ) } |
+		("EXISTS"|"exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
+		logicalPrimary
 
 	def logicalPrimary = positioned(
 		"true" ^^^ LiteralLogicalExpression( TRUE ) |
-			"false" ^^^ LiteralLogicalExpression( FALSE ) |
-			"maybe-a" ^^^ LiteralLogicalExpression( MAYBE_A ) |
-			"maybe-i" ^^^ LiteralLogicalExpression( MAYBE_I )
+		"false" ^^^ LiteralLogicalExpression( FALSE ) |
+		"maybe-a" ^^^ LiteralLogicalExpression( MAYBE_A ) |
+		"maybe-i" ^^^ LiteralLogicalExpression( MAYBE_I )
 	)
 
 	def parseFromString[T]( src: String, grammar: Parser[T] ) = {

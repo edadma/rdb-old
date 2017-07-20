@@ -30,7 +30,8 @@ case class UnaryValueExpression( oppos: Position, operation: String, func: Funct
 case class LogicalValueExpression( logical: LogicalExpression ) extends ValueExpression
 case class AliasValueExpression( expr: ValueExpression, alias: Ident ) extends ValueExpression
 
-trait RelationExpression extends StatementAST with Positional
+trait TupleCollectionExpression extends StatementAST
+trait RelationExpression extends TupleCollectionExpression with Positional
 case class RelationVariableExpression( name: Ident ) extends RelationExpression
 case class ListRelationExpression( columns: List[ColumnSpec], data: List[TupleExpression] ) extends RelationExpression
 case class ProjectionRelationExpression( relation: RelationExpression, columns: List[ValueExpression] ) extends RelationExpression
@@ -38,7 +39,7 @@ case class SelectionRelationExpression( relation: RelationExpression, condition:
 case class InnerJoinRelationExpression( left: RelationExpression, condition: LogicalExpression, right: RelationExpression ) extends RelationExpression
 case class GroupingRelationExpression( relation: RelationExpression, discriminator: List[ValueExpression], filter: Option[LogicalExpression], cpos: Position, columns: List[ValueExpression] ) extends RelationExpression
 
-trait TupleseqExpression extends StatementAST with Positional
+trait TupleseqExpression extends TupleCollectionExpression  with Positional
 case class TupleseqLit( data: List[TupleExpression] ) extends TupleseqExpression
 case class SortedTupleseqExpression( relation: RelationExpression, names: List[Ident], ascending: Boolean ) extends TupleseqExpression
 
@@ -47,7 +48,7 @@ case class LiteralLogicalExpression( l: Logical ) extends LogicalExpression
 case class ComparisonLogicalExpression( left: ValueExpression, comp: List[(String, FunctionMap, ValueExpression)] ) extends LogicalExpression
 case class AndLogicalExpression( left: LogicalExpression, right: LogicalExpression ) extends LogicalExpression
 case class OrLogicalExpression( left: LogicalExpression, right: LogicalExpression ) extends LogicalExpression
-case class ExistsLogicalExpression( relation: RelationExpression ) extends LogicalExpression
+case class ExistsLogicalExpression( tuples: TupleCollectionExpression ) extends LogicalExpression
 
 case class Ident( pos: Position, name: String )
 

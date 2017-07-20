@@ -2,10 +2,23 @@ package xyz.hyperreal.rdb
 
 
 object Main extends App {
-	val conn = new Connection
-	val statement = """ {[a, b] (1, 2), (3, 4)} [exists {[a, b] (1, 2)} [a = 1]] """
+	val conn = new Connection {loadFromFile( "samples/small" )}
+	val statement =
+		"""
+			|select * from Products where Price between 15 and 20
+		""".stripMargin
 
-	REPLMain.printResult( conn.executeRQLStatement(statement) )
+//	"""
+//		|{[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} [2 < b and b < 6]
+//	""".stripMargin
+
+//		"""
+//			|SELECT SupplierName
+//			|FROM Suppliers
+//			|WHERE EXISTS (SELECT ProductName FROM Products WHERE SupplierId = Suppliers.supplierId AND Price < 20)
+//		""".stripMargin
+
+	REPLMain.printResult( conn.executeSQLStatement(statement) )
 
 	/*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))
