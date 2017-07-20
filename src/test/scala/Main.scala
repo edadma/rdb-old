@@ -5,8 +5,14 @@ object Main extends App {
 	val conn = new Connection {loadFromFile( "samples/small" )}
 	val statement =
 		"""
-			|select * from Products where Price between 15 and 20
+			|SELECT SupplierName
+			|  FROM Suppliers
+			|  WHERE EXISTS (SELECT ProductName FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
 		""".stripMargin
+
+//		"""
+//			|select * from Products where Price between 15 and 20 order by Price desc
+//		""".stripMargin
 
 //	"""
 //		|{[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} [2 < b and b < 6]

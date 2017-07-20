@@ -17,6 +17,7 @@ class Metadata( val header: IndexedSeq[Column] ) {
 //
 //	lazy val primaryKeyIndex = columnMap(primaryKey.get.column)
 
+	override def toString = header.toString
 }
 
 object Column {

@@ -26,9 +26,11 @@ class SQLParser extends RegexParsers {
 	def string: Parser[ValueExpression] =
 		positioned(
 			(("'" ~> """[^'\n]*""".r <~ "'") |
-				("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit )
+			("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit )
 
 	def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
+
+	def ascending( o: Option[String] ) = o.isEmpty || o.get.toLowerCase == "asc"
 
 	def query: Parser[TupleCollectionExpression] =
 		(("SELECT"|"select") ~> pos ~ (expressions|"*" ^^^ Nil) <~ ("FROM"|"from")) ~ relation ~ opt(where) ~ opt(groupby) ~ opt(orderby) ^^ {
@@ -38,26 +40,26 @@ class SQLParser extends RegexParsers {
 			case _ ~ e ~ r ~ Some( w ) ~ None ~ None => ProjectionRelationExpression( SelectionRelationExpression(r, w), e )
 			case p ~ e ~ r ~ None ~ Some( d ~ h ) ~ None => GroupingRelationExpression( r, d, h, p, e )
 			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) ~ None => GroupingRelationExpression( SelectionRelationExpression(r, w), d, h, p, e )
-			case _ ~ Nil ~ r ~ None ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( r, s, !o.contains("desc") )
-			case _ ~ e ~ r ~ None ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( ProjectionRelationExpression(r, e), s, !o.contains("desc") )
-			case _ ~ Nil ~ r ~ Some( w ) ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( SelectionRelationExpression(r, w), s, !o.contains("desc") )
-			case _ ~ e ~ r ~ Some( w ) ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( ProjectionRelationExpression(SelectionRelationExpression(r, w), e), s, !o.contains("desc") )
-			case p ~ e ~ r ~ None ~ Some( d ~ h ) ~ Some( s ~ o ) => SortedTupleseqExpression( GroupingRelationExpression(r, d, h, p, e), s, !o.contains("desc") )
-			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) ~ Some( s ~ o ) => SortedTupleseqExpression( GroupingRelationExpression(SelectionRelationExpression(r, w), d, h, p, e), s, !o.contains("desc") )
+			case _ ~ Nil ~ r ~ None ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( r, s, ascending(o) )
+			case _ ~ e ~ r ~ None ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( ProjectionRelationExpression(r, e), s, ascending(o) )
+			case _ ~ Nil ~ r ~ Some( w ) ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( SelectionRelationExpression(r, w), s, ascending(o) )
+			case _ ~ e ~ r ~ Some( w ) ~ None ~ Some( s ~ o ) => SortedTupleseqExpression( ProjectionRelationExpression(SelectionRelationExpression(r, w), e), s, ascending(o) )
+			case p ~ e ~ r ~ None ~ Some( d ~ h ) ~ Some( s ~ o ) => SortedTupleseqExpression( GroupingRelationExpression(r, d, h, p, e), s, ascending(o) )
+			case p ~ e ~ r ~ Some( w ) ~ Some( d ~ h ) ~ Some( s ~ o ) => SortedTupleseqExpression( GroupingRelationExpression(SelectionRelationExpression(r, w), d, h, p, e), s, ascending(o) )
 		}
 
 	def relation = ident ^^ RelationVariableExpression
 
 	def where = ("WHERE"|"where") ~> logicalExpression
 
-	def groupby = "group" ~ "by" ~> expressions ~ opt("having" ~> logicalExpression)
+	def groupby = (("GROUP"|"group") ~ ("BY"|"by")) ~> expressions ~ opt(("HAVING"|"having") ~> logicalExpression)
 
-	def orderby = "order" ~ "by" ~> rep1sep(ident, ",") ~ opt("asc"|"desc")
+	def orderby = ("ORDER"|"order") ~ ("BY"|"by") ~> rep1sep(ident, ",") ~ opt(("ASC"|"asc")|("DESC"|"desc"))
 
 	def expressions = rep1sep(valueExpression, ",")
 
 	def alias( expr: Parser[ValueExpression] ): Parser[ValueExpression] =
-		expr ~ ("as" ~> ident) ^^ { case e ~ a => AliasValueExpression( e, a ) }
+		expr ~ (("AS"|"as") ~> ident) ^^ { case e ~ a => AliasValueExpression( e, a ) }
 
 	def valueExpression: Parser[ValueExpression] =
 		alias( lowPrecvalueExpression ) |

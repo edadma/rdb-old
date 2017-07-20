@@ -356,7 +356,8 @@ class Connection {
 				fmetadata.columnMap get n.name match {
 					case None =>
 						variables get n.name match {
-							case None => problem( n.pos, "no such column or variable" )
+							case None =>
+								problem( n.pos, "no such column or variable" )
 							case Some( v ) =>
 								VariableValue( n.pos, null, n.name, Type.fromValue(v).orNull, v )//todo: handle function types correctly
 						}
