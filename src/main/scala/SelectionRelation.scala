@@ -6,7 +6,6 @@ class SelectionRelation( conn: Connection, relation: Relation, filter: LogicalRe
 	val metadata = relation.metadata
 
 	def iterator( context: List[Tuple] ) = {
-		println( relation, filter )
 		conn.aggregateCondition( relation, filter, afuse )
 		relation.iterator( context ) filter (r => conn.evalCondition( r :: context, filter ) == TRUE)
 	}
