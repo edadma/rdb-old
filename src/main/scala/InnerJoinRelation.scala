@@ -8,4 +8,6 @@ class InnerJoinRelation( conn: Connection, val metadata: Metadata, left: Relatio
 
 	def iterator( context: List[Tuple] ) = nestedLoopIterator( context )
 
+	override def toString = s"innerJoin( $left, $condition, $right )"
+
 }

@@ -340,7 +340,7 @@ class Connection {
 	}
 
 	def evalExpression( afuse: AggregateFunctionUse, metadata: List[Metadata], ast: ValueExpression ): ValueResult =
-		evalExpression( afuse, metadata, metadata.head, ast )	//todo (nested): aggregates can't see outer scopes
+		evalExpression( afuse, metadata, if (metadata eq null) null else metadata.head, ast )	//todo (nested): aggregates can't see outer scopes
 
 	def evalExpression( afuse: AggregateFunctionUse, fmetadata: List[Metadata], ametadata: Metadata, ast: ValueExpression ): ValueResult =
 		ast match {

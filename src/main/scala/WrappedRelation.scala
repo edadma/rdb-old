@@ -9,4 +9,6 @@ class WrappedRelation( relation: Relation, context: List[Tuple] ) extends Abstra
 
 	override def iterator = iterator( context )
 
+	override def toString = s"wrappedRelation( $relation )"
+
 }

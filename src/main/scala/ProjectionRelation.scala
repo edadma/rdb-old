@@ -14,4 +14,6 @@ class ProjectionRelation( conn: Connection, relation: Relation, columns: Vector[
 			relation.iterator( context ) map (v => conn.evalVector( v :: context, columns ))
 	}
 
+	override def toString = s"project( $relation, [${columns map (_.heading) mkString ","}] )"
+
 }

@@ -7,4 +7,6 @@ class ConcreteRelation( header: IndexedSeq[Column], body: List[Tuple] ) extends 
 
 	def iterator( context: List[Tuple] ) = body.iterator
 
+	override def toString = s"concreteRelation( $header )"
+
 }

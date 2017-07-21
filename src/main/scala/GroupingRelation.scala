@@ -22,4 +22,7 @@ class GroupingRelation( conn: Connection, relation: Relation, disafuse: Aggregat
 			conn.evalVector( k :: context, columns )
 		}
 	}
+
+	override def toString = s"group( $relation, $discriminator, $columns, $filter )"
+
 }

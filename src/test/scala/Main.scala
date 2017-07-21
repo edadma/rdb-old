@@ -9,6 +9,7 @@ object Main extends App {
 			|  FROM Suppliers
 			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
 		""".stripMargin
+
 //		"""
 //			|SELECT SupplierName
 //			|  FROM Suppliers
@@ -22,12 +23,6 @@ object Main extends App {
 //	"""
 //		|{[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} [2 < b and b < 6]
 //	""".stripMargin
-
-//		"""
-//			|SELECT SupplierName
-//			|FROM Suppliers
-//			|WHERE EXISTS (SELECT ProductName FROM Products WHERE SupplierId = Suppliers.supplierId AND Price < 20)
-//		""".stripMargin
 
 //    println( SQLParser.parseStatement(statement) )
 	REPLMain.printResult( conn.executeSQLStatement(statement) )
