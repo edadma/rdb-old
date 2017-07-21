@@ -99,7 +99,7 @@ class Connection {
 				if (baseRelations contains name)
 					problem( pos, "a base relation by that name already exists" )
 
-				val rel = evalRelation( relation )
+				val rel = evalRelation( relation, Nil )
 				val res = AssignResult( name, variables contains name, rel size )
 
 				variables(name) = rel
@@ -109,13 +109,13 @@ class Connection {
 					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
 						val types = b.metadata.header map (_.typ) toArray
-						val seq = evalTupleseq( types, tupleseq )
+						val seq = evalTupleseq( types, tupleseq, Nil )
 						val (l, c) = b.insertTupleseq( seq )
 
 						InsertResult( l, c )
 				}
 			case InsertRelationStatement( Ident(pos, name), relation ) =>
-				val src = evalRelation( relation )
+				val src = evalRelation( relation, Nil )
 
 				baseRelations get name match {
 					case None => problem( pos, "unknown base relation" )
@@ -157,12 +157,12 @@ class Connection {
 						UpdateResult( b.update(this, cond, upds) )
 				}
 			case r: RelationExpression =>
-				RelationResult( evalRelation(r) )
+				RelationResult( evalRelation(r, Nil) )
 			case t: TupleseqExpression =>
-				TupleseqResult( evalTupleseq(null, t) )
+				TupleseqResult( evalTupleseq(null, t, Nil) )
 		}
 
-	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression ): Tupleseq = {
+	def evalTupleseq( types: Array[Type], tupleseq: TupleseqExpression, context: List[Metadata] ): Tupleseq = {
 		tupleseq match {
 			case TupleseqLit( data ) =>
 				val types1 =
@@ -173,7 +173,7 @@ class Connection {
 
 				new ListTupleseq( types1, evalTupleList(types1, data) )
 			case SortedTupleseqExpression( relation, names, ascending ) =>
-				val rel = evalRelation( relation )
+				val rel = evalRelation( relation, context )
 				val fields =
 					names map {
 						case Ident( pos, name ) =>
@@ -229,13 +229,13 @@ class Connection {
 		body.toList
 	}
 
-	def evalRelation( ast: RelationExpression, outer: List[Metadata] ): Relation = {
+	def evalRelation( ast: RelationExpression, context: List[Metadata] ): Relation = {
 		ast match {
 			case GroupingRelationExpression( relation, discriminator, filter, cpos, columns ) =>
-				val rel = evalRelation( relation, outer )//todo (nested): don't know if this is right
+				val rel = evalRelation( relation, context )//todo (nested): don't know if this is right
 				val disafuse = AFUseOrField( NoFieldOrAFUsed )
-				val dis = discriminator map (evalExpression(disafuse, rel.metadata :: outer, _)) toVector
-				val dismetadata = new Metadata( dis map (c => SimpleColumn("", c.heading, c.typ)) ) :: outer
+				val dis = discriminator map (evalExpression(disafuse, rel.metadata :: context, _)) toVector
+				val dismetadata = new Metadata( dis map (c => SimpleColumn("", c.heading, c.typ)) ) :: context
 				val filtafuse = AFUseOrField( NoFieldOrAFUsed )
 				val filt = filter map (evalLogical( filtafuse, dismetadata, rel.metadata, _ ))
 				val colafuse = AFUseOrField( NoFieldOrAFUsed )
@@ -246,20 +246,20 @@ class Connection {
 
 				new GroupingRelation( this, rel, disafuse.state, dis, filtafuse.state, filt, colafuse.state, cols )
 			case ProjectionRelationExpression( relation, columns ) =>
-				val rel = evalRelation( relation )
+				val rel = evalRelation( relation, context )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
 
-				new ProjectionRelation( this, rel, columns map (evalExpression(afuse, rel.metadata, _)) toVector, afuse.state )
+				new ProjectionRelation( this, rel, columns map (evalExpression(afuse, rel.metadata :: context, _)) toVector, afuse.state )
 			case InnerJoinRelationExpression( left, condition, right ) =>
-				val lrel = evalRelation( left )
-				val rrel = evalRelation( right )
+				val lrel = evalRelation( left, context )
+				val rrel = evalRelation( right, context )
 				val metadata = new Metadata( lrel.metadata.header ++ rrel.metadata.header )
 
-				new InnerJoinRelation( this, metadata, lrel, evalLogical(AFUseNotAllowed, metadata, condition), rrel )
+				new InnerJoinRelation( this, metadata, lrel, evalLogical(AFUseNotAllowed, metadata :: context, condition), rrel )
 			case SelectionRelationExpression( relation, condition ) =>
-				val rel = evalRelation( relation )
+				val rel = evalRelation( relation, context )
 				val afuse = AFUseOrField( NoFieldOrAFUsed )
-				val cond = evalLogical( afuse, rel.metadata, condition )
+				val cond = evalLogical( afuse, rel.metadata :: context, condition )
 
 				new SelectionRelation( this, rel, cond, afuse.state )
 			case RelationVariableExpression( Ident(p, n) ) =>
@@ -304,7 +304,7 @@ class Connection {
 						case (ColumnSpec( Ident(_, n), _ , _ ), t) => SimpleColumn( tab, n, t )
 					}
 
-				new ListRelation( header toIndexedSeq, body )
+				new ConcreteRelation( header toIndexedSeq, body )
 		}
 	}
 
@@ -530,7 +530,9 @@ class Connection {
 			case AliasValue( _, _, _, _, _, v ) => evalValue( row, v )
 			case LiteralValue( _, _, _, _, v ) => v
 			case VariableValue( _, _, _, _, v ) => v
-			case FieldValue( _, _, _, _, index, depth ) => row(depth)(index)
+			case FieldValue( _, _, _, _, index, depth ) =>
+				println( row, result )
+				row(depth)(index)
 			case MarkedValue( _, _, _, _, m ) => m
 			case BinaryValue( p, _, _, _, l, _, f, r ) =>
 				val lv = evalValue( row, l )
@@ -557,14 +559,19 @@ class Connection {
 			case LogicalValue( _, _, _, _, l ) => evalCondition( row, l )
 		}
 
-	def evalCondition( row: List[Tuple], cond: LogicalResult ): Logical =
+	def evalCondition( context: List[Tuple], cond: LogicalResult ): Logical =
 		cond match {
 			case ExistsLogical( _, relation ) =>
-				Logical.fromBoolean( relation nonEmpty )
+				relation match {
+					case r: Relation =>
+						Logical.fromBoolean( r.iterator(context).nonEmpty )
+					case _ => sys.error( "fix this" )
+				}
+
 			case LiteralLogical( _, lit ) => lit
 			case ComparisonLogical( _, left, _, pred, right ) =>
-				val lv = evalValue( row, left )
-				val rv = evalValue( row, right )
+				val lv = evalValue( context, left )
+				val rv = evalValue( context, right )
 
 				(lv, rv) match {
 					case (`I`, _)|(_, `I`) => MAYBE_I
@@ -576,9 +583,9 @@ class Connection {
 							Logical.fromBoolean( Math.predicate(pred, lv, rv) )
 				}
 			case AndLogical( _, l, r ) =>
-				evalCondition( row, l ) and evalCondition( row, r )
+				evalCondition( context, l ) and evalCondition( context, r )
 			case OrLogical( _, l, r ) =>
-				evalCondition( row, l ) or evalCondition( row, r )
+				evalCondition( context, l ) or evalCondition( context, r )
 		}
 
 	def evalLogical( afuse: AggregateFunctionUse, metadata: List[Metadata], ast: LogicalExpression ): LogicalResult =
@@ -589,8 +596,8 @@ class Connection {
 			case ExistsLogicalExpression( tuples ) =>
 				val rel =
 					tuples match {
-						case r: RelationExpression => evalRelation( r )
-						case s: TupleseqExpression => evalTupleseq( null, s )
+						case r: RelationExpression => evalRelation( r, fmetadata )
+						case s: TupleseqExpression => evalTupleseq( null, s, fmetadata )
 					}
 
 				ExistsLogical( s"exists ($rel)", rel )

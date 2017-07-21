@@ -7,21 +7,19 @@ class GroupingRelation( conn: Connection, relation: Relation, disafuse: Aggregat
 
 	val metadata = new Metadata( columns map (c => SimpleColumn( "", c.heading, c.typ )) )
 
-	def iterator = iterator( Nil )
-
-	def iterator( row: List[Tuple] ) = {
+	def iterator( context: List[Tuple] ) = {
 		conn.aggregateColumns( relation, discriminator, disafuse )
 
-		val groups = relation groupBy (conn.evalVector( _, discriminator ))
+		val groups = relation groupBy (v => conn.evalVector( v :: context, discriminator ))
 
 		groups.iterator filter {
 			case (k, g) if filter nonEmpty =>
 				conn.aggregateCondition( g, filter get, filtafuse )
-				conn.evalCondition( k, filter get ) == TRUE
+				conn.evalCondition( k :: context, filter get ) == TRUE
 			case _ => true
 		} map { case (k, g) =>
 			conn.aggregateColumns( g, columns, colafuse )
-			conn.evalVector( k, columns )
+			conn.evalVector( k :: context, columns )
 		}
 	}
 }

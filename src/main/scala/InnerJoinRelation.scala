@@ -3,9 +3,9 @@ package xyz.hyperreal.rdb
 
 class InnerJoinRelation( conn: Connection, val metadata: Metadata, left: Relation, condition: LogicalResult, right: Relation ) extends AbstractRelation {
 
-	private def nestedLoopIterator =
-		(for (x <- left; y <- right) yield x ++ y).iterator filter (conn.evalCondition( _, condition ) == TRUE)
+	private def nestedLoopIterator( context: List[Tuple] ) =
+		(for (x <- left; y <- right) yield x ++ y).iterator filter (r => conn.evalCondition( r :: context, condition ) == TRUE)
 
-	def iterator = nestedLoopIterator
+	def iterator( context: List[Tuple] ) = nestedLoopIterator( context )
 
 }

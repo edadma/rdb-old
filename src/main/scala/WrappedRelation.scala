@@ -1,7 +1,5 @@
 package xyz.hyperreal.rdb
 
-import collection.mutable.{ArrayBuffer, ListBuffer}
-
 
 class WrappedRelation( relation: Relation, context: List[Tuple] ) extends AbstractRelation {
 

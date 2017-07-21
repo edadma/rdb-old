@@ -20,7 +20,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 //				index
 //		}
 
-	def iterator = rows.iterator map (_ toVector)
+	def iterator( context: List[Tuple] ) = rows.iterator map (_ toVector)
 
 	override def size = rows.length
 
@@ -28,7 +28,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 		var count = 0
 
 		for (i <- rows.length - 1 to 0 by -1)
-			if (conn.evalCondition( rows(i), cond ) == TRUE) {
+			if (conn.evalCondition( List(rows(i)), cond ) == TRUE) {
 				rows.remove( i )
 				count += 1
 			}
@@ -40,9 +40,9 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 		var count = 0
 
 		for (i <- rows.length - 1 to 0 by -1)
-			if (conn.evalCondition( rows(i), cond ) == TRUE) {
+			if (conn.evalCondition( List(rows(i)), cond ) == TRUE) {
 				for ((f, v) <- updates)
-					rows(i)(f) = conn.evalValue( rows(i), v )
+					rows(i)(f) = conn.evalValue( List(rows(i)), v )
 				count += 1
 			}
 

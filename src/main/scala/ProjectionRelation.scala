@@ -5,13 +5,13 @@ class ProjectionRelation( conn: Connection, relation: Relation, columns: Vector[
 
 	val metadata = new Metadata( columns map (c => SimpleColumn( "", c.heading, c.typ )) )
 
-	def iterator = {
+	def iterator( context: List[Tuple] ) = {
 		conn.aggregateColumns( relation, columns, afuse )
 
 		if (afuse == OnlyAFUsed)
 			Iterator( conn.evalVector(null, columns) )
 		else
-			relation.iterator map (conn.evalVector( _, columns ))
+			relation.iterator( context ) map (v => conn.evalVector( v :: context, columns ))
 	}
 
 }
