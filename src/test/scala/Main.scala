@@ -29,6 +29,7 @@ object Main extends App {
 //			|WHERE EXISTS (SELECT ProductName FROM Products WHERE SupplierId = Suppliers.supplierId AND Price < 20)
 //		""".stripMargin
 
+//    println( SQLParser.parseStatement(statement) )
 	REPLMain.printResult( conn.executeSQLStatement(statement) )
 
 	/*

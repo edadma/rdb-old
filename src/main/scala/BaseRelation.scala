@@ -99,4 +99,6 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 		(res toList, count)
 	}
+
+	override def toString = s"baseRelation( $name, $definition )"
 }

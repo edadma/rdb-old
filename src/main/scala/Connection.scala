@@ -530,9 +530,7 @@ class Connection {
 			case AliasValue( _, _, _, _, _, v ) => evalValue( row, v )
 			case LiteralValue( _, _, _, _, v ) => v
 			case VariableValue( _, _, _, _, v ) => v
-			case FieldValue( _, _, _, _, index, depth ) =>
-				println( row, result )
-				row(depth)(index)
+			case FieldValue( _, _, _, _, index, depth ) => row(depth)(index)
 			case MarkedValue( _, _, _, _, m ) => m
 			case BinaryValue( p, _, _, _, l, _, f, r ) =>
 				val lv = evalValue( row, l )
