@@ -77,7 +77,6 @@ object REPLMain extends App {
 							case None =>
 							case Some( h ) =>
 								headerSeq( h )
-								line
 
 								for (i <- 1 to h.length)
 									if (tupleseq.types( i - 1 ).isInstanceOf[NumericalType])
@@ -100,7 +99,6 @@ object REPLMain extends App {
 				val t =
 					new TextTable {
 						headerSeq( l.metadata.header map (_.column) )
-						line
 
 						for (i <- 1 to l.metadata.header.length)
 							if (l.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])

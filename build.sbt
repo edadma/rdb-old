@@ -50,7 +50,7 @@ libraryDependencies ++= {
 
 libraryDependencies ++= Seq(
 	"xyz.hyperreal" %% "json" % "0.7",
-	"xyz.hyperreal" %% "table" % "0.5",
+	"xyz.hyperreal" %% "table" % "0.6",
 	"xyz.hyperreal" %% "lia" % "0.21",
 	"xyz.hyperreal" %% "options" % "0.2",
 	"xyz.hyperreal" %% "importer" % "0.1"
