@@ -58,7 +58,7 @@ class Connection {
 				var hset = Set[String]()
 				var pk = false
 
-				for (ColumnDef( Ident(p, n), _, _, pkpos, _, _ ) <- columns)
+				for (ColumnDef( Ident(p, n), _, _, pkpos, _, _, _ ) <- columns)
 					if (hset( n ))
 						problem( p, "duplicate column" )
 					else {
@@ -76,14 +76,14 @@ class Connection {
 
 				val types: Array[Type] =
 					columns map {
-						case ColumnDef( _, _, None, _, _, _ ) => null
-						case ColumnDef( _, p, Some(t), _, _, _ ) =>
+						case ColumnDef( _, _, None, _, _, _, _ ) => null
+						case ColumnDef( _, p, Some(t), _, _, _, _ ) =>
 							Type.names.getOrElse( t, problem( p, s"unrecognized type name '$t'" ) )
 					} toArray
 				val header =
 					columns zip types map {
-						case (ColumnDef( _, p, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
+						case (ColumnDef( _, p, _, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
+						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _, _), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
 					}
 
 				createTable( base, header )
@@ -171,7 +171,7 @@ class Connection {
 					else
 						types
 
-				new ListTupleseq( types1, evalTupleList(types1, data) )
+				new ConcreteTupleseq( types1, evalTupleList(types1, data) )
 			case SortedTupleseqExpression( relation, names, ascending ) =>
 				val rel = evalRelation( relation, context )
 				val fields =

@@ -4,17 +4,17 @@ package xyz.hyperreal.rdb
 object Main extends App {
 	val conn = new Connection {loadFromFile( "samples/small" )}
 	val statement =
-		"""
-			|SELECT *
-			|  FROM Suppliers
-			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
-		""".stripMargin
-
 //		"""
-//			|SELECT SupplierName
+//			|SELECT *
 //			|  FROM Suppliers
-//			|  WHERE EXISTS (SELECT ProductName FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
+//			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
 //		""".stripMargin
+
+		"""
+			|SELECT SupplierName
+			|  FROM Suppliers
+			|  WHERE EXISTS (SELECT ProductName FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
+		""".stripMargin
 
 //		"""
 //			|select * from Products where Price between 15 and 20 order by Price desc
