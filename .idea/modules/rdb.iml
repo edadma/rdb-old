@@ -53,10 +53,6 @@
     <orderEntry type="library" scope="TEST" name="SBT: org.scalatest:scalatest_2.12:3.0.0:jar" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang.modules:scala-parser-combinators_2.12:1.0.6:jar" level="project" />
     <orderEntry type="library" name="SBT: jline:jline:2.14.3:jar" level="project" />
-<<<<<<< HEAD
-    <orderEntry type="library" name="SBT: xyz.hyperreal:table_2.12:0.5:jar" level="project" />
-=======
->>>>>>> a4789c419d3aee32207db08d3c7faa39133dc0f4
     <orderEntry type="library" name="SBT: xyz.hyperreal:importer_2.12:0.1:jar" level="project" />
   </component>
 </module>
