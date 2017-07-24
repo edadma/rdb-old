@@ -111,7 +111,7 @@ class Connection {
 						val types = b.metadata.baseRelationHeader map (_.typ) toArray
 						val t = evalTuple( types, tuple )
 
-						(b.metadata.baseRelationHeader zip t) zip tuple.t find {case ((c, v), _) => c.unmarkable && v.isInstanceOf[Mark]} match {
+						(b.metadata.baseRelationHeader zip t) zip tuple.t find {case ((c, v), _) => (c.unmarkable || c.constraint.contains( PrimaryKey )) && v.isInstanceOf[Mark]} match {
 							case None =>
 							case Some( ((BaseRelationColumn(table, column, _, _, _, _), _), e) ) => problem( e.pos, s"column '$column' of table '$table' is unmarkable" )
 						}

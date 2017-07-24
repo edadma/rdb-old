@@ -50,7 +50,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 	}
 
 	def insertRow( row: Tuple ): Option[Map[String, AnyRef]] =
-		row zip definition find {case (v, d) => v.isInstanceOf[Mark] && d.unmarkable} match {
+		row zip definition find {case (v, d) => v.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey ))} match {
 			case None =>
 				rows += row.toArray
 				Some( Map.empty )
