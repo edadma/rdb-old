@@ -30,6 +30,17 @@ class SQLParser extends RegexParsers {
 
 	def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ { case p ~ n => Ident( p, n ) }
 
+	def createTable =
+		(("CREATE"|"create") ~ ("TABLE"|"table")) ~> ident ~ ("(" ~> rep1sep(columnDefinition, ",") <~ ")") ^^ {
+			case name ~ types => CreateBaseRelationStatement( name, types )
+		}
+
+	def columnDefinition =
+		ident ~ pos ~ columnType ^^ {case name ~ pos ~ typ => ColumnDef(name, pos, Some(typ), null, null, null, false)}
+
+	def columnType =
+		ident ^^ (_.name)
+
 	def ascending( o: Option[String] ) = o.isEmpty || o.get.toLowerCase == "asc"
 
 	def query: Parser[TupleCollectionExpression] =
