@@ -62,7 +62,7 @@ object REPLMain extends App {
 				if (stacktrace)
 					e.printStackTrace( out )
 				else
-					out.println( e )
+					out.println( e.getMessage )
 		}
 
 		out.println
@@ -90,7 +90,7 @@ object REPLMain extends App {
 				print( t )
 
 				tupleseq.size match {
-					case 0 => println( "empty tupleseq" )
+					case 0 => println( "empty tuple sequence" )
 					case 1 => println( "1 tuple" )
 					case s => println( s"$s tuples" )
 				}

@@ -109,10 +109,17 @@ class Connection {
 					case None => problem( base.pos, "unknown base relation" )
 					case Some( b ) =>
 						val types = b.metadata.baseRelationHeader map (_.typ) toArray
-						val seq = evalTupleseq( types, tupleseq, Nil )
-						val (l, c) = b.insertTupleseq( seq )
+						val t = evalTuple( types, tuple )
 
-						InsertResult( l, c )
+						(b.metadata.baseRelationHeader zip t) zip tuple.t find {case ((c, v), _) => c.unmarkable && v.isInstanceOf[Mark]} match {
+							case None =>
+							case Some( ((BaseRelationColumn(table, column, _, _, _, _), _), e) ) => problem( e.pos, s"column '$column' of table '$table' is unmarkable" )
+						}
+
+						b.insertRow( t ) match {
+							case None => InsertResult( Nil, 0 )
+							case Some( a ) => InsertResult( List(a), 1 )
+						}
 				}
 			case InsertTupleseqStatement( base, tupleseq ) =>
 				baseRelations get base.name match {
@@ -197,44 +204,48 @@ class Connection {
 		}
 	}
 
+	def evalTuple( types: Array[Type], tuple: TupleExpression ) = {
+		val row = new ArrayBuffer[AnyRef]
+		val r = tuple.t
+
+		if (r.length < types.length)
+			problem( tuple.pos, "not enough values")
+
+		for ((v, i) <- r zipWithIndex) {
+			if (i == types.length)
+				problem( v.pos, "too many values")
+
+			var x = evalValue( null, evalExpression(AFUseNotAllowed, null, v) )
+
+			x match {
+				case _: Mark =>
+				case a: java.lang.Integer =>
+					types(i) match {
+						case null => types(i) = IntegerType
+						case IntegerType =>
+						case FloatType =>
+							x = a.toDouble.asInstanceOf[Number]
+						case typ => problem( v.pos, s"expected $typ, not integer" )
+					}
+				case _: String =>
+					types(i) match {
+						case null => types( i ) = StringType
+						case StringType =>
+						case typ => problem( v.pos, s"expected $typ, not string" )
+					}
+			}
+
+			row += x
+		}
+
+		row toVector
+	}
+
 	def evalTupleList( types: Array[Type], data: List[TupleExpression] ): List[Tuple] = {
 		val body = new ArrayBuffer[Tuple]
 
-		for (t@TupleExpression( r ) <- data) {
-			val row = new ArrayBuffer[AnyRef]
-
-			if (r.length < types.length)
-				problem( t.pos, "not enough values")
-
-			for ((v, i) <- r zipWithIndex) {
-				if (i == types.length)
-					problem( v.pos, "too many values")
-
-				var x = evalValue( null, evalExpression(AFUseNotAllowed, null, v) )
-
-				x match {
-					case _: Mark =>
-					case a: java.lang.Integer =>
-						types(i) match {
-							case null => types(i) = IntegerType
-							case IntegerType =>
-							case FloatType =>
-								x = a.toDouble.asInstanceOf[Number]
-							case typ => problem( v.pos, s"expected $typ, not integer" )
-						}
-					case _: String =>
-						types(i) match {
-							case null => types( i ) = StringType
-							case StringType =>
-							case typ => problem( v.pos, s"expected $typ, not string" )
-						}
-				}
-
-				row += x
-			}
-
-			body += row.toVector
-		}
+		for (t@TupleExpression( r ) <- data)
+			body += evalTuple( types, t )
 
 		body.toList
 	}

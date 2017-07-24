@@ -49,10 +49,13 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 		count
 	}
 
-	def insertRow( row: Tuple ): Option[Map[String, AnyRef]] = {
-		rows += row.toArray
-		Some( Map.empty )
-	}
+	def insertRow( row: Tuple ): Option[Map[String, AnyRef]] =
+		row zip definition find {case (v, d) => v.isInstanceOf[Mark] && d.unmarkable} match {
+			case None =>
+				rows += row.toArray
+				Some( Map.empty )
+			case Some( (_, BaseRelationColumn(table, column, _, _, _, _)) ) => sys.error( s"column '$column' of table '$table' is unmarkable" )
+		}
 
 	def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[AnyRef]
