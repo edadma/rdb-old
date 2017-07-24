@@ -3,6 +3,8 @@ package xyz.hyperreal.rdb
 
 class Metadata( val header: IndexedSeq[Column] ) {
 
+	lazy val baseRelationHeader = header.asInstanceOf[IndexedSeq[BaseRelationColumn]]
+
 	lazy val tableSet = header map (_.table) toSet
 
 	lazy val columnSet = header map (_.column) toSet
@@ -35,7 +37,7 @@ abstract class Column {
 }
 
 case class SimpleColumn( table: String, column: String, typ: Type ) extends Column
-case class BaseRelationColumn( table: String, column: String, typ: Type, constraint: Option[Constraint] ) extends Column
+case class BaseRelationColumn( table: String, column: String, typ: Type, constraint: Option[Constraint], unmarkable: Boolean, auto: Boolean ) extends Column
 
 trait Constraint
 case object PrimaryKey extends Constraint

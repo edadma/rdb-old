@@ -24,7 +24,7 @@ class Connection {
 				Type.names(t)
 
 		for ((_, Table(name, header, data)) <- imp.importFromFile( file )) {
-			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types( typ ), None )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
+			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types(typ), None, false, false )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
 
 			for (row <- data)
 				t.insertRow( row )
@@ -83,7 +83,7 @@ class Connection {
 				val header =
 					columns zip types map {
 						case (ColumnDef( _, p, _, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _, _), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None )
+						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _, u), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None, u, false )
 					}
 
 				createTable( base, header )
@@ -104,6 +104,16 @@ class Connection {
 
 				variables(name) = rel
 				res
+			case InsertTupleStatement( base, tuple ) =>
+				baseRelations get base.name match {
+					case None => problem( base.pos, "unknown base relation" )
+					case Some( b ) =>
+						val types = b.metadata.baseRelationHeader map (_.typ) toArray
+						val seq = evalTupleseq( types, tupleseq, Nil )
+						val (l, c) = b.insertTupleseq( seq )
+
+						InsertResult( l, c )
+				}
 			case InsertTupleseqStatement( base, tupleseq ) =>
 				baseRelations get base.name match {
 					case None => problem( base.pos, "unknown base relation" )

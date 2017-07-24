@@ -44,7 +44,7 @@ class RQLParser extends RegexParsers {
 		"drop" ~> ident ^^ DropTableStatement |
 		("insert" ~> ident) ~ relation ^^ { case n ~ r => InsertRelationStatement( n, r ) } |
 		("insert" ~> ident) ~ tupleseq ^^ { case n ~ t => InsertTupleseqStatement( n, t ) } |
-		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTupleseqStatement( n, TupleseqLit(List(t)) ) } |
+		("insert" ~> ident) ~ tuple ^^ { case n ~ t => InsertTupleStatement( n, t ) } |
 		("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ { case n ~ c => DeleteStatement( n, c ) } |
 		("update" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ~ ("(" ~> rep1sep(ident ~ ("=" ~> valueExpression), ",") <~ ")") ^^ {
 			case n ~ c ~ u => UpdateStatement( n, c, u map {case f ~ e => (f, e)} ) }
