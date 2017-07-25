@@ -1,6 +1,7 @@
 package xyz.hyperreal.rdb
 
 import java.util.UUID
+import java.time.{Instant, LocalDate}
 
 import xyz.hyperreal.numbers.ComplexBigInt
 
@@ -11,9 +12,12 @@ object Type {
 		Map(
 			"logical" -> LogicalType,
 			"integer" -> IntegerType,
+			"smallint" -> SmallintType,
 			"float" -> FloatType,
-			"string" -> StringType,
-			"decimal" -> DecimalType
+			"text" -> TextType,
+			"decimal" -> DecimalType,
+			"date" -> DateType,
+			"instant" -> InstantType
 		)
 
 	def fromValue( v: Any ) = {
@@ -22,7 +26,9 @@ object Type {
 			case _: Int => IntegerType
 			case _: Double => FloatType
 			case _: ComplexBigInt => ComplexIntegerType
-			case _: String => StringType
+			case _: String => TextType
+			case _: LocalDate => DateType
+			case _: Instant => InstantType
 		}
 
 		if (_fromValue isDefinedAt v)
@@ -30,6 +36,7 @@ object Type {
 		else
 			None
 	}
+
 }
 
 trait Type extends Ordering[AnyRef]
@@ -67,7 +74,16 @@ case object LogicalType extends PrimitiveType( "logical" ) {
 //
 //}
 
-//case object ShortType extends PrimitiveType
+case object SmallintType extends PrimitiveType( "smallint" ) with OrderedNumericalType {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (x: java.lang.Short, y: java.lang.Short) => x compareTo y
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
+
 case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumericalType {
 
 	def compare( x: AnyRef, y: AnyRef ) =
@@ -78,7 +94,6 @@ case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumerical
 
 }
 
-//case object LongType extends PrimitiveType
 //case object BigintType extends PrimitiveType
 case object FloatType extends PrimitiveType( "float" ) with OrderedNumericalType {
 
@@ -118,7 +133,7 @@ case object ComplexIntegerType extends PrimitiveType( "complex integer" ) with N
 //case object ComplexRationalType extends PrimitiveType
 //case object ComplexDecimalType extends PrimitiveType
 //case object NumberType extends PrimitiveType
-case object StringType extends PrimitiveType( "string" ) with OrderedType {
+case object TextType extends PrimitiveType( "string" ) with OrderedType {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
@@ -131,11 +146,27 @@ case object StringType extends PrimitiveType( "string" ) with OrderedType {
 //case object TextType extends PrimitiveType
 //case object BinaryType extends PrimitiveType
 //case object BlobType extends PrimitiveType
-//case object TimestampType extends PrimitiveType
-//case object TimestamptzType extends PrimitiveType
-//case object DateType extends PrimitiveType
-//case object DateTimeType extends PrimitiveType
-//case object TimeType extends PrimitiveType
+
+case object DateType extends PrimitiveType( "date" ) with OrderedType {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (x: LocalDate, y: LocalDate) => x compareTo y
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
+
+case object InstantType extends PrimitiveType( "instant" ) with OrderedType {
+
+	def compare( x: AnyRef, y: AnyRef ) =
+		(x, y) match {
+			case (x: Instant, y: Instant) => x compareTo y
+			case _ => sys.error( s"incomparable values: $x, $y" )
+		}
+
+}
+
 //case object TimeIntervalType extends PrimitiveType
 case object UUIDType extends PrimitiveType( "uuid" ) {
 

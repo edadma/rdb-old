@@ -18,10 +18,11 @@ class Connection {
 		val imp = new Importer
 
 		def types( t: String ) =
-			if (t == "currency")
-				DecimalType
-			else
-				Type.names(t)
+			t match {
+				case "currency" => DecimalType
+				case "dateUS" | "date" => DateType
+				case _ => Type.names( t )
+			}
 
 		for ((_, Table(name, header, data)) <- imp.importFromFile( file )) {
 			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types(typ), None, false, false )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
@@ -76,9 +77,7 @@ class Connection {
 
 				val types: Array[Type] =
 					columns map {
-						case ColumnDef( _, _, None, _, _, _, _ ) => null
-						case ColumnDef( _, p, Some(t), _, _, _, _ ) =>
-							Type.names.getOrElse( t, problem( p, s"unrecognized type name '$t'" ) )
+						case ColumnDef( _, _, t, _, _, _, _ ) => t
 					} toArray
 				val header =
 					columns zip types map {
@@ -229,8 +228,8 @@ class Connection {
 					}
 				case _: String =>
 					types(i) match {
-						case null => types( i ) = StringType
-						case StringType =>
+						case null => types( i ) = TextType
+						case TextType =>
 						case typ => problem( v.pos, s"expected $typ, not string" )
 					}
 			}
@@ -371,7 +370,7 @@ class Connection {
 				AliasValue( v.pos, v.table, alias.name, v.typ, alias.pos, v )
 			case FloatLit( n ) => LiteralValue( ast.pos, null, n, FloatType, java.lang.Double.valueOf(n) )
 			case IntegerLit( n ) => LiteralValue( ast.pos, null, n, IntegerType, Integer.valueOf(n) )
-			case StringLit( s ) => LiteralValue( ast.pos, null, '"' + s + '"', StringType, s )
+			case StringLit( s ) => LiteralValue( ast.pos, null, '"' + s + '"', TextType, s )
 			case MarkLit( m ) => MarkedValue( ast.pos, null, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
 				search( fmetadata )( _.columnMap get n.name ) match {

@@ -99,12 +99,14 @@ class RQLParser extends RegexParsers {
 	def columnsDef = "[" ~> rep1sep(columnDef, ",") <~ "]"
 
 	def columnDef =
-		ident ~ (":" ~> ident) ~ opt(pos <~ "*") ~ opt("unmarkable") ^^ {
-			case n ~ t ~ None ~ u => ColumnDef( n, t.pos, Some(t.name), null, null, null, if (u isDefined) true else false )
-			case n ~ t ~ Some(p) ~ u => ColumnDef( n, t.pos, Some(t.name), p, null, null, if (u isDefined) true else false ) } |
-		ident ~ pos ~ opt(pos <~ "*") ~ opt("unmarkable") ^^ {
-			case n ~ tp ~ None ~ u => ColumnDef( n, tp, None, null, null, null, if (u isDefined) true else false )
-			case n ~ tp ~ Some(pkp) ~ u => ColumnDef( n, tp, None, pkp, null, null, if (u isDefined) true else false ) }
+		ident ~ pos ~ (":" ~> columnType) ~ opt(pos <~ "*") ~ opt("unmarkable") ^^ {
+			case n ~ tp ~ t ~ None ~ u => ColumnDef( n, tp, t, null, null, null, if (u isDefined) true else false )
+			case n ~ tp ~ t ~ Some(p) ~ u => ColumnDef( n, tp, t, p, null, null, if (u isDefined) true else false ) }
+
+	def columnType =
+		"smallint" ^^^ SmallintType |
+		"integer" ^^^ IntegerType |
+		"text" ^^^ TextType
 
 	def tuple = positioned( "(" ~> expressions <~ ")" ^^ TupleExpression )
 

@@ -36,10 +36,14 @@ class SQLParser extends RegexParsers {
 		}
 
 	def columnDefinition =
-		ident ~ pos ~ columnType ^^ {case name ~ pos ~ typ => ColumnDef(name, pos, Some(typ), null, null, null, false)}
+		ident ~ pos ~ columnType ^^ {case name ~ pos ~ typ => ColumnDef(name, pos, typ, null, null, null, false)}
 
 	def columnType =
-		ident ^^ (_.name)
+		"smallint" ^^^ SmallintType |
+		"integer" ^^^ IntegerType |
+		"text" ^^^ TextType |
+		"date" ^^^ DateType |
+		"timestamp" ^^^ InstantType
 
 	def ascending( o: Option[String] ) = o.isEmpty || o.get.toLowerCase == "asc"
 

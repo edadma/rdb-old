@@ -134,7 +134,7 @@ object MaxAggregateFunction extends AbstractAggregateFunction( "max" ) {
 
 object ListAggregateFunction extends AbstractAggregateFunction( "list" ) {
 
-	def typ( inputs: List[Type] ) = StringType
+	def typ( inputs: List[Type] ) = TextType
 
 	def instance =
 		new AbstractAggregateFunctionInstance[String] {

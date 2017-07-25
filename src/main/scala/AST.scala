@@ -54,4 +54,4 @@ case class ExistsLogicalExpression( tuples: TupleCollectionExpression ) extends 
 case class Ident( pos: Position, name: String )
 
 case class ColumnSpec( name: Ident, typepos: Position, typ: Option[String] )
-case class ColumnDef( name: Ident, typepos: Position, typ: Option[String], pkpos: Position, fkr: Ident, fkc: Ident, unmarkable: Boolean /*, auto: Boolean*/ )
+case class ColumnDef( name: Ident, typepos: Position, typ: Type, pkpos: Position, fkr: Ident, fkc: Ident, unmarkable: Boolean /*, auto: Boolean*/ )
