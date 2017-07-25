@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb
 
-import collection.mutable.{ArrayBuffer, ListBuffer}
+import collection.mutable.{HashMap, ArrayBuffer, ListBuffer, TreeMap}
 
 
 class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends AbstractRelation {
@@ -9,7 +9,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 	val metadata = new Metadata( definition toIndexedSeq )
 
-//	private val indexes = new HashMap[String, TreeMap[AnyRef, Int]]
+	private val indexes = new ArrayBuffer[TreeMap[AnyRef, Int]]
 //	private val pkindex =
 //		metadata primaryKey match {
 //			case None => sys.error( s"attempt to create base relation '$name' with no primary key" )
@@ -58,21 +58,24 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 		}
 
 	def insertRelation( rel: Relation ) = {
-		val mapping = new ArrayBuffer[AnyRef]
+		val mapping = new ArrayBuffer[Option[Int]]
 
 		for (c <- metadata.header)
-			mapping += rel.metadata.columnMap.getOrElse( c.column, I ).asInstanceOf[AnyRef]
+			mapping += rel.metadata.columnMap get c.column
 
 		val res = new ListBuffer[Map[String, AnyRef]]
 		var count = 0
 
 		for (row <- rel) {
 			val r =
-				(for (i <- mapping)
+				(for ((m, idx) <- mapping zipWithIndex)
 					yield {
-						i match {
-							case n: java.lang.Integer => row( n )
-							case m => m
+						m match {
+							case Some( n ) => row( n )
+							case None =>
+								if (metadata.baseRelationHeader(idx).auto)
+									metadata.baseRelationHeader(idx).typ.asInstanceOf[Auto].next()
+								I
 						}
 					}) toVector
 

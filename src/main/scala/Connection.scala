@@ -20,7 +20,7 @@ class Connection {
 		def types( t: String ) =
 			t match {
 				case "currency" => DecimalType
-				case "dateUS" | "date" => DateType
+				case "dateUS"|"date" => DateType
 				case _ => Type.names( t )
 			}
 
