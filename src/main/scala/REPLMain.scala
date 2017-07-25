@@ -71,23 +71,25 @@ object REPLMain extends App {
 	def printResult( r: StatementResult ) =
 		r match {
 			case TupleseqResult( tupleseq ) =>
-				val t =
-					new TextTable {
-						tupleseq.header match {
-							case None =>
-							case Some( h ) =>
-								headerSeq( h )
+				if (tupleseq.nonEmpty) {
+					val t =
+						new TextTable {
+							tupleseq.header match {
+								case None =>
+								case Some( h ) =>
+									headerSeq( h )
 
-								for (i <- 1 to h.length)
-									if (tupleseq.types( i - 1 ).isInstanceOf[NumericalType])
-										rightAlignment( i )
+									for (i <- 1 to h.length)
+										if (tupleseq.types( i - 1 ).isInstanceOf[NumericalType])
+											rightAlignment( i )
+							}
+
+							for (r <- tupleseq)
+								rowSeq( r )
 						}
 
-						for (r <- tupleseq)
-							rowSeq( r )
-					}
-
-				print( t )
+					print( t )
+				}
 
 				tupleseq.size match {
 					case 0 => println( "empty tuple sequence" )
@@ -96,19 +98,22 @@ object REPLMain extends App {
 				}
 			case RelationResult( rel ) =>
 				val l = rel.collect
-				val t =
-					new TextTable {
-						headerSeq( l.metadata.header map (_.column) )
 
-						for (i <- 1 to l.metadata.header.length)
-							if (l.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
-								rightAlignment( i )
+				if (l.nonEmpty) {
+					val t =
+						new TextTable {
+							headerSeq( l.metadata.header map (_.column) )
 
-						for (r <- l)
-							rowSeq( r )
-					}
+							for (i <- 1 to l.metadata.header.length)
+								if (l.metadata.header( i - 1 ).typ.isInstanceOf[NumericalType])
+									rightAlignment( i )
 
-				print( t )
+							for (r <- l)
+								rowSeq( r )
+						}
+
+					print( t )
+				}
 
 				l.size match {
 					case 0 => println( "empty relation" )

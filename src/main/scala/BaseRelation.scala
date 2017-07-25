@@ -58,24 +58,27 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 	}
 
 	def insertRow( row: Tuple ): Option[Map[String, AnyRef]] = {
-//		row zip definition find {case (v, d) => v.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey ))} match {
-//			case None =>
-				var auto = Map.empty[String, AnyRef]
+		var auto = Map.empty[String, AnyRef]
 
-				for (((r, d), i) <- (row zip definition) zipWithIndex) {
-					if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey )))
-						sys.error( s"column '${d.column}' of table '${d.table}' is unmarkable" )
+		for (((r, d), i) <- (row zip definition) zipWithIndex) {
+			if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey )))
+				sys.error( s"column '${d.column}' of table '${d.table}' is unmarkable" )
 
-					if (d.auto || d.constraint.isDefined)
-						indexes(i)(r) = rows.length
+			d.constraint match {
+				case Some( PrimaryKey ) if indexes(i) contains r => return None
+				case Some( Unique ) if indexes(i) contains r => sys.error( s"Uniqueness constraint violation: $r exists in column ${d.column}" )
+				case _ =>
+			}
 
-					if (d.auto)
-						auto += (d.column -> r)
-				}
+			if (d.auto || d.constraint.isDefined)
+				indexes(i)(r) = rows.length
 
-				rows += row.toArray
-				Some( auto )
-//			case Some( (_, BaseRelationColumn(table, column, _, _, _, _)) ) =>
+			if (d.auto)
+				auto += (d.column -> r)
+		}
+
+		rows += row.toArray
+		Some( auto )
 		}
 
 	def insertRelation( rel: Relation ) = {
