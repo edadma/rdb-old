@@ -51,6 +51,8 @@ trait Auto {
 
 	def next( v: AnyRef ): AnyRef
 
+	def default: AnyRef
+
 }
 
 trait NumericalType extends Type
@@ -90,6 +92,8 @@ case object SmallintType extends PrimitiveType( "smallint" ) with OrderedNumeric
 
 	def next( v: AnyRef ) = (v.asInstanceOf[Short] + 1).asInstanceOf[java.lang.Short]
 
+	def default = 1.asInstanceOf[java.lang.Short]
+
 }
 
 case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumericalType with Auto {
@@ -101,6 +105,8 @@ case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumerical
 		}
 
 	def next( v: AnyRef ) = (v.asInstanceOf[Int] + 1).asInstanceOf[java.lang.Integer]
+
+	def default = 1.asInstanceOf[java.lang.Integer]
 
 }
 

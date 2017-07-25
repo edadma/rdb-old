@@ -2,7 +2,7 @@ package xyz.hyperreal.rdb
 
 
 object Main extends App {
-	val conn = new Connection {loadFromFile( "samples/medium" )}
+	val conn = new Connection {loadFromFile( "samples/small" )}
 	val statement =
 		"""
 			|SELECT *
@@ -48,8 +48,9 @@ object Main extends App {
 
 	create r1 [a: text*, b: integer]
 	insert r1 {[a, b] ('a', 2), ('b', 2), ('c', 1)}
-	create r2 [c: integer*, d: text]
+	create r2 [c: integer* auto, d: text]
 	insert r2 {[c, d] (1, 'x'), (2, 'y'), (3, 'z')}
+	insert r2 {[d] ('asdf')}
 
 	r1 [b = c] r2
 	{[a, b] ('a', 2), ('b', 2), ('c', 1)} [b = c] {[c, d] (1, 'x'), (2, 'y'), (3, 'z')} [d = 'x'] (a, b, d)

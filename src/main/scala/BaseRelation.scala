@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb
 
-import collection.mutable.{HashMap, ArrayBuffer, ListBuffer, TreeMap}
+import collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 
 
 class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends AbstractRelation {
@@ -9,7 +9,15 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 	val metadata = new Metadata( definition toIndexedSeq )
 
-	private val indexes = new ArrayBuffer[TreeMap[AnyRef, Int]]
+	private val indexes =
+		metadata.baseRelationHeader map {
+			case BaseRelationColumn( _, _, typ, constraint, _, auto ) =>
+				if (constraint.isDefined || auto)
+					new TreeMap[AnyRef, Int]()( typ )
+				else
+					null
+		}
+
 //	private val pkindex =
 //		metadata primaryKey match {
 //			case None => sys.error( s"attempt to create base relation '$name' with no primary key" )
@@ -49,12 +57,25 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 		count
 	}
 
-	def insertRow( row: Tuple ): Option[Map[String, AnyRef]] =
-		row zip definition find {case (v, d) => v.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey ))} match {
-			case None =>
+	def insertRow( row: Tuple ): Option[Map[String, AnyRef]] = {
+//		row zip definition find {case (v, d) => v.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey ))} match {
+//			case None =>
+				var auto = Map.empty[String, AnyRef]
+
+				for (((r, d), i) <- (row zip definition) zipWithIndex) {
+					if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains( PrimaryKey )))
+						sys.error( s"column '${d.column}' of table '${d.table}' is unmarkable" )
+
+					if (d.auto || d.constraint.isDefined)
+						indexes(i)(r) = rows.length
+
+					if (d.auto)
+						auto += (d.column -> r)
+				}
+
 				rows += row.toArray
-				Some( Map.empty )
-			case Some( (_, BaseRelationColumn(table, column, _, _, _, _)) ) => sys.error( s"column '$column' of table '$table' is unmarkable" )
+				Some( auto )
+//			case Some( (_, BaseRelationColumn(table, column, _, _, _, _)) ) =>
 		}
 
 	def insertRelation( rel: Relation ) = {
@@ -73,9 +94,15 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 						m match {
 							case Some( n ) => row( n )
 							case None =>
-								if (metadata.baseRelationHeader(idx).auto)
-									metadata.baseRelationHeader(idx).typ.asInstanceOf[Auto].next()
-								I
+								if (metadata.baseRelationHeader(idx).auto) {
+									val auto = metadata.baseRelationHeader(idx).typ.asInstanceOf[Auto]
+
+									indexes(idx).lastOption map (_._1) match {
+										case None => auto.default
+										case Some( v ) => auto.next( v )
+									}
+								} else
+									I
 						}
 					}) toVector
 

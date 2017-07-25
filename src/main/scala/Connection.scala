@@ -78,7 +78,7 @@ class Connection {
 				val header =
 					columns map {
 						case ColumnDef( Ident(_, n), tp , t, pkpos, _, _, u, a) =>
-							if (!t.isInstanceOf[Auto])
+							if (a && !t.isInstanceOf[Auto])
 								problem( tp, "a column of this type cannot be declared auto" )
 
 							BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None, u, a )
