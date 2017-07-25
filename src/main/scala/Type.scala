@@ -47,6 +47,12 @@ abstract class PrimitiveType( val name: String ) extends SimpleType {
 	override def toString = name
 }
 
+trait Auto {
+
+	def next( v: AnyRef ): AnyRef
+
+}
+
 trait NumericalType extends Type
 
 trait OrderedType extends Type
@@ -74,7 +80,7 @@ case object LogicalType extends PrimitiveType( "logical" ) {
 //
 //}
 
-case object SmallintType extends PrimitiveType( "smallint" ) with OrderedNumericalType {
+case object SmallintType extends PrimitiveType( "smallint" ) with OrderedNumericalType with Auto {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
@@ -82,15 +88,19 @@ case object SmallintType extends PrimitiveType( "smallint" ) with OrderedNumeric
 			case _ => sys.error( s"incomparable values: $x, $y" )
 		}
 
+	def next( v: AnyRef ) = (v.asInstanceOf[Short] + 1).asInstanceOf[java.lang.Short]
+
 }
 
-case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumericalType {
+case object IntegerType extends PrimitiveType( "integer" ) with OrderedNumericalType with Auto {
 
 	def compare( x: AnyRef, y: AnyRef ) =
 		(x, y) match {
 			case (x: java.lang.Integer, y: java.lang.Integer) => x compareTo y
 			case _ => sys.error( s"incomparable values: $x, $y" )
 		}
+
+	def next( v: AnyRef ) = (v.asInstanceOf[Int] + 1).asInstanceOf[java.lang.Integer]
 
 }
 

@@ -99,9 +99,9 @@ class RQLParser extends RegexParsers {
 	def columnsDef = "[" ~> rep1sep(columnDef, ",") <~ "]"
 
 	def columnDef =
-		ident ~ pos ~ (":" ~> columnType) ~ opt(pos <~ "*") ~ opt("unmarkable") ^^ {
-			case n ~ tp ~ t ~ None ~ u => ColumnDef( n, tp, t, null, null, null, if (u isDefined) true else false )
-			case n ~ tp ~ t ~ Some(p) ~ u => ColumnDef( n, tp, t, p, null, null, if (u isDefined) true else false ) }
+		ident ~ pos ~ (":" ~> columnType) ~ opt(pos <~ "*") ~ opt("unmarkable") ~ opt("auto") ^^ {
+			case n ~ tp ~ t ~ None ~ u ~ a => ColumnDef( n, tp, t, null, null, null, u isDefined, a isDefined )
+			case n ~ tp ~ t ~ Some(p) ~ u ~ a => ColumnDef( n, tp, t, p, null, null, u isDefined, a isDefined ) }
 
 	def columnType =
 		"smallint" ^^^ SmallintType |

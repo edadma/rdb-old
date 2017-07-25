@@ -59,7 +59,7 @@ class Connection {
 				var hset = Set[String]()
 				var pk = false
 
-				for (ColumnDef( Ident(p, n), _, _, pkpos, _, _, _ ) <- columns)
+				for (ColumnDef( Ident(p, n), _, _, pkpos, _, _, _, _ ) <- columns)
 					if (hset( n ))
 						problem( p, "duplicate column" )
 					else {
@@ -75,14 +75,13 @@ class Connection {
 				if (!pk)
 					problem( pos, "one of the columns must be declared to be the primary key" )
 
-				val types: Array[Type] =
-					columns map {
-						case ColumnDef( _, _, t, _, _, _, _ ) => t
-					} toArray
 				val header =
-					columns zip types map {
-						case (ColumnDef( _, p, _, _, _, _, _ ), null) => problem( p, "missing type specification in relation with missing values" )
-						case (ColumnDef( Ident(_, n), _ , _, pkpos, _, _, u), t) => BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None, u, false )
+					columns map {
+						case ColumnDef( Ident(_, n), tp , t, pkpos, _, _, u, a) =>
+							if (!t.isInstanceOf[Auto])
+								problem( tp, "a column of this type cannot be declared auto" )
+
+							BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None, u, a )
 					}
 
 				createTable( base, header )

@@ -36,7 +36,7 @@ class SQLParser extends RegexParsers {
 		}
 
 	def columnDefinition =
-		ident ~ pos ~ columnType ^^ {case name ~ pos ~ typ => ColumnDef(name, pos, typ, null, null, null, false)}
+		ident ~ pos ~ columnType ~ opt("not" ~ "null") ~ opt("auto") ^^ {case name ~ pos ~ typ ~ u ~ a => ColumnDef( name, pos, typ, null, null, null, u isDefined, a isDefined )}
 
 	def columnType =
 		"smallint" ^^^ SmallintType |
