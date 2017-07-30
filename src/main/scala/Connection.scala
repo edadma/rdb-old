@@ -114,7 +114,6 @@ class Connection {
 							case Some( ((BaseRelationColumn(table, column, _, _, _, _), _), e) ) => problem( e.pos, s"column '$column' of table '$table' is unmarkable" )
 						}
 
-						println(123)
 						b.insertRow( t ) match {
 							case None => InsertResult( Nil, 0 )
 							case Some( a ) => InsertResult( List(a), 1 )
