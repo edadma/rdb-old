@@ -12,7 +12,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 	private val indexes =
 		metadata.baseRelationHeader map {
 			case BaseRelationColumn( _, _, typ, constraint, _, auto ) =>
-				if (constraint.isDefined || auto)
+				if (constraint.contains( PrimaryKey ) || constraint.contains( Unique ) || constraint.contains( Indexed ) || auto)
 					new TreeMap[AnyRef, Int]()( typ )
 				else
 					null
@@ -20,8 +20,8 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 //	private val pkindex =
 //		metadata primaryKey match {
-//			case None => sys.error( s"attempt to create base relation '$name' with no primary key" )
-//			case Some( Column( _, col, typ, _ ) ) =>
+//			case None => sys.error( s"attempting to create base relation '$name' with no primary key" )
+//			case Some( BaseRelationColumn( _, col, typ, _ ) ) =>
 //				val index = new TreeMap[AnyRef, Int]()( typ )
 //
 //				indexes(col) = index
@@ -70,7 +70,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 				case _ =>
 			}
 
-			if (d.auto || d.constraint.isDefined)
+			if (indexes(i) ne null)
 				indexes(i)(r) = rows.length
 
 			if (d.auto)
