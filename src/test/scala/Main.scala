@@ -2,12 +2,12 @@ package xyz.hyperreal.rdb
 
 
 object Main extends App {
-	val conn = new Connection {loadFromFile( "samples/small" )}
+	val conn = new Connection {loadFromFile( "samples/northwind.tab" )}
 	val statement =
 		"""
 			|SELECT *
 			|  FROM Suppliers
-			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND Price < 20)
+			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 20)
 		""".stripMargin
 
 //		"""
