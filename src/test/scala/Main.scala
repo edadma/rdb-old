@@ -5,9 +5,9 @@ object Main extends App {
 	val conn = new Connection {loadFromFile( "samples/northwind.tab" )}
 	val statement =
 		"""
-			|SELECT *
+			|SELECT CompanyName, ContactName
 			|  FROM Suppliers
-			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 20)
+			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 10)
 		""".stripMargin
 
 //		"""

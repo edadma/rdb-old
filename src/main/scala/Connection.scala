@@ -24,7 +24,7 @@ class Connection {
 				case _ => Type.names( t )
 			}
 
-		for ((_, Table(name, header, data)) <- imp.importFromFile( file )) {
+		for ((_, Table(name, header, data)) <- imp.importFromFile( file, false )) {
 			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types(typ), None, false, false )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
 
 			for (row <- data)
