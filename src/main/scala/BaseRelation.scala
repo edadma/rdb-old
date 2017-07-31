@@ -3,7 +3,7 @@ package xyz.hyperreal.rdb
 import collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 
 
-class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends AbstractRelation {
+class BaseRelation( conn: Connection, val name: String, definition: Seq[BaseRelationColumn] ) extends AbstractRelation {
 
 	private val rows = new ArrayBuffer[Array[AnyRef]]
 
@@ -12,7 +12,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 	private val indexes =
 		metadata.baseRelationHeader map {
 			case BaseRelationColumn( _, _, typ, constraint, _, auto ) =>
-				if (constraint.contains( PrimaryKey ) || constraint.contains( Unique ) || constraint.contains( Indexed ) || auto)
+				if (constraint.isDefined || auto)
 					new TreeMap[AnyRef, Int]()( typ )
 				else
 					null
@@ -67,6 +67,9 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 			d.constraint match {
 				case Some( PrimaryKey ) if indexes(i) contains r => return None
 				case Some( Unique ) if indexes(i) contains r => sys.error( s"Uniqueness constraint violation: $r exists in column ${d.column}" )
+				case Some( ForeignKey(table, column) ) =>
+					if (!table.exists( t => t(column) == r ))
+						sys.error( s"referential integrity violation: $r does not exist in ${table.name}(${table.metadata.header(column).column})" )
 				case _ =>
 			}
 
@@ -79,7 +82,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 		rows += row.toArray
 		Some( auto )
-		}
+	}
 
 	def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[Option[Int]]

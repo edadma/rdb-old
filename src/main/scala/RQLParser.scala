@@ -101,7 +101,9 @@ class RQLParser extends RegexParsers {
 	def columnDef =
 		ident ~ pos ~ (":" ~> columnType) ~ opt(pos <~ "*") ~ opt("unmarkable") ~ opt("auto") ^^ {
 			case n ~ tp ~ t ~ None ~ u ~ a => ColumnDef( n, tp, t, null, null, null, u isDefined, a isDefined )
-			case n ~ tp ~ t ~ Some(p) ~ u ~ a => ColumnDef( n, tp, t, p, null, null, u isDefined, a isDefined ) }
+			case n ~ tp ~ t ~ Some(p) ~ u ~ a => ColumnDef( n, tp, t, p, null, null, u isDefined, a isDefined ) } |
+		ident ~ pos ~ (":" ~> columnType) ~ ("->" ~> ident) ~ ("(" ~> ident <~ ")") ~ opt("unmarkable") ^^ {
+			case n ~ tp ~ t ~ fkr ~ fkc ~ u => ColumnDef( n, tp, t, null, fkr, fkc, u isDefined, false ) }
 
 	def columnType =
 		"smallint" ^^^ SmallintType |
