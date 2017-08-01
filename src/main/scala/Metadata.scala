@@ -15,9 +15,9 @@ class Metadata( val header: IndexedSeq[Column] ) {
 
 	lazy val attributes = header map {case Column( _, n, t ) => (n, t)} toSet
 
-//	lazy val primaryKey = header find (_.constraint contains PrimaryKey)
-//
-//	lazy val primaryKeyIndex = columnMap(primaryKey.get.column)
+	lazy val primaryKey = baseRelationHeader find (_.constraint contains PrimaryKey)
+
+	lazy val primaryKeyIndex = columnMap(primaryKey.get.column)
 
 	override def toString = header.toString
 }
@@ -41,6 +41,6 @@ case class BaseRelationColumn( table: String, column: String, typ: Type, constra
 
 trait Constraint
 case object PrimaryKey extends Constraint
-case class ForeignKey( table: String, column: String ) extends Constraint
+case class ForeignKey( table: BaseRelation, column: Int ) extends Constraint
 case object Unique extends Constraint
 case object Indexed extends Constraint
