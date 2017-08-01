@@ -92,8 +92,8 @@ class Connection {
 												case None => problem( fkc.pos, "unknown column" )
 												case Some( c ) =>
 													t.metadata.baseRelationHeader(c).constraint match {
-														case Some( PrimaryKey ) => Some( ForeignKey(t, c) )
-														case _ => problem( fkc.pos, "target column must be a primary key" )
+														case Some( PrimaryKey|Unique ) => Some( ForeignKey(t, c) )
+														case _ => problem( fkc.pos, "target column must be a primary key or unique" )
 													}
 											}
 									}
