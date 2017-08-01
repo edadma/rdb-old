@@ -52,6 +52,11 @@ object Main extends App {
 	insert r2 {[c, d] (1, 'x'), (2, 'y'), (3, 'z')}
 	insert r2 {[d] ('asdf')}
 
+	create r1 [c: integer* auto, d: text]
+	create r2 [a: integer* auto, b: integer -> r1(c)]
+	insert r1 {[d] ('asdf')}
+	insert r2 {[b] (1)}
+
 	r1 [b = c] r2
 	{[a, b] ('a', 2), ('b', 2), ('c', 1)} [b = c] {[c, d] (1, 'x'), (2, 'y'), (3, 'z')} [d = 'x'] (a, b, d)
 
