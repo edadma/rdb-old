@@ -24,8 +24,25 @@ class Connection {
 				case _ => Type.names( t )
 			}
 
-		for ((_, Table(name, header, data)) <- imp.importFromFile( file, false )) {
-			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types(typ), None, false, false )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
+		for (Table(name, header, data) <- imp.importFromFile( file, false )) {
+			val t =
+				createTable( name, header map {
+					case ImpColumn( cname, typ, Nil ) => BaseRelationColumn( name, cname, types(typ), None, false, false )
+					case ImpColumn( cname, typ, List("pk") ) => BaseRelationColumn( name, cname, types(typ), Some(PrimaryKey), false, false )
+					case ImpColumn( cname, typ, List("fk", tref, cref) ) =>
+						baseRelations get tref match {
+							case None => sys.error( s"unknown table: $tref" )
+							case Some( tab ) =>
+								tab.metadata.columnMap get cref match {
+									case None => sys.error( s"unknown column: $cref" )
+									case Some( col ) =>
+										tab.metadata.baseRelationHeader(col).constraint match {
+											case Some( PrimaryKey|Unique ) => BaseRelationColumn( name, cname, types(typ), Some(ForeignKey(tab, col)), false, false )
+											case _ => sys.error( s"target column must be a primary key or unique: $cref" )
+										}
+								}
+						}
+				} )
 
 			for (row <- data)
 				t.insertRow( row )

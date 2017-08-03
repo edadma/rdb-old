@@ -2,7 +2,7 @@ package xyz.hyperreal.rdb
 
 
 object Main extends App {
-	val conn = new Connection {loadFromFile( "samples/northwind.tab" )}
+	val conn = new Connection {loadFromFile( "../northwind/northwind.tab" )}
 	val statement =
 		"""
 			|SELECT CompanyName, ContactName
