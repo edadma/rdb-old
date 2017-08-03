@@ -3,7 +3,7 @@ package xyz.hyperreal.rdb
 import collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 
 
-class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends AbstractRelation {
+class BaseRelation( conn: Connection, val name: String, definition: Seq[BaseRelationColumn] ) extends AbstractRelation {
 
 	private val rows = new ArrayBuffer[Array[AnyRef]]
 
@@ -20,8 +20,8 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 //	private val pkindex =
 //		metadata primaryKey match {
-//			case None => sys.error( s"attempt to create base relation '$name' with no primary key" )
-//			case Some( Column( _, col, typ, _ ) ) =>
+//			case None => sys.error( s"attempting to create base relation '$name' with no primary key" )
+//			case Some( BaseRelationColumn( _, col, typ, _ ) ) =>
 //				val index = new TreeMap[AnyRef, Int]()( typ )
 //
 //				indexes(col) = index
@@ -67,10 +67,13 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 			d.constraint match {
 				case Some( PrimaryKey ) if indexes(i) contains r => return None
 				case Some( Unique ) if indexes(i) contains r => sys.error( s"Uniqueness constraint violation: $r exists in column ${d.column}" )
+				case Some( ForeignKey(table, column) ) =>
+					if (!table.exists( t => t(column) == r ))
+						sys.error( s"referential integrity violation: $r does not exist in ${table.name}(${table.metadata.header(column).column})" )
 				case _ =>
 			}
 
-			if (d.auto || d.constraint.isDefined)
+			if (indexes(i) ne null)
 				indexes(i)(r) = rows.length
 
 			if (d.auto)
@@ -79,7 +82,7 @@ class BaseRelation( name: String, definition: Seq[BaseRelationColumn] ) extends 
 
 		rows += row.toArray
 		Some( auto )
-		}
+	}
 
 	def insertRelation( rel: Relation ) = {
 		val mapping = new ArrayBuffer[Option[Int]]

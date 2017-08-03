@@ -24,8 +24,25 @@ class Connection {
 				case _ => Type.names( t )
 			}
 
-		for ((_, Table(name, header, data)) <- imp.importFromFile( file )) {
-			val t = createTable( name, header map {case ImpColumn( col, typ ) => BaseRelationColumn( name, col, types(typ), None, false, false )} ) //todo: first field should be primary key, createTable should check everything, Importer should allow column info to be given in a general way like comma separated list of strings
+		for (Table(name, header, data) <- imp.importFromFile( file, false )) {
+			val t =
+				createTable( name, header map {
+					case ImpColumn( cname, typ, Nil ) => BaseRelationColumn( name, cname, types(typ), None, false, false )
+					case ImpColumn( cname, typ, List("pk") ) => BaseRelationColumn( name, cname, types(typ), Some(PrimaryKey), false, false )
+					case ImpColumn( cname, typ, List("fk", tref, cref) ) =>
+						baseRelations get tref match {
+							case None => sys.error( s"unknown table: $tref" )
+							case Some( tab ) =>
+								tab.metadata.columnMap get cref match {
+									case None => sys.error( s"unknown column: $cref" )
+									case Some( col ) =>
+										tab.metadata.baseRelationHeader(col).constraint match {
+											case Some( PrimaryKey|Unique ) => BaseRelationColumn( name, cname, types(typ), Some(ForeignKey(tab, col)), false, false )
+											case _ => sys.error( s"target column must be a primary key or unique: $cref" )
+										}
+								}
+						}
+				} )
 
 			for (row <- data)
 				t.insertRow( row )
@@ -38,7 +55,7 @@ class Connection {
 		else if (variables contains name)
 			sys.error( s"variable relation '$name' already exists" )
 
-		val res = new BaseRelation( name, definition )
+		val res = new BaseRelation( this, name, definition )
 
 		baseRelations( name ) = res
 		res
@@ -77,11 +94,30 @@ class Connection {
 
 				val header =
 					columns map {
-						case ColumnDef( Ident(_, n), tp , t, pkpos, _, _, u, a) =>
-							if (a && !t.isInstanceOf[Auto])
+						case ColumnDef( Ident(_, n), tp , typ, pkpos, fkr, fkc, u, a) =>
+							if (a && !typ.isInstanceOf[Auto])
 								problem( tp, "a column of this type cannot be declared auto" )
 
-							BaseRelationColumn( base, n, t, if (pkpos ne null) Some(PrimaryKey) else None, u, a )
+							val constraint =
+								if (pkpos ne null)
+									Some( PrimaryKey )
+								else if (fkr ne null) {
+									baseRelations get fkr.name match {
+										case None => problem( fkr.pos, "unknown table" )
+										case Some( t ) =>
+											t.metadata.columnMap get fkc.name match {
+												case None => problem( fkc.pos, "unknown column" )
+												case Some( c ) =>
+													t.metadata.baseRelationHeader(c).constraint match {
+														case Some( PrimaryKey|Unique ) => Some( ForeignKey(t, c) )
+														case _ => problem( fkc.pos, "target column must be a primary key or unique" )
+													}
+											}
+									}
+								} else
+									None
+
+							BaseRelationColumn( base, n, typ, constraint, u, a )
 					}
 
 				createTable( base, header )
