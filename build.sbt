@@ -2,7 +2,7 @@ name := "rdb"
 
 version := "0.1"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
@@ -57,7 +57,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-	"jline" % "jline" % "2.14.3"
+	"jline" % "jline" % "2.14.4"
 )
 
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
