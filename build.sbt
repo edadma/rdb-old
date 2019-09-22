@@ -2,33 +2,29 @@ name := "rdb"
 
 version := "0.1"
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.13.1"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
-incOptions := incOptions.value.withNameHashing( true )
-
 organization := "xyz.hyperreal"
 
-//resolvers += Resolver.sonatypeRepo( "snapshots" )
-
-resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
 libraryDependencies ++= Seq(
-	"org.scalatest" %% "scalatest" % "3.0.0" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+	"org.scalatest" %% "scalatest" % "3.0.8" % "test",
+	"org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
+	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 //	"org.scala-lang.modules" %% "scala-swing" % "2.0.0"
 )
 
 libraryDependencies ++= {
-	val akkaV = "2.5.3"
+	val akkaV = "2.5.25"
 	Seq(
 //		"com.typesafe.akka" %% "akka-actor"    % akkaV
 //		"com.typesafe.akka" %% "akka-remote"   % akkaV,
@@ -38,26 +34,26 @@ libraryDependencies ++= {
 }
 
 libraryDependencies ++= {
-	val akka_http = "10.0.7"
+	val akka_http = "10.1.10"
 	Seq(
-		"com.typesafe.akka" %% "akka-http-core"       % akka_http,
-		"com.typesafe.akka" %% "akka-http"            % akka_http,
-		"com.typesafe.akka" %% "akka-http-testkit"    % akka_http,
-		"com.typesafe.akka" %% "akka-http-spray-json" % akka_http,
-		"com.typesafe.akka" %% "akka-http-jackson"    % akka_http
+//		"com.typesafe.akka" %% "akka-http-core"       % akka_http,
+//		"com.typesafe.akka" %% "akka-http"            % akka_http,
+//		"com.typesafe.akka" %% "akka-http-testkit"    % akka_http,
+//		"com.typesafe.akka" %% "akka-http-spray-json" % akka_http,
+//		"com.typesafe.akka" %% "akka-http-jackson"    % akka_http
 	)
 }
 
 libraryDependencies ++= Seq(
-	"xyz.hyperreal" %% "json" % "0.7",
-	"xyz.hyperreal" %% "table" % "0.9",
-	"xyz.hyperreal" %% "lia" % "0.21",
-	"xyz.hyperreal" %% "options" % "0.2",
-	"xyz.hyperreal" %% "importer" % "0.4"
+	"xyz.hyperreal" %% "json" % "0.8.0",
+	"xyz.hyperreal" %% "table" % "0.11",
+	"xyz.hyperreal" %% "lia" % "0.23",
+	"xyz.hyperreal" %% "options" % "0.3",
+	"xyz.hyperreal" %% "importer" % "0.5"
 )
 
 libraryDependencies ++= Seq(
-	"jline" % "jline" % "2.14.4"
+	"jline" % "jline" % "2.14.6"
 )
 
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )

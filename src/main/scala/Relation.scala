@@ -32,11 +32,13 @@ trait Relation extends collection.Set[Tuple] {
 
 abstract class AbstractRelation extends Relation {
 
-	def -( elem: Tuple ) = sys.error( "unsupported" )
-
-	def +( elem: Tuple ) = sys.error( "unsupported" )
+//	def -( elem: Tuple ) = sys.error( "unsupported" )
+//
+//	def +( elem: Tuple ) = sys.error( "unsupported" )
 
 	def contains( elem: Tuple ) = iterator contains elem	// extending classes can override with a more effecient implementation
+
+	def diff( that: collection.Set[Tuple] ) = filterNot (that contains)	// extending classes can override with a more effecient implementation
 
 	def collect = new ConcreteRelation( metadata.header, iterator.toList )
 

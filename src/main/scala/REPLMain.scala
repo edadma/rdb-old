@@ -20,12 +20,12 @@ object REPLMain extends App {
 	var stacktrace = false
 	var conn = new Connection
 
-	s"""
-		 |Welcome to rdb/$VERSION
-		 |Type in expressions to have them evaluated.
-		 |Type :help for more information.
-	""".trim.stripMargin.lines foreach println
-	println
+	println(
+		s"""
+			 |Welcome to rdb/$VERSION
+			 |Type in expressions to have them evaluated.
+			 |Type :help for more information.
+		""".trim.stripMargin )
 
 	while ({line = reader.readLine; line != null}) {
 		val line1 = line.trim
@@ -34,15 +34,16 @@ object REPLMain extends App {
 		try {
 			com match {
 				case List( ":help"|":h" ) =>
-					"""
-						|:help (h)                             print this summary
-						|:quit (q)                             exit the REPL
-						|:relations (r)                        print the relations currently accessible
-						|:trace (t) on/off                     turn exception stack trace on or off
-						|<RQL>                                 execute <RQL> statement (query or command)
-						|/<SQL>                                execute <SQL> statement (query or command)
-						|?<expression>                         evaluate <expression>
-					""".trim.stripMargin.lines foreach out.println
+					println(
+						"""
+							|:help (h)                             print this summary
+							|:quit (q)                             exit the REPL
+							|:relations (r)                        print the relations currently accessible
+							|:trace (t) on/off                     turn exception stack trace on or off
+							|<RQL>                                 execute <RQL> statement (query or command)
+							|/<SQL>                                execute <SQL> statement (query or command)
+							|?<expression>                         evaluate <expression>
+						""".trim.stripMargin )
 				case List( ":load"|":l", file ) =>
 					conn.loadFromFile( file )
 				case List( ":quit"|":q" ) =>
