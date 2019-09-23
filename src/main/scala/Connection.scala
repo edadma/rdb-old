@@ -222,7 +222,7 @@ class Connection {
 					else
 						types
 
-				new ConcreteTupleseq( types1, evalTupleList(types1, data) )
+				new ConcreteTupleseq( types1.toIndexedSeq, evalTupleList(types1, data) )
 			case SortedTupleseqExpression( relation, names, ascending ) =>
 				val rel = evalRelation( relation, context )
 				val fields =
@@ -368,8 +368,8 @@ class Connection {
 	private def brackets( p: ValueExpression, c: ValueExpression, right: Boolean ): Boolean = {
 		def s( e: ValueExpression ) =
 			e match {
-				case BinaryValueExpression( _, _, operation, _, _ ) => Some( 'b' + operation )
-				case UnaryValueExpression( _, operation, _, _ ) => Some( 'u' + operation )
+				case BinaryValueExpression( _, _, operation, _, _ ) => Some( s"b$operation" )
+				case UnaryValueExpression( _, operation, _, _ ) => Some( s"u$operation" )
 				case _ => None
 			}
 
@@ -405,7 +405,7 @@ class Connection {
 				AliasValue( v.pos, v.table, alias.name, v.typ, alias.pos, v )
 			case FloatLit( n ) => LiteralValue( ast.pos, null, n, FloatType, java.lang.Double.valueOf(n) )
 			case IntegerLit( n ) => LiteralValue( ast.pos, null, n, IntegerType, Integer.valueOf(n) )
-			case StringLit( s ) => LiteralValue( ast.pos, null, '"' + s + '"', TextType, s )
+			case StringLit( s ) => LiteralValue( ast.pos, null, s""""$s"""", TextType, s )
 			case MarkLit( m ) => MarkedValue( ast.pos, null, m.toString, null, m )
 			case ValueVariableExpression( n ) =>
 				search( fmetadata )( _.columnMap get n.name ) match {

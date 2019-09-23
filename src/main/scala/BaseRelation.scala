@@ -36,7 +36,7 @@ class BaseRelation( conn: Connection, val name: String, definition: Seq[BaseRela
 		var count = 0
 
 		for (i <- rows.length - 1 to 0 by -1)
-			if (conn.evalCondition( List(rows(i)), cond ) == TRUE) {
+			if (conn.evalCondition( List(rows(i).toIndexedSeq), cond ) == TRUE) {
 				rows.remove( i )
 				count += 1
 			}
@@ -48,9 +48,9 @@ class BaseRelation( conn: Connection, val name: String, definition: Seq[BaseRela
 		var count = 0
 
 		for (i <- rows.length - 1 to 0 by -1)
-			if (conn.evalCondition( List(rows(i)), cond ) == TRUE) {
+			if (conn.evalCondition( List(rows(i).toIndexedSeq), cond ) == TRUE) {
 				for ((f, v) <- updates)
-					rows(i)(f) = conn.evalValue( List(rows(i)), v )
+					rows(i)(f) = conn.evalValue( List(rows(i).toIndexedSeq), v )
 				count += 1
 			}
 

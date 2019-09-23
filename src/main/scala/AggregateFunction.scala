@@ -47,9 +47,9 @@ abstract class AbstractAggregateFunctionInstance[T] extends AggregateFunctionIns
 
 object AggregateFunctionMath {
 
-	val add = Math.lookup( '+ )
-	val div = Math.lookup( '/ )
-	val lt = Math.lookup( '< )
+	val add = Math.lookup( Symbol("+") )
+	val div = Math.lookup( Symbol("/") )
+	val lt = Math.lookup( Symbol("<") )
 
 }
 
