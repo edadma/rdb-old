@@ -1,4 +1,4 @@
-name := "rdb"
+name := "rdb.js"
 
 version := "0.1"
 
@@ -13,7 +13,7 @@ resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releas
 resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
 libraryDependencies ++= Seq(
-	"org.scalatest" %% "scalatest" % "3.0.8" % "test",
+	"org.scalatest" %% "scalatest" % "3.1.1" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
 )
 
