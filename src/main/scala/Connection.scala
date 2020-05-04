@@ -3,6 +3,8 @@ package xyz.hyperreal.rdb_sjs
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import xyz.hyperreal.importer.{Importer, Table, Column => ImpColumn}
 
+import scala.util.parsing.input.Position
+
 class Connection {
 
   val baseRelations = new HashMap[String, BaseRelation]
@@ -546,7 +548,7 @@ class Connection {
 
         (l, r) match {
           case (LiteralValue(p, _, _, _, x), LiteralValue(_, _, _, _, y)) =>
-            val res = Math(func, x, y)
+            val res = binaryOperation(x, oppos, operation, y)
 
             LiteralValue(p, null, res.toString, Type.fromValue(res).get, res)
           case _ =>
@@ -574,8 +576,8 @@ class Connection {
         val e = evalExpression(afuse, fmetadata, ametadata, expr)
 
         e match {
-          case LiteralValue(p, _, _, _, x) =>
-            val res = Math(func, x)
+          case LiteralValue(p, _, _, op, x) =>
+            val res = unaryOperation(oppos, operation, x)
 
             LiteralValue(p, null, res.toString, Type.fromValue(res).get, res)
           case _ =>
@@ -712,8 +714,37 @@ class Connection {
         initAggregation(right)
     }
 
-  def evalVector(row: List[Tuple], vector: Vector[ValueResult]) =
+  def evalVector(row: List[Tuple], vector: Vector[ValueResult]): Seq[AnyRef] =
     vector map (evalValue(row, _))
+
+  def binaryOperation(lv: AnyRef, pos: Position, op: String, rv: AnyRef) =
+    (lv, rv) match {
+      case (I, _) | (_, I) => I
+      case (A, _) | (_, A) => A
+      case _ =>
+        try {
+          (lv, op, rv) match {
+            case (_: String, "+", _) | (_, "+", _: String) =>
+              lv.toString ++ rv.toString
+            case (l: BigDecimal, "+", r: BigDecimal) => l + r
+            case (l: BigDecimal, "-", r: BigDecimal) => l - r
+            case (l: BigDecimal, "*", r: BigDecimal) => l * r
+            case (l: BigDecimal, "/", r: BigDecimal) => l / r
+          }
+        } catch {
+          case _: Exception =>
+            problem(pos, "error performing binary operation")
+        }
+    }
+
+  def unaryOperation(pos: Position, op: String, v: AnyRef) =
+    try {
+      (op, v) match {
+        case ("-", v: BigDecimal) => -v
+      }
+    } catch {
+      case _: Exception => problem(pos, "error performing unary operation")
+    }
 
   def evalValue(row: List[Tuple], result: ValueResult): AnyRef =
     result match {
@@ -722,27 +753,13 @@ class Connection {
       case VariableValue(_, _, _, _, v)         => v
       case FieldValue(_, _, _, _, index, depth) => row(depth)(index)
       case MarkedValue(_, _, _, _, m)           => m
-      case BinaryValue(p, _, _, _, l, _, r) =>
+      case BinaryValue(p, _, _, _, l, op, r) =>
         val lv = evalValue(row, l)
         val rv = evalValue(row, r)
 
-        (lv, rv) match {
-          case (I, _) | (_, I) => I
-          case (A, _) | (_, A) => A
-          case _ =>
-            try {
-              Math(f, lv, rv)
-            } catch {
-              case _: Exception =>
-                problem(p, "error performing binary operation")
-            }
-        }
-      case UnaryValue(p, _, _, _, v, _) =>
-        try {
-          Math(f, evalValue(row, v))
-        } catch {
-          case _: Exception => problem(p, "error performing unary operation")
-        }
+        binaryOperation(lv, p, op, rv)
+      case UnaryValue(p, _, _, _, v, op) =>
+        unaryOperation(p, op, evalValue(row, v))
       case ScalarFunctionValue(_, _, _, _, func, args) =>
         func(args map (evalValue(row, _))).asInstanceOf[AnyRef]
       case a: AggregateFunctionValue   => a.func.result.asInstanceOf[AnyRef]
