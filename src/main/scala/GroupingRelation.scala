@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 
 class GroupingRelation( conn: Connection, relation: Relation, disafuse: AggregateFunctionUseState, discriminator: Vector[ValueResult],

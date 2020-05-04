@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 import collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 

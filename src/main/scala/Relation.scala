@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 
 trait Relation extends collection.Set[Tuple] {

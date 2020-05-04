@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 
 class WrappedRelation( relation: Relation, context: List[Tuple] ) extends AbstractRelation {

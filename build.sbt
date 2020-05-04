@@ -1,8 +1,10 @@
-name := "rdb.js"
+name := "rdb-sjs"
 
 version := "0.1"
 
-scalaVersion := "2.13.1"
+description := "In-memory relational database system"
+
+scalaVersion := "2.13.2"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
@@ -12,6 +14,14 @@ resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releas
 
 resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
+enablePlugins(ScalaJSPlugin)
+
+enablePlugins(ScalablyTypedConverterPlugin)
+
+scalaJSUseMainModuleInitializer := true
+
+jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
+
 libraryDependencies ++= Seq(
 	"org.scalatest" %% "scalatest" % "3.1.1" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
@@ -20,47 +30,24 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-//	"org.scala-lang.modules" %% "scala-swing" % "2.0.0"
 )
 
-libraryDependencies ++= {
-	val akkaV = "2.5.25"
-	Seq(
-//		"com.typesafe.akka" %% "akka-actor"    % akkaV
-//		"com.typesafe.akka" %% "akka-remote"   % akkaV,
-//		"com.typesafe.akka" %% "akka-testkit"  % akkaV    % "test",
-//		"org.specs2"        %% "specs2-core"   % "2.3.11" % "test"
-	)
-}
-
-libraryDependencies ++= {
-	val akka_http = "10.1.10"
-	Seq(
-//		"com.typesafe.akka" %% "akka-http-core"       % akka_http,
-//		"com.typesafe.akka" %% "akka-http"            % akka_http,
-//		"com.typesafe.akka" %% "akka-http-testkit"    % akka_http,
-//		"com.typesafe.akka" %% "akka-http-spray-json" % akka_http,
-//		"com.typesafe.akka" %% "akka-http-jackson"    % akka_http
-	)
-}
+libraryDependencies ++= Seq(
+  "org.scala-js" %%% "scalajs-java-time" % "1.0.0"
+)
 
 libraryDependencies ++= Seq(
 	"xyz.hyperreal" %% "json" % "0.8.0",
 	"xyz.hyperreal" %% "table" % "0.11",
-	"xyz.hyperreal" %% "lia" % "0.23",
 	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %% "importer" % "0.5"
+	"xyz.hyperreal" %% "importer" % "0.5",
+  "xyz.hyperreal" %%% "numbers-sjs" % "0.7.1"
 )
 
-libraryDependencies ++= Seq(
-	"jline" % "jline" % "2.14.6"
+npmDependencies in Compile ++= Seq(
 )
 
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
-
-mainClass in assembly := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
-
-assemblyJarName in assembly := name.value + "-" + version.value + ".jar"
 
 publishMavenStyle := true
 

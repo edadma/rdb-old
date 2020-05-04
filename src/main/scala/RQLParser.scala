@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 import scala.util.parsing.input.{CharSequenceReader, Positional}
 import util.parsing.combinator.RegexParsers

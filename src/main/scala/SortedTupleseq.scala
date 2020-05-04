@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 
 class SortedTupleseq( relation: Relation, fields: List[Int], ascending: Boolean ) extends AbstractTupleseq {

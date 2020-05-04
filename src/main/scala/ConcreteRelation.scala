@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 
 class ConcreteRelation( header: IndexedSeq[Column], body: List[Tuple] ) extends AbstractRelation {

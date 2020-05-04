@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb
+package xyz.hyperreal.rdb_sjs
 
 
 class InnerJoinRelation( conn: Connection, val metadata: Metadata, left: Relation, condition: LogicalResult, right: Relation ) extends AbstractRelation {

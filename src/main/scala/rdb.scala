@@ -3,7 +3,7 @@ package xyz.hyperreal
 import scala.util.parsing.input.Position
 
 
-package object rdb {
+package object rdb_sjs {
 	val VERSION = "0.1"
 
 	type Tuple = IndexedSeq[AnyRef]

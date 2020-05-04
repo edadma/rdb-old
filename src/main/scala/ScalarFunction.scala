@@ -1,43 +1,40 @@
-package xyz.hyperreal.rdb
-
-import xyz.hyperreal.lia.Math
-
+package xyz.hyperreal.rdb_sjs
 
 trait ScalarFunction extends (List[Any] => Any) {
 
-	def name: String
+  def name: String
 
-	def typ( inputs: List[Type] ): Type
+  def typ(inputs: List[Type]): Type
 
-	def apply( args: List[Any] ): Any
-
-}
-
-abstract class AbstractScalarFunction( val name: String ) extends ScalarFunction {
-
-	def typ( inputs: List[Type] ) = FloatType
-
-	override def toString = s"<scalar function '$name'>"
+  def apply(args: List[Any]): Any
 
 }
 
-object FloatScalarFunction extends AbstractScalarFunction( "float" ) {
-	def apply( args: List[Any] ) =
-		args match {
-			case List( a: Number ) => a.doubleValue
-		}
+abstract class AbstractScalarFunction(val name: String) extends ScalarFunction {
+
+  def typ(inputs: List[Type]) = FloatType
+
+  override def toString = s"<scalar function '$name'>"
+
 }
 
-object AbsScalarFunction extends AbstractScalarFunction( "abs" ) {
-	def apply( args: List[Any] ) =
-		args match {
-			case List( a ) => Math.absFunction( a )
-		}
+object FloatScalarFunction extends AbstractScalarFunction("float") {
+  def apply(args: List[Any]) =
+    args match {
+      case List(a: Number) => a.doubleValue
+    }
 }
 
-object sqrtFunction extends AbstractScalarFunction( "sqrt" ) {
-	def apply( args: List[Any] ) =
-		args match {
-			case List( a ) => Math.sqrtFunction( a )
-		}
+object AbsScalarFunction extends AbstractScalarFunction("abs") {
+  def apply(args: List[Any]) =
+    args match {
+      case List(a: BigDecimal) => a.abs
+    }
+}
+
+object sqrtFunction extends AbstractScalarFunction("sqrt") {
+  def apply(args: List[Any]) =
+    args match {
+      case List(a) => Math.sqrtFunction(a)
+    }
 }
