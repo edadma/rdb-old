@@ -1,7 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
-import xyz.hyperreal.importer.{Importer, Table, Column => ImpColumn}
+import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 
 import scala.util.parsing.input.Position
 
@@ -15,7 +15,7 @@ class Connection {
   variables ++= Builtins.constants
 
   def loadFromFile(file: String): Unit = {
-    val imp = new Importer
+    val imp = Importer
 
     def types(t: String) =
       t match {
@@ -714,7 +714,7 @@ class Connection {
         initAggregation(right)
     }
 
-  def evalVector(row: List[Tuple], vector: Vector[ValueResult]): Seq[AnyRef] =
+  def evalVector(row: List[Tuple], vector: Vector[ValueResult]) =
     vector map (evalValue(row, _))
 
   def binaryOperation(lv: AnyRef, pos: Position, op: String, rv: AnyRef) =
@@ -746,13 +746,27 @@ class Connection {
       case _: Exception => problem(pos, "error performing unary operation")
     }
 
+  def numbersAsBigDecimal(v: AnyRef) =
+    v match {
+      case v: java.lang.Byte    => BigDecimal(v.toInt)
+      case v: java.lang.Short   => BigDecimal(v.toInt)
+      case v: java.lang.Integer => BigDecimal(v)
+      case v: java.lang.Double  => BigDecimal(v)
+      case v                    => v
+    }
+
   def evalValue(row: List[Tuple], result: ValueResult): AnyRef =
     result match {
-      case AliasValue(_, _, _, _, _, v)         => evalValue(row, v)
-      case LiteralValue(_, _, _, _, v)          => v
-      case VariableValue(_, _, _, _, v)         => v
-      case FieldValue(_, _, _, _, index, depth) => row(depth)(index)
-      case MarkedValue(_, _, _, _, m)           => m
+      case AliasValue(_, _, _, _, _, v) => evalValue(row, v)
+      case LiteralValue(_, _, _, _, v) =>
+        println("literal", v, v.getClass)
+        numbersAsBigDecimal(v)
+      case VariableValue(_, _, _, _, v) => v
+      case FieldValue(_, _, _, _, index, depth) =>
+        println("field", depth, index, row, row(depth)(index))
+//        row(depth)(index)
+        numbersAsBigDecimal(row(depth)(index))
+      case MarkedValue(_, _, _, _, m) => m
       case BinaryValue(p, _, _, _, l, op, r) =>
         val lv = evalValue(row, l)
         val rv = evalValue(row, r)
@@ -790,6 +804,7 @@ class Connection {
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
 
+        println(lv, rv, lv.getClass, rv.getClass)
         (lv, rv) match {
           case (`I`, _) | (_, `I`) => MAYBE_I
           case (`A`, _) | (_, `A`) => MAYBE_A

@@ -42,14 +42,6 @@ abstract class AbstractAggregateFunctionInstance[T]
 
 }
 
-object AggregateFunctionMath {
-
-  val add = Math.lookup(Symbol("+"))
-  val div = Math.lookup(Symbol("/"))
-  val lt = Math.lookup(Symbol("<"))
-
-}
-
 object CountAggregateFunction extends AbstractAggregateFunction("count") {
 
   def typ(inputs: List[Type]) = IntegerType
@@ -66,13 +58,12 @@ object SumAggregateFunction extends AbstractAggregateFunction("sum") {
   def typ(inputs: List[Type]) = inputs.head
 
   def instance =
-    new AbstractAggregateFunctionInstance[Number] {
+    new AbstractAggregateFunctionInstance[BigDecimal] {
       override def compute(next: Any) =
         if (intermediate eq null)
-          next.asInstanceOf[Number]
+          next.asInstanceOf[BigDecimal]
         else
-          Math(AggregateFunctionMath.add, intermediate, next)
-            .asInstanceOf[Number]
+          intermediate + next.asInstanceOf[BigDecimal]
     }
 
 }
@@ -82,17 +73,14 @@ object AvgAggregateFunction extends AbstractAggregateFunction("avg") {
   def typ(inputs: List[Type]) = FloatType //todo: do this properly
 
   def instance =
-    new AbstractAggregateFunctionInstance[Number] {
+    new AbstractAggregateFunctionInstance[BigDecimal] {
       override def compute(next: Any) =
         if (intermediate eq null)
-          next.asInstanceOf[Number]
+          next.asInstanceOf[BigDecimal]
         else
-          Math(AggregateFunctionMath.add, intermediate, next)
-            .asInstanceOf[Number]
+          intermediate + next.asInstanceOf[BigDecimal]
 
-      override def result =
-        Math(AggregateFunctionMath.div, intermediate, count)
-          .asInstanceOf[Number]
+      override def result = intermediate / count
     }
 
 }
@@ -102,12 +90,12 @@ object MinAggregateFunction extends AbstractAggregateFunction("min") {
   def typ(inputs: List[Type]) = inputs.head
 
   def instance =
-    new AbstractAggregateFunctionInstance[Number] {
+    new AbstractAggregateFunctionInstance[BigDecimal] {
       override def compute(next: Any) = {
         if (intermediate eq null)
-          next.asInstanceOf[Number]
-        else if (Math.predicate(AggregateFunctionMath.lt, next, intermediate))
-          next.asInstanceOf[Number]
+          next.asInstanceOf[BigDecimal]
+        else if (next.asInstanceOf[BigDecimal] < intermediate)
+          next.asInstanceOf[BigDecimal]
         else
           intermediate
       }
@@ -120,12 +108,12 @@ object MaxAggregateFunction extends AbstractAggregateFunction("max") {
   def typ(inputs: List[Type]) = inputs.head
 
   def instance =
-    new AbstractAggregateFunctionInstance[Number] {
+    new AbstractAggregateFunctionInstance[BigDecimal] {
       override def compute(next: Any) = {
         if (intermediate eq null)
-          next.asInstanceOf[Number]
-        else if (Math.predicate(AggregateFunctionMath.lt, intermediate, next))
-          next.asInstanceOf[Number]
+          next.asInstanceOf[BigDecimal]
+        else if (intermediate < next.asInstanceOf[BigDecimal])
+          next.asInstanceOf[BigDecimal]
         else
           intermediate
       }
@@ -144,13 +132,3 @@ object ListAggregateFunction extends AbstractAggregateFunction("list") {
     }
 
 }
-
-//class MedianAggregateFunction extends AbstractAggregateFunction[Number]( "median" ) {
-//
-//	val q = new PriorityQueue[Number].reverse
-//
-//	override def compute( next: Any ) =
-//
-//}
-
-// Mode

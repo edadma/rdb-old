@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2"
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
 )
 
@@ -37,10 +37,10 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-	"xyz.hyperreal" %% "json" % "0.8.0",
-	"xyz.hyperreal" %% "table" % "0.11",
-	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %% "importer" % "0.5",
+//	"xyz.hyperreal" %% "json" % "0.8.0",
+	"xyz.hyperreal" %%% "table-sjs" % "0.11.2",
+//	"xyz.hyperreal" %% "options" % "0.3",
+	"xyz.hyperreal" %%% "importer-sjs" % "0.5.1",
   "xyz.hyperreal" %%% "numbers-sjs" % "0.7.1"
 )
 

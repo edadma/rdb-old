@@ -2,72 +2,72 @@ package xyz.hyperreal.rdb_sjs
 
 import java.io.PrintWriter
 
-import xyz.hyperreal.table.TextTable
+import xyz.hyperreal.table_sjs.TextTable
 
-object REPLMain extends App {
+object REPLMain /*extends App*/ {
 
-  val reader =
-    new ConsoleReader {
-      setExpandEvents(false)
-      setBellEnabled(false)
-      setPrompt("rdb> ")
-    }
-  val out =
-    new PrintWriter(reader.getTerminal.wrapOutIfNeeded(System.out), true)
-  var line: String = _
-  var stacktrace = false
-  var conn = new Connection
-
-  println(s"""
-			 |Welcome to rdb/$VERSION
-			 |Type in expressions to have them evaluated.
-			 |Type :help for more information.
-		""".trim.stripMargin)
-
-  while ({ line = reader.readLine; line != null }) {
-    val line1 = line.trim
-    val com = line1 split "\\s+" toList
-
-    try {
-      com match {
-        case List(":help" | ":h") =>
-          println(
-            """
-							|:help (h)                             print this summary
-							|:quit (q)                             exit the REPL
-							|:relations (r)                        print the relations currently accessible
-							|:trace (t) on/off                     turn exception stack trace on or off
-							|<RQL>                                 execute <RQL> statement (query or command)
-							|/<SQL>                                execute <SQL> statement (query or command)
-							|?<expression>                         evaluate <expression>
-						""".trim.stripMargin)
-        case List(":load" | ":l", file) =>
-          conn.loadFromFile(file)
-        case List(":quit" | ":q") =>
-          sys.exit
-        case List(":relations" | ":r") =>
-          println("base relations: " + conn.baseRelations.keys.mkString(", "))
-          println("variable relations: " + conn.variables.keys.mkString(", "))
-        case List(":trace" | ":t", "on")  => stacktrace = true
-        case List(":trace" | ":t", "off") => stacktrace = false
-        case Nil | List("")               =>
-        case _ if line1 startsWith "?"    =>
-        case _ =>
-          printResult(
-            if (line1 startsWith "/")
-              conn.executeSQLStatement(line1 substring 1)
-            else conn.executeRQLStatement(line1))
-      }
-    } catch {
-      case e: Exception =>
-        if (stacktrace)
-          e.printStackTrace(out)
-        else
-          out.println(e.getMessage)
-    }
-
-    out.println
-  }
+//  val reader =
+//    new ConsoleReader {
+//      setExpandEvents(false)
+//      setBellEnabled(false)
+//      setPrompt("rdb> ")
+//    }
+//  val out =
+//    new PrintWriter(reader.getTerminal.wrapOutIfNeeded(System.out), true)
+//  var line: String = _
+//  var stacktrace = false
+//  var conn = new Connection
+//
+//  println(s"""
+//			 |Welcome to rdb/$VERSION
+//			 |Type in expressions to have them evaluated.
+//			 |Type :help for more information.
+//		""".trim.stripMargin)
+//
+//  while ({ line = reader.readLine; line != null }) {
+//    val line1 = line.trim
+//    val com = line1 split "\\s+" toList
+//
+//    try {
+//      com match {
+//        case List(":help" | ":h") =>
+//          println(
+//            """
+//							|:help (h)                             print this summary
+//							|:quit (q)                             exit the REPL
+//							|:relations (r)                        print the relations currently accessible
+//							|:trace (t) on/off                     turn exception stack trace on or off
+//							|<RQL>                                 execute <RQL> statement (query or command)
+//							|/<SQL>                                execute <SQL> statement (query or command)
+//							|?<expression>                         evaluate <expression>
+//						""".trim.stripMargin)
+//        case List(":load" | ":l", file) =>
+//          conn.loadFromFile(file)
+//        case List(":quit" | ":q") =>
+//          sys.exit
+//        case List(":relations" | ":r") =>
+//          println("base relations: " + conn.baseRelations.keys.mkString(", "))
+//          println("variable relations: " + conn.variables.keys.mkString(", "))
+//        case List(":trace" | ":t", "on")  => stacktrace = true
+//        case List(":trace" | ":t", "off") => stacktrace = false
+//        case Nil | List("")               =>
+//        case _ if line1 startsWith "?"    =>
+//        case _ =>
+//          printResult(
+//            if (line1 startsWith "/")
+//              conn.executeSQLStatement(line1 substring 1)
+//            else conn.executeRQLStatement(line1))
+//      }
+//    } catch {
+//      case e: Exception =>
+//        if (stacktrace)
+//          e.printStackTrace(out)
+//        else
+//          out.println(e.getMessage)
+//    }
+//
+//    out.println
+//  }
 
   def printResult(r: StatementResult) =
     r match {
