@@ -766,6 +766,16 @@ class Connection {
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
+  def comparison(l: BigDecimal, comp: String, r: BigDecimal) =
+    comp match {
+      case "<"  => l < r
+      case "<=" => l <= r
+      case ">"  => l > r
+      case ">=" => l >= r
+      case "="  => l == r
+      case "!=" => l != r
+    }
+
   def evalCondition(context: List[Tuple], cond: LogicalResult): Logical =
     cond match {
       case ExistsLogical(_, relation) =>
@@ -776,19 +786,18 @@ class Connection {
         }
 
       case LiteralLogical(_, lit) => lit
-      case ComparisonLogical(_, left, _, right) =>
+      case ComparisonLogical(_, left, comp, right) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
 
         (lv, rv) match {
           case (`I`, _) | (_, `I`) => MAYBE_I
           case (`A`, _) | (_, `A`) => MAYBE_A
-          case _ =>
-            if (lv.isInstanceOf[String] || rv.isInstanceOf[String]) {
-              Logical.fromBoolean(
-                Math.predicate(pred, lv.toString compareTo rv.toString, 0))
-            } else
-              Logical.fromBoolean(Math.predicate(pred, lv, rv))
+          case (_: String, _) | (_, _: String) =>
+            Logical.fromBoolean(
+              comparison(lv.toString compareTo rv.toString, comp, 0))
+          case (l: BigDecimal, r: BigDecimal) =>
+            Logical.fromBoolean(comparison(l, comp, r))
         }
       case AndLogical(_, l, r) =>
         evalCondition(context, l) and evalCondition(context, r)
