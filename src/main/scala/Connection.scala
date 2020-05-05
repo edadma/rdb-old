@@ -14,7 +14,7 @@ class Connection {
   variables ++= Builtins.scalarFunctions
   variables ++= Builtins.constants
 
-  def load(data: String): Unit = {
+  def load(data: String, doubleSpaces: Boolean = false): Unit = {
     def types(t: String) =
       t match {
         case "currency" => DecimalType
@@ -22,7 +22,7 @@ class Connection {
         case _          => Type.names(t)
       }
 
-    for (Table(name, header, data) <- Importer.importFromString(data, false)) {
+    for (Table(name, header, data) <- Importer.importFromString(data, true)) {
       val t =
         createTable(
           name,
