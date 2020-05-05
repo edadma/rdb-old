@@ -203,13 +203,14 @@ class SQLParser extends RegexParsers {
     }
 
   def comparisonExpression =
-    nonLogicalValueExpression ~ rep1(comparison ~ nonLogicalValueExpression) ^^ {
+    nonLogicalValueExpression ~ rep1(
+      pos ~ comparison ~ nonLogicalValueExpression) ^^ {
       case l ~ cs =>
-        ComparisonLogicalExpression(l, cs map { case c ~ v => (c, v) })
+        ComparisonLogicalExpression(l, cs map { case p ~ c ~ v => (p, c, v) })
     } |
-      columnPrimary ~ (("BETWEEN" | "between") ~> nonLogicalValueExpression <~ ("AND" | "and")) ~ nonLogicalValueExpression ^^ {
-        case c ~ l ~ u =>
-          ComparisonLogicalExpression(l, List(("<=", c), ("<=", u)))
+      columnPrimary ~ pos ~ (("BETWEEN" | "between") ~> nonLogicalValueExpression <~ ("AND" | "and")) ~ nonLogicalValueExpression ^^ {
+        case c ~ p ~ l ~ u =>
+          ComparisonLogicalExpression(l, List((p, "<=", c), (p, "<=", u)))
       } |
       ("EXISTS" | "exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
       logicalPrimary

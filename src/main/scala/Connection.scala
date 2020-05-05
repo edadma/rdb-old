@@ -684,7 +684,7 @@ class Connection {
   def aggregate(row: Tuple, result: LogicalResult): Unit =
     result match {
       case _: LiteralLogical =>
-      case ComparisonLogical(_, left, _, right) =>
+      case ComparisonLogical(_, left, _, _, right) =>
         aggregate(row, left)
         aggregate(row, right)
     }
@@ -709,7 +709,7 @@ class Connection {
   def initAggregation(result: LogicalResult): Unit =
     result match {
       case _: LiteralLogical =>
-      case ComparisonLogical(_, left, _, right) =>
+      case ComparisonLogical(_, left, _, _, right) =>
         initAggregation(left)
         initAggregation(right)
     }
@@ -730,6 +730,7 @@ class Connection {
             case (l: BigDecimal, "-", r: BigDecimal) => l - r
             case (l: BigDecimal, "*", r: BigDecimal) => l * r
             case (l: BigDecimal, "/", r: BigDecimal) => l / r
+            case _                                   => problem(pos, "invalid operation")
           }
         } catch {
           case _: Exception =>
@@ -741,6 +742,7 @@ class Connection {
     try {
       (op, v) match {
         case ("-", v: BigDecimal) => -v
+        case _                    => problem(pos, "invalid operation")
       }
     } catch {
       case _: Exception => problem(pos, "error performing unary operation")
@@ -759,12 +761,9 @@ class Connection {
     result match {
       case AliasValue(_, _, _, _, _, v) => evalValue(row, v)
       case LiteralValue(_, _, _, _, v) =>
-        println("literal", v, v.getClass)
         numbersAsBigDecimal(v)
       case VariableValue(_, _, _, _, v) => v
       case FieldValue(_, _, _, _, index, depth) =>
-        println("field", depth, index, row, row(depth)(index))
-//        row(depth)(index)
         numbersAsBigDecimal(row(depth)(index))
       case MarkedValue(_, _, _, _, m) => m
       case BinaryValue(p, _, _, _, l, op, r) =>
@@ -800,11 +799,10 @@ class Connection {
         }
 
       case LiteralLogical(_, lit) => lit
-      case ComparisonLogical(_, left, comp, right) =>
+      case ComparisonLogical(_, left, pos, comp, right) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
 
-        println(lv, rv, lv.getClass, rv.getClass)
         (lv, rv) match {
           case (`I`, _) | (_, `I`) => MAYBE_I
           case (`A`, _) | (_, `A`) => MAYBE_A
@@ -813,6 +811,7 @@ class Connection {
               comparison(lv.toString compareTo rv.toString, comp, 0))
           case (l: BigDecimal, r: BigDecimal) =>
             Logical.fromBoolean(comparison(l, comp, r))
+          case _ => problem(pos, "invalid comparison")
         }
       case AndLogical(_, l, r) =>
         evalCondition(context, l) and evalCondition(context, r)
@@ -839,20 +838,29 @@ class Connection {
 
         ExistsLogical(s"exists ($rel)", rel)
       case LiteralLogicalExpression(lit) => LiteralLogical(lit.toString, lit)
-      case ComparisonLogicalExpression(left, List((comp, right))) =>
+      case ComparisonLogicalExpression(left, List((pos, comp, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
 
-        ComparisonLogical(s"${l.heading} $comp ${r.heading}", l, comp, r)
-      case ComparisonLogicalExpression(left,
-                                       List((compm, middle), (compr, right))) =>
+        ComparisonLogical(s"${l.heading} $comp ${r.heading}", l, pos, comp, r)
+      case ComparisonLogicalExpression(
+          left,
+          List((posm, compm, middle), (posr, compr, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val m = evalExpression(afuse, fmetadata, ametadata, middle)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
         val lc =
-          ComparisonLogical(s"${l.heading} $compm ${m.heading}", l, compm, m)
+          ComparisonLogical(s"${l.heading} $compm ${m.heading}",
+                            l,
+                            posm,
+                            compm,
+                            m)
         val rc =
-          ComparisonLogical(s"${m.heading} $compr ${r.heading}", m, compr, r)
+          ComparisonLogical(s"${m.heading} $compr ${r.heading}",
+                            m,
+                            posr,
+                            compr,
+                            r)
 
         AndLogical(s"${lc.heading} and ${rc.heading}", lc, rc)
       case AndLogicalExpression(left, right) =>
@@ -893,6 +901,7 @@ case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult)
     extends LogicalResult
 case class ComparisonLogical(heading: String,
                              left: ValueResult,
+                             pos: Position,
                              comp: String,
                              right: ValueResult)
     extends LogicalResult

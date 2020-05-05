@@ -82,8 +82,9 @@ case class SortedTupleseqExpression(relation: RelationExpression,
 
 trait LogicalExpression extends Positional
 case class LiteralLogicalExpression(l: Logical) extends LogicalExpression
-case class ComparisonLogicalExpression(left: ValueExpression,
-                                       comp: List[(String, ValueExpression)])
+case class ComparisonLogicalExpression(
+    left: ValueExpression,
+    comp: List[(Position, String, ValueExpression)])
     extends LogicalExpression
 case class AndLogicalExpression(left: LogicalExpression,
                                 right: LogicalExpression)
