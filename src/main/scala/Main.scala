@@ -1,13 +1,20 @@
 package xyz.hyperreal.rdb_sjs
 
+import scalajs.js.Dynamic.{global => g}
+
 object Main extends App {
-  val conn = new Connection { loadFromFile("samples/northwind.tab") }
+  private val fs = g.require("fs")
+  val conn = new Connection { load(readFile("samples/northwind.tab")) }
   val statement =
     """
 			|SELECT CompanyName, ContactName
 			|  FROM Suppliers
 			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 10)
 		""".stripMargin
+
+  private def readFile(name: String) = {
+    fs.readFileSync(name).toString
+  }
 
 //		"""
 //			|SELECT SupplierName

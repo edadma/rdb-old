@@ -14,17 +14,15 @@ class Connection {
   variables ++= Builtins.scalarFunctions
   variables ++= Builtins.constants
 
-  def loadFromFile(file: String): Unit = {
-    val imp = Importer
-
+  def load(data: String): Unit = {
     def types(t: String) =
       t match {
-        case "currency"        => DecimalType
-        case "dateUS" | "date" => DateType
-        case _                 => Type.names(t)
+        case "currency" => DecimalType
+        case "date"     => DateType
+        case _          => Type.names(t)
       }
 
-    for (Table(name, header, data) <- imp.importFromFile(file, false)) {
+    for (Table(name, header, data) <- Importer.importFromString(data, false)) {
       val t =
         createTable(
           name,
