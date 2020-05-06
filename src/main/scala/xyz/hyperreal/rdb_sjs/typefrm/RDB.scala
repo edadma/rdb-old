@@ -21,6 +21,8 @@ class RDB(data: String) {
           js.Dictionary((rel.metadata.header zip r) map {
             case (h, f) => (h.column, f)
           }: _*)
+//          js.Dynamic.newInstance(js.Dynamic.global.C)(
+//            r.asInstanceOf[Seq[js.Any]]: _*)
         }
 
         l.toJSArray

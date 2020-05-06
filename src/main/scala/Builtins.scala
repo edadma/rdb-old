@@ -22,6 +22,6 @@ object Builtins {
   val constants =
     List(
       "pi" -> Pi
-    ).asInstanceOf[List[(String, AnyRef)]]
+    ).asInstanceOf[List[(String, Any)]]
 
 }

@@ -8,7 +8,7 @@ import scala.util.parsing.input.Position
 class Connection {
 
   val baseRelations = new HashMap[String, BaseRelation]
-  val variables = new HashMap[String, AnyRef]
+  val variables = new HashMap[String, Any]
 
   variables ++= Builtins.aggregateFunctions
   variables ++= Builtins.scalarFunctions
@@ -273,7 +273,7 @@ class Connection {
   }
 
   def evalTuple(types: Array[Type], tuple: TupleExpression) = {
-    val row = new ArrayBuffer[AnyRef]
+    val row = new ArrayBuffer[Any]
     val r = tuple.t
 
     if (r.length < types.length)
@@ -716,7 +716,7 @@ class Connection {
   def evalVector(row: List[Tuple], vector: Vector[ValueResult]) =
     vector map (evalValue(row, _))
 
-  def binaryOperation(lv: AnyRef, pos: Position, op: String, rv: AnyRef) =
+  def binaryOperation(lv: Any, pos: Position, op: String, rv: Any) =
     (lv, rv) match {
       case (I, _) | (_, I) => I
       case (A, _) | (_, A) => A
@@ -737,7 +737,7 @@ class Connection {
         }
     }
 
-  def unaryOperation(pos: Position, op: String, v: AnyRef) =
+  def unaryOperation(pos: Position, op: String, v: Any) =
     try {
       (op, v) match {
         case ("-", v: BigDecimal) => -v
@@ -747,7 +747,7 @@ class Connection {
       case _: Exception => problem(pos, "error performing unary operation")
     }
 
-  def numbersAsBigDecimal(v: AnyRef) =
+  def numbersAsBigDecimal(v: Any) =
     v match {
       case v: java.lang.Byte    => BigDecimal(v.toInt)
       case v: java.lang.Short   => BigDecimal(v.toInt)
@@ -756,7 +756,7 @@ class Connection {
       case v                    => v
     }
 
-  def evalValue(row: List[Tuple], result: ValueResult): AnyRef =
+  def evalValue(row: List[Tuple], result: ValueResult): Any =
     result match {
       case AliasValue(_, _, _, _, _, v) => evalValue(row, v)
       case LiteralValue(_, _, _, _, v) =>
@@ -773,8 +773,8 @@ class Connection {
       case UnaryValue(p, _, _, _, v, op) =>
         unaryOperation(p, op, evalValue(row, v))
       case ScalarFunctionValue(_, _, _, _, func, args) =>
-        func(args map (evalValue(row, _))).asInstanceOf[AnyRef]
-      case a: AggregateFunctionValue   => a.func.result.asInstanceOf[AnyRef]
+        func(args map (evalValue(row, _))).asInstanceOf[Any]
+      case a: AggregateFunctionValue   => a.func.result.asInstanceOf[Any]
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
@@ -912,7 +912,7 @@ case class CreateResult(name: String) extends StatementResult
 case class DropResult(name: String) extends StatementResult
 case class AssignResult(name: String, update: Boolean, count: Int)
     extends StatementResult
-case class InsertResult(auto: List[Map[String, AnyRef]], count: Int)
+case class InsertResult(auto: List[Map[String, Any]], count: Int)
     extends StatementResult
 case class DeleteResult(count: Int) extends StatementResult
 case class UpdateResult(count: Int) extends StatementResult

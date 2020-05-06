@@ -13,13 +13,13 @@ case class LiteralValue(pos: Position,
                         table: String,
                         heading: String,
                         typ: Type,
-                        value: AnyRef)
+                        value: Any)
     extends ValueResult
 case class VariableValue(pos: Position,
                          table: String,
                          heading: String,
                          typ: Type,
-                         value: AnyRef)
+                         value: Any)
     extends ValueResult
 case class FieldValue(pos: Position,
                       table: String,

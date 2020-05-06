@@ -1,26 +1,25 @@
 package xyz.hyperreal.rdb_sjs
 
-
 object Logical {
 
-	def fromBoolean( b: Boolean ) = if (b) TRUE else FALSE
+  def fromBoolean(b: Boolean) = if (b) TRUE else FALSE
 
 }
 abstract class Logical {
 
-	def not: Logical
+  def not: Logical
 
-	def and( that: => Logical ): Logical
+  def and(that: => Logical): Logical
 
-	def or( that: => Logical ): Logical
+  def or(that: => Logical): Logical
 
 }
 
-abstract class Mark( name: String ) {
+abstract class Mark(name: String) {
 
-	def scala( that: AnyRef ): Mark
+  def scala(that: Any): Mark
 
-	def comparison( that: AnyRef ): Logical
+  def comparison(that: Any): Logical
 
-	override def toString = name
+  override def toString = name
 }

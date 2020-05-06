@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
+import xyz.hyperreal.dal_sjs
+
 trait AggregateFunction {
 
   def name: String
