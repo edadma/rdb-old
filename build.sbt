@@ -1,6 +1,6 @@
 name := "rdb-sjs"
 
-version := "0.1.0-alpha.10"
+version := "0.1.0-alpha.11"
 
 description := "In-memory relational database system"
 
@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
 //	"xyz.hyperreal" %% "options" % "0.3",
 	"xyz.hyperreal" %%% "importer-sjs" % "0.5.1",
   "xyz.hyperreal" %%% "numbers-sjs" % "0.7.1",
-  "xyz.hyperreal" %%% "dal-sjs" % "0.1.5"
+  "xyz.hyperreal" %%% "dal-sjs" % "0.1.8"
 )
 
 npmDependencies in Compile ++= Seq(

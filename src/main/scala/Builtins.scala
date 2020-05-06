@@ -17,7 +17,7 @@ object Builtins {
     List(
       "float" -> FloatScalarFunction,
       "abs" -> AbsScalarFunction,
-      "sqrt" -> sqrtFunction
+      "sqrt" -> sqrtScalarFunction
     )
   val constants =
     List(

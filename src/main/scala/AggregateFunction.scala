@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import xyz.hyperreal.dal_sjs
+import xyz.hyperreal.dal_sjs.BasicDAL.{compute => dcompute, relate}
 
 trait AggregateFunction {
 
@@ -60,12 +60,12 @@ object SumAggregateFunction extends AbstractAggregateFunction("sum") {
   def typ(inputs: List[Type]) = inputs.head
 
   def instance =
-    new AbstractAggregateFunctionInstance[BigDecimal] {
+    new AbstractAggregateFunctionInstance[Number] {
       override def compute(next: Any) =
         if (intermediate eq null)
-          next.asInstanceOf[BigDecimal]
+          next.asInstanceOf[Number]
         else
-          intermediate + next.asInstanceOf[BigDecimal]
+          dcompute(intermediate, Symbol("+"), next.asInstanceOf[Number])
     }
 
 }
@@ -75,14 +75,14 @@ object AvgAggregateFunction extends AbstractAggregateFunction("avg") {
   def typ(inputs: List[Type]) = FloatType //todo: do this properly
 
   def instance =
-    new AbstractAggregateFunctionInstance[BigDecimal] {
+    new AbstractAggregateFunctionInstance[Number] {
       override def compute(next: Any) =
         if (intermediate eq null)
-          next.asInstanceOf[BigDecimal]
+          next.asInstanceOf[Number]
         else
-          intermediate + next.asInstanceOf[BigDecimal]
+          dcompute(intermediate, Symbol("+"), next.asInstanceOf[Number])
 
-      override def result = intermediate / count
+      override def result = dcompute(intermediate, Symbol("/"), count)
     }
 
 }
@@ -92,12 +92,12 @@ object MinAggregateFunction extends AbstractAggregateFunction("min") {
   def typ(inputs: List[Type]) = inputs.head
 
   def instance =
-    new AbstractAggregateFunctionInstance[BigDecimal] {
+    new AbstractAggregateFunctionInstance[Number] {
       override def compute(next: Any) = {
         if (intermediate eq null)
-          next.asInstanceOf[BigDecimal]
-        else if (next.asInstanceOf[BigDecimal] < intermediate)
-          next.asInstanceOf[BigDecimal]
+          next.asInstanceOf[Number]
+        else if (relate(next.asInstanceOf[Number], Symbol("<"), intermediate))
+          next.asInstanceOf[Number]
         else
           intermediate
       }
@@ -110,12 +110,12 @@ object MaxAggregateFunction extends AbstractAggregateFunction("max") {
   def typ(inputs: List[Type]) = inputs.head
 
   def instance =
-    new AbstractAggregateFunctionInstance[BigDecimal] {
+    new AbstractAggregateFunctionInstance[Number] {
       override def compute(next: Any) = {
         if (intermediate eq null)
-          next.asInstanceOf[BigDecimal]
-        else if (intermediate < next.asInstanceOf[BigDecimal])
-          next.asInstanceOf[BigDecimal]
+          next.asInstanceOf[Number]
+        else if (relate(intermediate, Symbol("<"), next.asInstanceOf[Number]))
+          next.asInstanceOf[Number]
         else
           intermediate
       }

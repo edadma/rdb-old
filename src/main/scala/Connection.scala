@@ -1,9 +1,12 @@
 package xyz.hyperreal.rdb_sjs
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
-import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 
 import scala.util.parsing.input.Position
+
+import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
+
+import xyz.hyperreal.dal_sjs.BasicDAL.{compute, relate, negate}
 
 class Connection {
 
@@ -725,11 +728,8 @@ class Connection {
           (lv, op, rv) match {
             case (_: String, "+", _) | (_, "+", _: String) =>
               lv.toString ++ rv.toString
-            case (l: BigDecimal, "+", r: BigDecimal) => l + r
-            case (l: BigDecimal, "-", r: BigDecimal) => l - r
-            case (l: BigDecimal, "*", r: BigDecimal) => l * r
-            case (l: BigDecimal, "/", r: BigDecimal) => l / r
-            case _                                   => problem(pos, "invalid operation")
+            case (l: Number, _, r: Number) => compute(l, op, r)
+            case _                         => problem(pos, "invalid operation")
           }
         } catch {
           case _: Exception =>
@@ -740,31 +740,20 @@ class Connection {
   def unaryOperation(pos: Position, op: String, v: Any) =
     try {
       (op, v) match {
-        case ("-", v: BigDecimal) => -v
-        case _                    => problem(pos, "invalid operation")
+        case ("-", v: Number) => negate(v)
+        case _                => problem(pos, "invalid operation")
       }
     } catch {
       case _: Exception => problem(pos, "error performing unary operation")
     }
 
-  def numbersAsBigDecimal(v: Any) =
-    v match {
-      case v: java.lang.Byte    => BigDecimal(v.toInt)
-      case v: java.lang.Short   => BigDecimal(v.toInt)
-      case v: java.lang.Integer => BigDecimal(v)
-      case v: java.lang.Double  => BigDecimal(v)
-      case v                    => v
-    }
-
   def evalValue(row: List[Tuple], result: ValueResult): Any =
     result match {
-      case AliasValue(_, _, _, _, _, v) => evalValue(row, v)
-      case LiteralValue(_, _, _, _, v) =>
-        numbersAsBigDecimal(v)
-      case VariableValue(_, _, _, _, v) => v
-      case FieldValue(_, _, _, _, index, depth) =>
-        numbersAsBigDecimal(row(depth)(index))
-      case MarkedValue(_, _, _, _, m) => m
+      case AliasValue(_, _, _, _, _, v)         => evalValue(row, v)
+      case LiteralValue(_, _, _, _, v)          => v
+      case VariableValue(_, _, _, _, v)         => v
+      case FieldValue(_, _, _, _, index, depth) => row(depth)(index)
+      case MarkedValue(_, _, _, _, m)           => m
       case BinaryValue(p, _, _, _, l, op, r) =>
         val lv = evalValue(row, l)
         val rv = evalValue(row, r)
@@ -778,15 +767,7 @@ class Connection {
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
-  def comparison(l: BigDecimal, comp: String, r: BigDecimal) =
-    comp match {
-      case "<"  => l < r
-      case "<=" => l <= r
-      case ">"  => l > r
-      case ">=" => l >= r
-      case "="  => l == r
-      case "!=" => l != r
-    }
+  def comparison(l: Number, comp: String, r: Number) = relate(l, comp, r)
 
   def evalCondition(context: List[Tuple], cond: LogicalResult): Logical =
     cond match {
@@ -808,7 +789,7 @@ class Connection {
           case (_: String, _) | (_, _: String) =>
             Logical.fromBoolean(
               comparison(lv.toString compareTo rv.toString, comp, 0))
-          case (l: BigDecimal, r: BigDecimal) =>
+          case (l: Number, r: Number) =>
             Logical.fromBoolean(comparison(l, comp, r))
           case _ => problem(pos, "invalid comparison")
         }
