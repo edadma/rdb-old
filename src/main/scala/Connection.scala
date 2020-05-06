@@ -22,7 +22,8 @@ class Connection {
         case _          => Type.names(t)
       }
 
-    for (Table(name, header, data) <- Importer.importFromString(data, true)) {
+    for (Table(name, header, data) <- Importer.importFromString(data,
+                                                                doubleSpaces)) {
       val t =
         createTable(
           name,
