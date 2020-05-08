@@ -260,18 +260,18 @@ class Connection {
             types
 
         new ConcreteTupleseq(types1.toIndexedSeq, evalTupleList(types1, data))
-      case SortedTupleseqExpression(relation, names, ascending) =>
+      case SortedTupleseqExpression(relation, names) =>
         val rel = evalRelation(relation, context)
         val fields =
           names map {
-            case Ident(pos, name) =>
+            case (Ident(pos, name), asc) =>
               rel.metadata.columnMap get name match {
                 case None      => problem(pos, "unknown column")
-                case Some(ind) => ind
+                case Some(ind) => (ind, asc)
               }
           }
 
-        new SortedTupleseq(rel, fields, ascending)
+        new SortedTupleseq(rel, fields)
     }
   }
 

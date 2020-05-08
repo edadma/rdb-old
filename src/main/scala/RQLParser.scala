@@ -66,11 +66,20 @@ class RQLParser extends RegexParsers {
       }
 
   def tupleseq =
-    relation ~ ("order" ~ "by" ~> names) ~ opt("asc" | "desc") ^^ {
-      case r ~ n ~ None    => SortedTupleseqExpression(r, n, true)
-      case r ~ n ~ Some(o) => SortedTupleseqExpression(r, n, o == "asc")
+    relation ~ ("order" ~ "by" ~> orderby) ^^ {
+      case r ~ fs => SortedTupleseqExpression(r, fs)
+      case r ~ fs => SortedTupleseqExpression(r, fs)
     } |
       tupleseqLit
+
+  def orderby =
+    ("order" ~ "by") ~> rep1sep(
+      ident ~ opt(("ASC" | "asc") | ("DESC" | "desc")),
+      ",") ^^ (l =>
+      l.map {
+        case i ~ None    => (i, true)
+        case i ~ Some(a) => (i, a.toLowerCase == "asc")
+      })
 
   def tupleseqLit =
     "[" ~> rep1sep(tuple, ",") <~ "]" ^^ TupleseqLit

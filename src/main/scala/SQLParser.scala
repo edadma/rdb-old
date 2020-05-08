@@ -70,34 +70,26 @@ class SQLParser extends RegexParsers {
                                    h,
                                    p,
                                    e)
-      case _ ~ Nil ~ r ~ None ~ None ~ Some(s ~ o) =>
-        SortedTupleseqExpression(r, s, ascending(o))
-      case _ ~ e ~ r ~ None ~ None ~ Some(s ~ o) =>
-        SortedTupleseqExpression(ProjectionRelationExpression(r, e),
-                                 s,
-                                 ascending(o))
-      case _ ~ Nil ~ r ~ Some(w) ~ None ~ Some(s ~ o) =>
-        SortedTupleseqExpression(SelectionRelationExpression(r, w),
-                                 s,
-                                 ascending(o))
-      case _ ~ e ~ r ~ Some(w) ~ None ~ Some(s ~ o) =>
+      case _ ~ Nil ~ r ~ None ~ None ~ Some(fs) =>
+        SortedTupleseqExpression(r, fs)
+      case _ ~ e ~ r ~ None ~ None ~ Some(fs) =>
+        SortedTupleseqExpression(ProjectionRelationExpression(r, e), fs)
+      case _ ~ Nil ~ r ~ Some(w) ~ None ~ Some(fs) =>
+        SortedTupleseqExpression(SelectionRelationExpression(r, w), fs)
+      case _ ~ e ~ r ~ Some(w) ~ None ~ Some(fs) =>
         SortedTupleseqExpression(
           ProjectionRelationExpression(SelectionRelationExpression(r, w), e),
-          s,
-          ascending(o))
-      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ Some(s ~ o) =>
-        SortedTupleseqExpression(GroupingRelationExpression(r, d, h, p, e),
-                                 s,
-                                 ascending(o))
-      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ Some(s ~ o) =>
+          fs)
+      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ Some(fs) =>
+        SortedTupleseqExpression(GroupingRelationExpression(r, d, h, p, e), fs)
+      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ Some(fs) =>
         SortedTupleseqExpression(
           GroupingRelationExpression(SelectionRelationExpression(r, w),
                                      d,
                                      h,
                                      p,
                                      e),
-          s,
-          ascending(o))
+          fs)
     }
 
   def fromRelation =
@@ -122,8 +114,13 @@ class SQLParser extends RegexParsers {
       ("HAVING" | "having") ~> logicalExpression)
 
   def orderby =
-    ("ORDER" | "order") ~ ("BY" | "by") ~> rep1sep(ident, ",") ~ opt(
-      ("ASC" | "asc") | ("DESC" | "desc"))
+    ("ORDER" | "order") ~ ("BY" | "by") ~> rep1sep(
+      ident ~ opt(("ASC" | "asc") | ("DESC" | "desc")),
+      ",") ^^ (l =>
+      l.map {
+        case i ~ None    => (i, true)
+        case i ~ Some(a) => (i, a.toLowerCase == "asc")
+      })
 
   def expressions = rep1sep(valueExpression, ",")
 

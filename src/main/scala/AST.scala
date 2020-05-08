@@ -76,8 +76,7 @@ case class GroupingRelationExpression(relation: RelationExpression,
 trait TupleseqExpression extends TupleCollectionExpression with Positional
 case class TupleseqLit(data: List[TupleExpression]) extends TupleseqExpression
 case class SortedTupleseqExpression(relation: RelationExpression,
-                                    names: List[Ident],
-                                    ascending: Boolean)
+                                    names: List[(Ident, Boolean)])
     extends TupleseqExpression
 
 trait LogicalExpression extends Positional
