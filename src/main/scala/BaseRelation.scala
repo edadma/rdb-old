@@ -2,9 +2,7 @@ package xyz.hyperreal.rdb_sjs
 
 import collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 
-class BaseRelation(conn: Connection,
-                   val name: String,
-                   definition: Seq[BaseRelationColumn])
+class BaseRelation(val name: String, definition: Seq[BaseRelationColumn])
     extends AbstractRelation {
 
   private val rows = new ArrayBuffer[Array[Any]]

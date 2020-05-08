@@ -75,7 +75,7 @@ class Connection {
     else if (variables contains name)
       sys.error(s"variable relation '$name' already exists")
 
-    val res = new BaseRelation(this, name, definition)
+    val res = new BaseRelation(name, definition)
 
     baseRelations(name) = res
     res
