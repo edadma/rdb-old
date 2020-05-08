@@ -54,7 +54,7 @@ class SQLParser extends RegexParsers {
   def ascending(o: Option[String]) = o.isEmpty || o.get.toLowerCase == "asc"
 
   def query: Parser[TupleCollectionExpression] =
-    (("SELECT" | "select") ~> pos ~ (expressions | "*" ^^^ Nil) <~ ("FROM" | "from")) ~ relation ~ opt(
+    (("SELECT" | "select") ~> pos ~ (expressions | "*" ^^^ Nil) <~ ("FROM" | "from")) ~ fromRelation ~ opt(
       where) ~ opt(groupby) ~ opt(orderby) ^^ {
       case _ ~ Nil ~ r ~ None ~ None ~ None => r
       case _ ~ e ~ r ~ None ~ None ~ None   => ProjectionRelationExpression(r, e)
@@ -100,7 +100,20 @@ class SQLParser extends RegexParsers {
           ascending(o))
     }
 
-  def relation = ident ^^ RelationVariableExpression
+  def fromRelation =
+    innerJoinRelation |
+      relation
+
+  def innerJoinRelation: Parser[RelationExpression] =
+    (primaryRelation | "(" ~> innerJoinRelation <~ ")") ~ (("INNER" | "inner") ~> ("JOIN" | "join") ~> primaryRelation) ~ (("ON" | "on") ~> logicalExpression) ^^ {
+      case l ~ r ~ c => InnerJoinRelationExpression(l, c, r)
+    }
+
+  def relation: Parser[RelationExpression] = primaryRelation
+
+  def primaryRelation =
+    ident ^^ RelationVariableExpression |
+      "(" ~> relation <~ ")"
 
   def where = ("WHERE" | "where") ~> logicalExpression
 

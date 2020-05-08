@@ -3,20 +3,25 @@ package xyz.hyperreal.rdb_sjs
 import scalajs.js.Dynamic.{global => g}
 
 object Main extends App {
-//  private val fs = g.require("fs")
-//  val conn = new Connection { load(readFile("samples/northwind.tab")) }
-//  val statement =
+  private val fs = g.require("fs")
+  val conn = new Connection { load(readFile("samples/northwind.tab")) }
+  val statement =
 //    """
 //			|SELECT CompanyName, ContactName
 //			|  FROM Suppliers
 //			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 10)
 //		""".stripMargin
-//
-//  private def readFile(name: String) = {
-//    fs.readFileSync(name).toString
-//  }
-//
-//  REPLMain.printResult(conn.executeSQLStatement(statement))
+    """
+			|SELECT ProductName, CompanyName
+			|  FROM (Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID) INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID
+			|  WHERE Categories.CategoryName = 'Produce'
+		""".stripMargin
+
+  private def readFile(name: String) = {
+    fs.readFileSync(name).toString
+  }
+
+  REPLMain.printResult(conn.executeSQLStatement(statement))
 
 //		"""
 //			|SELECT SupplierName

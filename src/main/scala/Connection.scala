@@ -1,14 +1,17 @@
 package xyz.hyperreal.rdb_sjs
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
-import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 
 import scala.util.parsing.input.Position
+
+import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
+
+import xyz.hyperreal.dal_sjs.BasicDAL.{compute, relate, negate}
 
 class Connection {
 
   val baseRelations = new HashMap[String, BaseRelation]
-  val variables = new HashMap[String, AnyRef]
+  val variables = new HashMap[String, Any]
 
   variables ++= Builtins.aggregateFunctions
   variables ++= Builtins.scalarFunctions
@@ -22,7 +25,8 @@ class Connection {
         case _          => Type.names(t)
       }
 
-    for (Table(name, header, data) <- Importer.importFromString(data, true)) {
+    for (Table(name, header, data) <- Importer.importFromString(data,
+                                                                doubleSpaces)) {
       val t =
         createTable(
           name,
@@ -71,7 +75,7 @@ class Connection {
     else if (variables contains name)
       sys.error(s"variable relation '$name' already exists")
 
-    val res = new BaseRelation(this, name, definition)
+    val res = new BaseRelation(name, definition)
 
     baseRelations(name) = res
     res
@@ -272,7 +276,7 @@ class Connection {
   }
 
   def evalTuple(types: Array[Type], tuple: TupleExpression) = {
-    val row = new ArrayBuffer[AnyRef]
+    val row = new ArrayBuffer[Any]
     val r = tuple.t
 
     if (r.length < types.length)
@@ -715,7 +719,7 @@ class Connection {
   def evalVector(row: List[Tuple], vector: Vector[ValueResult]) =
     vector map (evalValue(row, _))
 
-  def binaryOperation(lv: AnyRef, pos: Position, op: String, rv: AnyRef) =
+  def binaryOperation(lv: Any, pos: Position, op: String, rv: Any) =
     (lv, rv) match {
       case (I, _) | (_, I) => I
       case (A, _) | (_, A) => A
@@ -724,11 +728,8 @@ class Connection {
           (lv, op, rv) match {
             case (_: String, "+", _) | (_, "+", _: String) =>
               lv.toString ++ rv.toString
-            case (l: BigDecimal, "+", r: BigDecimal) => l + r
-            case (l: BigDecimal, "-", r: BigDecimal) => l - r
-            case (l: BigDecimal, "*", r: BigDecimal) => l * r
-            case (l: BigDecimal, "/", r: BigDecimal) => l / r
-            case _                                   => problem(pos, "invalid operation")
+            case (l: Number, _, r: Number) => compute(l, op, r)
+            case _                         => problem(pos, "invalid operation")
           }
         } catch {
           case _: Exception =>
@@ -736,34 +737,23 @@ class Connection {
         }
     }
 
-  def unaryOperation(pos: Position, op: String, v: AnyRef) =
+  def unaryOperation(pos: Position, op: String, v: Any) =
     try {
       (op, v) match {
-        case ("-", v: BigDecimal) => -v
-        case _                    => problem(pos, "invalid operation")
+        case ("-", v: Number) => negate(v)
+        case _                => problem(pos, "invalid operation")
       }
     } catch {
       case _: Exception => problem(pos, "error performing unary operation")
     }
 
-  def numbersAsBigDecimal(v: AnyRef) =
-    v match {
-      case v: java.lang.Byte    => BigDecimal(v.toInt)
-      case v: java.lang.Short   => BigDecimal(v.toInt)
-      case v: java.lang.Integer => BigDecimal(v)
-      case v: java.lang.Double  => BigDecimal(v)
-      case v                    => v
-    }
-
-  def evalValue(row: List[Tuple], result: ValueResult): AnyRef =
+  def evalValue(row: List[Tuple], result: ValueResult): Any =
     result match {
-      case AliasValue(_, _, _, _, _, v) => evalValue(row, v)
-      case LiteralValue(_, _, _, _, v) =>
-        numbersAsBigDecimal(v)
-      case VariableValue(_, _, _, _, v) => v
-      case FieldValue(_, _, _, _, index, depth) =>
-        numbersAsBigDecimal(row(depth)(index))
-      case MarkedValue(_, _, _, _, m) => m
+      case AliasValue(_, _, _, _, _, v)         => evalValue(row, v)
+      case LiteralValue(_, _, _, _, v)          => v
+      case VariableValue(_, _, _, _, v)         => v
+      case FieldValue(_, _, _, _, index, depth) => row(depth)(index)
+      case MarkedValue(_, _, _, _, m)           => m
       case BinaryValue(p, _, _, _, l, op, r) =>
         val lv = evalValue(row, l)
         val rv = evalValue(row, r)
@@ -772,20 +762,12 @@ class Connection {
       case UnaryValue(p, _, _, _, v, op) =>
         unaryOperation(p, op, evalValue(row, v))
       case ScalarFunctionValue(_, _, _, _, func, args) =>
-        func(args map (evalValue(row, _))).asInstanceOf[AnyRef]
-      case a: AggregateFunctionValue   => a.func.result.asInstanceOf[AnyRef]
+        func(args map (evalValue(row, _))).asInstanceOf[Any]
+      case a: AggregateFunctionValue   => a.func.result.asInstanceOf[Any]
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
-  def comparison(l: BigDecimal, comp: String, r: BigDecimal) =
-    comp match {
-      case "<"  => l < r
-      case "<=" => l <= r
-      case ">"  => l > r
-      case ">=" => l >= r
-      case "="  => l == r
-      case "!=" => l != r
-    }
+  def comparison(l: Number, comp: String, r: Number) = relate(l, comp, r)
 
   def evalCondition(context: List[Tuple], cond: LogicalResult): Logical =
     cond match {
@@ -807,7 +789,7 @@ class Connection {
           case (_: String, _) | (_, _: String) =>
             Logical.fromBoolean(
               comparison(lv.toString compareTo rv.toString, comp, 0))
-          case (l: BigDecimal, r: BigDecimal) =>
+          case (l: Number, r: Number) =>
             Logical.fromBoolean(comparison(l, comp, r))
           case _ => problem(pos, "invalid comparison")
         }
@@ -911,7 +893,7 @@ case class CreateResult(name: String) extends StatementResult
 case class DropResult(name: String) extends StatementResult
 case class AssignResult(name: String, update: Boolean, count: Int)
     extends StatementResult
-case class InsertResult(auto: List[Map[String, AnyRef]], count: Int)
+case class InsertResult(auto: List[Map[String, Any]], count: Int)
     extends StatementResult
 case class DeleteResult(count: Int) extends StatementResult
 case class UpdateResult(count: Int) extends StatementResult

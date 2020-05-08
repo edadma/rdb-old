@@ -1,7 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import xyz.hyperreal.numbers_sjs.BigDecimalMath
-import xyz.hyperreal.numbers_sjs.BigDecimalMath.decimal128._
+import xyz.hyperreal.dal_sjs.BasicDAL.{absFunction, sqrtFunction}
 
 trait ScalarFunction extends (List[Any] => Any) {
 
@@ -31,13 +30,13 @@ object FloatScalarFunction extends AbstractScalarFunction("float") {
 object AbsScalarFunction extends AbstractScalarFunction("abs") {
   def apply(args: List[Any]) =
     args match {
-      case List(a: BigDecimal) => a.abs
+      case List(a: Number) => absFunction(a)
     }
 }
 
-object sqrtFunction extends AbstractScalarFunction("sqrt") {
+object sqrtScalarFunction extends AbstractScalarFunction("sqrt") {
   def apply(args: List[Any]) =
     args match {
-      case List(a: BigDecimal) => BigDecimalMath.sqrt(a)
+      case List(a: Number) => sqrtFunction(a)
     }
 }

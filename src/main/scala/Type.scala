@@ -3,6 +3,8 @@ package xyz.hyperreal.rdb_sjs
 import java.util.UUID
 import java.time.{Instant, LocalDate}
 
+import xyz.hyperreal.dal_sjs.BasicDAL.{compute, relate, compare => dcompare}
+
 object Type {
 
   val names =
@@ -19,12 +21,13 @@ object Type {
 
   def fromValue(v: Any) = {
     def _fromValue: PartialFunction[Any, Type] = {
-      case _: Logical   => LogicalType
-      case _: Int       => IntegerType
-      case _: Double    => FloatType
-      case _: String    => TextType
-      case _: LocalDate => DateType
-      case _: Instant   => InstantType
+      case _: Logical    => LogicalType
+      case _: Int        => IntegerType
+      case _: Double     => FloatType
+      case _: String     => TextType
+      case _: BigDecimal => DecimalType
+      case _: LocalDate  => DateType
+      case _: Instant    => InstantType
     }
 
     if (_fromValue isDefinedAt v)
@@ -35,116 +38,76 @@ object Type {
 
 }
 
-trait Type extends Ordering[AnyRef]
+abstract class Type extends Ordering[Any] {
+  val name: String
 
-trait SimpleType extends Type
-
-abstract class PrimitiveType(val name: String) extends SimpleType {
   override def toString = name
+}
+
+abstract class PrimitiveType(val name: String) extends Type
+
+abstract class NumericalType(name: String) extends PrimitiveType(name) {
+
+  def compare(x: Any, y: Any): Int =
+    (x, y) match {
+      case (x: Number, y: Number) => dcompare(x, y)
+      case _                      => sys.error(s"incomparable values: $x, $y")
+    }
+
 }
 
 trait Auto {
 
-  def next(v: AnyRef): AnyRef
+  def next(v: Any): Any
 
-  def default: AnyRef
+  def default: Any
 
 }
 
-trait NumericalType extends Type
+trait IntegralType extends Auto {
 
-trait OrderedType extends Type
+  def next(v: Any) = compute(v.asInstanceOf[Number], Symbol("+"), 1)
 
-trait OrderedNumericalType extends NumericalType with OrderedType
+  def default = 1.asInstanceOf[Number]
+
+}
 
 case object LogicalType extends PrimitiveType("logical") {
 
-  def compare(x: AnyRef, y: AnyRef) =
+  def compare(x: Any, y: Any) =
     (x, y) match {
-      case (java.lang.Boolean.TRUE, java.lang.Boolean.TRUE) |
-          (java.lang.Boolean.FALSE, java.lang.Boolean.FALSE) =>
+      case (true, true) | (false, false) =>
         0
-      case (java.lang.Boolean.FALSE, java.lang.Boolean.TRUE) => 1
-      case (java.lang.Boolean.TRUE, java.lang.Boolean.FALSE) => -1
-      case _                                                 => sys.error(s"incomparable values: $x, $y")
+      case (false, true) => 1
+      case (true, false) => -1
+      case _             => sys.error(s"incomparable values: $x, $y")
     }
 
 }
 
 //case object ByteType extends PrimitiveType( "byte" ) with NumericalType {
 //
-//	def compare( x: AnyRef, y: AnyRef ) =
+//	def compare( x: Any, y: Any ) =
 //		(x, y) match {
 //			case (x: java.lang.Byte, y: java.lang.Byte) => x compareTo y
 //		}
 //
 //}
 
-case object SmallintType
-    extends PrimitiveType("smallint")
-    with OrderedNumericalType
-    with Auto {
+case object SmallintType extends NumericalType("smallint") with IntegralType
 
-  def compare(x: AnyRef, y: AnyRef) =
-    (x, y) match {
-      case (x: java.lang.Short, y: java.lang.Short) => x compareTo y
-      case _                                        => sys.error(s"incomparable values: $x, $y")
-    }
-
-  def next(v: AnyRef) =
-    (v.asInstanceOf[Short] + 1).asInstanceOf[java.lang.Short]
-
-  def default = 1.asInstanceOf[java.lang.Short]
-
-}
-
-case object IntegerType
-    extends PrimitiveType("integer")
-    with OrderedNumericalType
-    with Auto {
-
-  def compare(x: AnyRef, y: AnyRef) =
-    (x, y) match {
-      case (x: java.lang.Integer, y: java.lang.Integer) => x compareTo y
-      case _                                            => sys.error(s"incomparable values: $x, $y")
-    }
-
-  def next(v: AnyRef) =
-    (v.asInstanceOf[Int] + 1).asInstanceOf[java.lang.Integer]
-
-  def default = 1.asInstanceOf[java.lang.Integer]
-
-}
+case object IntegerType extends NumericalType("integer") with IntegralType
 
 //case object BigintType extends PrimitiveType
-case object FloatType extends PrimitiveType("float") with OrderedNumericalType {
+case object FloatType extends NumericalType("float")
 
-  def compare(x: AnyRef, y: AnyRef) =
+case object DecimalType extends NumericalType("decimal")
+
+case object TextType extends PrimitiveType("string") {
+
+  def compare(x: Any, y: Any) =
     (x, y) match {
-      case (x: java.lang.Double, y: java.lang.Double) => x compareTo y
-      case _                                          => sys.error(s"incomparable values: $x, $y")
-    }
-
-}
-
-case object DecimalType
-    extends PrimitiveType("decimal")
-    with OrderedNumericalType {
-
-  def compare(x: AnyRef, y: AnyRef) =
-    (x, y) match {
-      case (x: BigDecimal, y: BigDecimal) => x compareTo y
-      case _                              => sys.error(s"incomparable values: $x, $y")
-    }
-
-}
-
-//case object NumberType extends PrimitiveType
-case object TextType extends PrimitiveType("string") with OrderedType {
-
-  def compare(x: AnyRef, y: AnyRef) =
-    (x, y) match {
-      case (x: String, y: String) => x compareTo y
+      case (x: String, y: String) => x compare y
       case _                      => sys.error(s"incomparable values: $x, $y")
     }
 
@@ -153,9 +116,9 @@ case object TextType extends PrimitiveType("string") with OrderedType {
 //case object BinaryType extends PrimitiveType
 //case object BlobType extends PrimitiveType
 
-case object DateType extends PrimitiveType("date") with OrderedType {
+case object DateType extends PrimitiveType("date") {
 
-  def compare(x: AnyRef, y: AnyRef) =
+  def compare(x: Any, y: Any) =
     (x, y) match {
       case (x: LocalDate, y: LocalDate) => x compareTo y
       case _                            => sys.error(s"incomparable values: $x, $y")
@@ -163,9 +126,9 @@ case object DateType extends PrimitiveType("date") with OrderedType {
 
 }
 
-case object InstantType extends PrimitiveType("instant") with OrderedType {
+case object InstantType extends PrimitiveType("instant") {
 
-  def compare(x: AnyRef, y: AnyRef) =
+  def compare(x: Any, y: Any) =
     (x, y) match {
       case (x: Instant, y: Instant) => x compareTo y
       case _                        => sys.error(s"incomparable values: $x, $y")
@@ -174,15 +137,15 @@ case object InstantType extends PrimitiveType("instant") with OrderedType {
 }
 
 //case object TimeIntervalType extends PrimitiveType
-case object UUIDType extends PrimitiveType("uuid") {
-
-  def compare(x: AnyRef, y: AnyRef) =
-    (x, y) match {
-      case (x: UUID, y: UUID) => x compareTo y
-      case _                  => sys.error(s"incomparable values: $x, $y")
-    }
-
-}
+//case object UUIDType extends PrimitiveType("uuid") {
+//
+//  def compare(x: Any, y: Any) =
+//    (x, y) match {
+//      case (x: UUID, y: UUID) => x compareTo y
+//      case _                  => sys.error(s"incomparable values: $x, $y")
+//    }
+//
+//}
 
 //case class EnumeratedType( elements: List[String] ) extends SimpleType {
 //	val name = "enum(" + elements.mkString( "," ) + ")"

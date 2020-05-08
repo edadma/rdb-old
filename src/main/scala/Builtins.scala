@@ -17,11 +17,11 @@ object Builtins {
     List(
       "float" -> FloatScalarFunction,
       "abs" -> AbsScalarFunction,
-      "sqrt" -> sqrtFunction
+      "sqrt" -> sqrtScalarFunction
     )
   val constants =
     List(
       "pi" -> Pi
-    ).asInstanceOf[List[(String, AnyRef)]]
+    ).asInstanceOf[List[(String, Any)]]
 
 }
