@@ -18,16 +18,6 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn])
           null
     }
 
-//	private val pkindex =
-//		metadata primaryKey match {
-//			case None => sys.error( s"attempting to create base relation '$name' with no primary key" )
-//			case Some( BaseRelationColumn( _, col, typ, _ ) ) =>
-//				val index = new TreeMap[Any, Int]()( typ )
-//
-//				indexes(col) = index
-//				index
-//		}
-
   def iterator(context: List[Tuple]) = rows.iterator map (_ toVector)
 
   override def size = rows.length

@@ -4,7 +4,7 @@ import scalajs.js.Dynamic.{global => g}
 
 object Main extends App {
   private val fs = g.require("fs")
-  val conn = new Connection { load(readFile("samples/northwind.tab")) }
+  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
   val statement =
 //    """
 //			|SELECT CompanyName, ContactName
