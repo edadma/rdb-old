@@ -55,15 +55,17 @@ class OQLParser extends RegexParsers {
 
   def order = "<" ~> rep1sep(orderExpression, ",") <~ ">"
 
-  def orderExpression = expression ~ opt("/" | "\\")
+  def orderExpression = expression ~ opt("/" | "\\") ^^ {
+    case e ~ "/" => (e, true)
+    case e ~ _ => (e, false)
+  }
 
   def group = "(" ~> rep1sep(expression, ",") <~ ")"
 
-  def parseFromString[T](src: String, grammar: Parser[T]) = {
+  def parseFromString[T](src: String, grammar: Parser[T]) =
     parseAll(grammar, new CharSequenceReader(src)) match {
       case Success(tree, _)       => tree
       case NoSuccess(error, rest) => problem(rest.pos, error)
     }
-  }
 
 }

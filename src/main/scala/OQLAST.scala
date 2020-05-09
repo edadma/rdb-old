@@ -4,7 +4,11 @@ import scala.util.parsing.input.{Positional, Position}
 
 abstract class OQLAST extends AST
 
-case class OQLQuery(resource: Ident, select: ExpressionOQL, project: ProjectOQL))
+case class OQLQuery(resource: Ident,
+                    select: ExpressionOQL,
+                    project: ProjectOQL,
+                    order: List[(ExpressionOQL, Boolean)],
+                    group: List[ExpressionOQL])
 
 abstract class ExpressionOQL extends OQLAST
 
