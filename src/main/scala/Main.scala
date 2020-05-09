@@ -5,7 +5,7 @@ import scalajs.js.Dynamic.{global => g}
 object Main extends App {
   private val fs = g.require("fs")
   val conn = new Connection { load(readFile("samples/movie.tab"), true) }
-  val statement = readFile("samples/w3r-movie-join-5.sql")
+  val statement = readFile("samples/w3r-movie-join-2.sql")
 //  """
 //			|SELECT *
 //			|  FROM movie

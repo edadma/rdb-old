@@ -2,9 +2,9 @@ package xyz.hyperreal.rdb_sjs
 
 import scala.util.parsing.input.{Positional, Position}
 
-trait AST
+abstract class AST
 
-trait StatementAST extends AST
+abstract class StatementAST extends AST
 case class AssignRelationStatement(variable: Ident,
                                    relation: RelationExpression)
     extends StatementAST
@@ -24,7 +24,7 @@ case class UpdateStatement(base: Ident,
                            updates: List[(Ident, ValueExpression)])
     extends StatementAST
 
-trait ValueExpression extends AST with Positional
+abstract class ValueExpression extends AST with Positional
 case class FloatLit(n: String) extends ValueExpression
 case class IntegerLit(n: String) extends ValueExpression
 case class StringLit(s: String) extends ValueExpression
@@ -50,8 +50,10 @@ case class LogicalValueExpression(logical: LogicalExpression)
 case class AliasValueExpression(expr: ValueExpression, alias: Ident)
     extends ValueExpression
 
-trait TupleCollectionExpression extends StatementAST
-trait RelationExpression extends TupleCollectionExpression with Positional
+abstract class TupleCollectionExpression extends StatementAST
+abstract class RelationExpression
+    extends TupleCollectionExpression
+    with Positional
 case class RelationVariableExpression(name: Ident) extends RelationExpression
 case class ListRelationExpression(columns: List[ColumnSpec],
                                   data: List[TupleExpression])
@@ -73,13 +75,15 @@ case class GroupingRelationExpression(relation: RelationExpression,
                                       columns: List[ValueExpression])
     extends RelationExpression
 
-trait TupleseqExpression extends TupleCollectionExpression with Positional
+abstract class TupleseqExpression
+    extends TupleCollectionExpression
+    with Positional
 case class TupleseqLit(data: List[TupleExpression]) extends TupleseqExpression
 case class SortedTupleseqExpression(relation: RelationExpression,
                                     names: List[(Ident, Boolean)])
     extends TupleseqExpression
 
-trait LogicalExpression extends Positional
+abstract class LogicalExpression extends Positional
 case class LiteralLogicalExpression(l: Logical) extends LogicalExpression
 case class ComparisonLogicalExpression(
     left: ValueExpression,
@@ -94,7 +98,7 @@ case class OrLogicalExpression(left: LogicalExpression,
 case class ExistsLogicalExpression(tuples: TupleCollectionExpression)
     extends LogicalExpression
 
-case class Ident(pos: Position, name: String)
+case class Ident(name: String) extends Positional
 
 case class ColumnSpec(name: Ident, typepos: Position, typ: Option[String])
 case class ColumnDef(name: Ident,

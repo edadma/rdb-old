@@ -27,9 +27,7 @@ class RQLParser extends RegexParsers {
       (("'" ~> """[^'\n]*""".r <~ "'") |
         ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit)
 
-  def ident = pos ~ """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ {
-    case p ~ n => Ident(p, n)
-  }
+  def ident = positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
   def statement: Parser[StatementAST] =
     assignStatement |
@@ -67,7 +65,6 @@ class RQLParser extends RegexParsers {
 
   def tupleseq =
     relation ~ ("order" ~ "by" ~> orderby) ^^ {
-      case r ~ fs => SortedTupleseqExpression(r, fs)
       case r ~ fs => SortedTupleseqExpression(r, fs)
     } |
       tupleseqLit

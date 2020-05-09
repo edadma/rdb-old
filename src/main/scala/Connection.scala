@@ -89,18 +89,18 @@ class Connection {
 
   def executeStatement(ast: AST): StatementResult =
     ast match {
-      case CreateBaseRelationStatement(Ident(pos, base), columns) =>
+      case CreateBaseRelationStatement(table @ Ident(base), columns) =>
         if (baseRelations contains base)
-          problem(pos, "a base relation by that name already exists")
+          problem(table.pos, "a base relation by that name already exists")
         else if (variables contains base)
-          problem(pos, "a variable relation by that name already exists")
+          problem(table.pos, "a variable relation by that name already exists")
 
         var hset = Set[String]()
         var pk = false
 
-        for (ColumnDef(Ident(p, n), _, _, pkpos, _, _, _, _) <- columns)
+        for (ColumnDef(id @ Ident(n), _, _, pkpos, _, _, _, _) <- columns)
           if (hset(n))
-            problem(p, "duplicate column")
+            problem(id.pos, "duplicate column")
           else {
             hset += n
 
@@ -112,12 +112,12 @@ class Connection {
           }
 
         if (!pk)
-          problem(pos,
+          problem(table.pos,
                   "one of the columns must be declared to be the primary key")
 
         val header =
           columns map {
-            case ColumnDef(Ident(_, n), tp, typ, pkpos, fkr, fkc, u, a) =>
+            case ColumnDef(Ident(n), tp, typ, pkpos, fkr, fkc, u, a) =>
               if (a && !typ.isInstanceOf[Auto])
                 problem(tp, "a column of this type cannot be declared auto")
 
@@ -149,16 +149,16 @@ class Connection {
 
         createTable(base, header)
         CreateResult(base)
-      case DropTableStatement(Ident(pos, name)) =>
+      case DropTableStatement(table @ Ident(name)) =>
         if (baseRelations contains name)
           baseRelations remove name
         else
-          problem(pos, "no base relation by that name exists")
+          problem(table.pos, "no base relation by that name exists")
 
         DropResult(name)
-      case AssignRelationStatement(Ident(pos, name), relation) =>
+      case AssignRelationStatement(table @ Ident(name), relation) =>
         if (baseRelations contains name)
-          problem(pos, "a base relation by that name already exists")
+          problem(table.pos, "a base relation by that name already exists")
 
         val rel = evalRelation(relation, Nil)
         val res = AssignResult(name, variables contains name, rel size)
@@ -199,11 +199,11 @@ class Connection {
 
             InsertResult(l, c)
         }
-      case InsertRelationStatement(Ident(pos, name), relation) =>
+      case InsertRelationStatement(table @ Ident(name), relation) =>
         val src = evalRelation(relation, Nil)
 
         baseRelations get name match {
-          case None => problem(pos, "unknown base relation")
+          case None => problem(table.pos, "unknown base relation")
           case Some(b) =>
             if (!src.metadata.attributes.subsetOf(b.metadata.attributes))
               problem(relation.pos, "attributes must be a subset of base")
@@ -264,9 +264,9 @@ class Connection {
         val rel = evalRelation(relation, context)
         val fields =
           names map {
-            case (Ident(pos, name), asc) =>
+            case (f @ Ident(name), asc) =>
               rel.metadata.columnMap get name match {
-                case None      => problem(pos, "unknown column")
+                case None      => problem(f.pos, "unknown column")
                 case Some(ind) => (ind, asc)
               }
           }
@@ -388,12 +388,12 @@ class Connection {
         val cond = evalLogical(afuse, rel.metadata :: context, condition)
 
         new SelectionRelation(this, rel, cond, afuse.state)
-      case RelationVariableExpression(Ident(p, n)) =>
+      case RelationVariableExpression(v @ Ident(n)) =>
         baseRelations get n match {
           case None =>
             variables get n match {
               case Some(r: Relation) => r
-              case _                 => problem(p, "unknown base or variable relation")
+              case _                 => problem(v.pos, "unknown base or variable relation")
             }
 
           case Some(r) => r
@@ -401,9 +401,9 @@ class Connection {
       case ListRelationExpression(columns, data) =>
         var hset = Set[String]()
 
-        for (ColumnSpec(Ident(p, n), _, _) <- columns)
+        for (ColumnSpec(c @ Ident(n), _, _) <- columns)
           if (hset(n))
-            problem(p, "duplicate column")
+            problem(c.pos, "duplicate column")
           else {
             hset += n
           }
@@ -431,7 +431,7 @@ class Connection {
               problem(
                 p,
                 "missing type specification in relation with missing values")
-            case (ColumnSpec(Ident(_, n), _, _), t) => SimpleColumn(tab, n, t)
+            case (ColumnSpec(Ident(n), _, _), t) => SimpleColumn(tab, n, t)
           }
 
         new ConcreteRelation(header toIndexedSeq, body)
