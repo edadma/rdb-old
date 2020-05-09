@@ -33,7 +33,31 @@ class OQLParser extends RegexParsers {
   def ident =
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
-  def query = string
+  def query =
+    ident ~ opt(select) ~ opt(project) ~ opt(order) ~ opt(group) ^^ {
+      case r ~ s ~ p ~ o ~ g => OQLQuery(r, s, p, o, g)
+    }
+
+  def project =
+    "{" ~> rep1sep(projectExpression, ",") <~ "}" | "." ~ simpleProjectExpression | "^" ~ simpleProjectExpression
+
+  def simpleProjectExpression = fieldProject | ident
+
+  def projectExpression = fieldProject | expression
+
+  def fieldProject = ident ~ project
+
+  def variable = rep1sep(ident, ".") ^^
+
+  def expression = ident
+
+  def select = "[" ~> expression <~ "]"
+
+  def order = "<" ~> rep1sep(orderExpression, ",") <~ ">"
+
+  def orderExpression = expression ~ opt("/" | "\\")
+
+  def group = "(" ~> rep1sep(expression, ",") <~ ")"
 
   def parseFromString[T](src: String, grammar: Parser[T]) = {
     parseAll(grammar, new CharSequenceReader(src)) match {
