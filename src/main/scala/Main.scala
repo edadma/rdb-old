@@ -5,13 +5,13 @@ import scalajs.js.Dynamic.{global => g}
 object Main extends App {
   private val fs = g.require("fs")
   val conn = new Connection { load(readFile("samples/movie.tab"), true) }
-  val statement =
-    """
-			|SELECT *
-			|  FROM movie
-      |  WHERE mov_year BETWEEN 1990 AND 1999
-      |  ORDER BY mov_year
-		""".stripMargin
+  val statement = readFile("samples/w3r-movie-join-ex-2.sql")
+//  """
+//			|SELECT *
+//			|  FROM movie
+//      |  WHERE mov_year BETWEEN 1990 AND 1999
+//      |  ORDER BY mov_year
+//		""".stripMargin
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =
 //    """
