@@ -5,7 +5,7 @@ import scala.util.parsing.input.{CharSequenceReader, Positional}
 
 object OQLParser {
 
-  def parseStatement(query: String) = {
+  def parseQuery(query: String) = {
     val p = new OQLParser
 
     p.parseFromString(query, p.query)

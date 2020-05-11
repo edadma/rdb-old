@@ -5,10 +5,10 @@ import scala.util.parsing.input.{CharSequenceReader, Position, Positional}
 
 object ERDParser {
 
-  def parseStatement(query: String): OQLQuery = {
-    val p = new OQLParser
+  def parseDefinition(defn: String): ERDefinitionERD = {
+    val p = new ERDParser
 
-    p.parseFromString(query, p.query)
+    p.parseFromString(defn, p.definition)
   }
 
 }
@@ -36,7 +36,7 @@ class ERDParser extends RegexParsers {
 
   def variable: Parser[VariableExpressionERD] = ident ^^ VariableExpressionERD
 
-  def definition: Parser[DefinitionERD] = rep1(block) ^^ DefinitionERD
+  def definition: Parser[ERDefinitionERD] = rep1(block) ^^ ERDefinitionERD
 
   def block: Parser[BlockERD] = typeBlock | entityBlock
 

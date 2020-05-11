@@ -3,7 +3,7 @@ package xyz.hyperreal.rdb_sjs
 import scala.util.parsing.input.Positional
 
 abstract class ERDAST
-case class DefinitionERD(blocks: List[BlockERD]) extends ERDAST
+case class ERDefinitionERD(blocks: List[BlockERD]) extends ERDAST
 
 abstract class BlockERD extends ERDAST
 case class TypeBlockERD(name: Ident,
