@@ -23,15 +23,33 @@ class ERDParser extends RegexParsers {
 
   def block = typeBlock | entityBlock
 
-  def typeBlock = "type"
+  def typeBlock =
+    "type" ~ "=" ~ ident ~ ":" ~ condition
 
-  def entityBlock = "entity"
+  def condition = boolCond
 
-  def parseFromString[T](src: String, grammar: Parser[T]) =
-    parseAll(grammar, new CharSequenceReader(src)) match {
-      case Success(tree, _)       => tree
-      case NoSuccess(error, rest) => problem(rest.pos, error)
-    }
+  def boolCond =
+    orCond ~ rep("and" ~ orCond)
+
+  def orCond =
+    compCond ~ rep("or" ~ compCond)
+
+  def compCond =
+    notCond ~ rep(("<" | "<=") ~ notCond)
+
+  def notCond =
+    "not" ~ primaryCond |
+      primaryCond
+
+  def primaryCond = ident | number
+
+  def entityBlock = "entity" ~ ident ~ "{" ~ rep
+
+//  def parseFromString[T](src: String, grammar: Parser[T]) =
+//    parseAll(grammar, new CharSequenceReader(src)) match {
+//      case Success(tree, _)       => tree
+//      case NoSuccess(error, rest) => problem(rest.pos, error)
+//    }
 
 }
 
@@ -44,7 +62,7 @@ type Country = text: _ is in ["UK", "US", "JP"]
 type PosInt = integer: _ > 0
 
 entity movie {
-  *mov_id: integer
+ *mov_id: integer
   mov_title: text
   mov_year: integer
   mov_time: integer //PosInt
@@ -54,7 +72,7 @@ entity movie {
 }
 
 entity actor {
-  *act_id: integer
+ *act_id: integer
   act_fname: text
   act_lname: text
   act_gender: text
