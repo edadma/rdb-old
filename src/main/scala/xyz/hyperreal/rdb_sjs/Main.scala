@@ -10,8 +10,8 @@ object Main extends App {
   }
 
   val erd = ERDefinition(readFile("samples/movie.erd"))
-
-  println(erd)
+  val query =
+    println(erd)
 //  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
 //  val statement = readFile("samples/w3r-movie-join-2.sql")
 //  """
