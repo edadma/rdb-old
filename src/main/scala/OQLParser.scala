@@ -38,7 +38,7 @@ class OQLParser extends RegexParsers {
       case r ~ s ~ p ~ o ~ g => OQLQuery(r, s, p, o, g)
     }
 
-  def project =
+  def project: Parser[ProjectOQL] =
     "{" ~> rep1sep(projectExpression, ",") <~ "}" ^^ (ps =>
       ProjectOQL(false, ps)) |
       ("." | "^") ~ simpleProjectExpression ^^ {
@@ -46,7 +46,7 @@ class OQLParser extends RegexParsers {
         case "^" ~ p => ProjectOQL(true, List(p))
       }
 
-  def simpleProjectExpression = fieldProject | ident
+  def simpleProjectExpression: Parser[ExpressionOQL] = fieldProject | variable
 
   def projectExpression = fieldProject | expression
 
@@ -54,16 +54,16 @@ class OQLParser extends RegexParsers {
     case i ~ p => ProjectionExpressionOQL(i, p)
   }
 
-  def variable = rep1sep(ident, ".") ^^
+  def variable = rep1sep(ident, ".") ^^ VariableExpressionOQL
 
-  def expression = ident
+  def expression = variable
 
   def select = "[" ~> expression <~ "]"
 
   def order = "<" ~> rep1sep(orderExpression, ",") <~ ">"
 
   def orderExpression = expression ~ opt("/" | "\\") ^^ {
-    case e ~ "/" => (e, true)
+    case e ~ (Some("/")|None) => (e, true)
     case e ~ _   => (e, false)
   }
 
