@@ -118,8 +118,8 @@ entity actor {
 }
 
 entity movie_cast {
-  actor: actor
-  movie: movie
+  actor (act_id): actor
+  movie (mov_id): movie
   role: text
 }
 
