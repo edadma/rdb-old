@@ -19,37 +19,57 @@ class ERDParser extends RegexParsers {
     _.pos
   }
 
+  def number: Parser[ValueExpression] =
+    positioned("""\-?\d+(\.\d*)?""".r ^^ {
+      case n if n contains '.' => FloatLit(n)
+      case n                   => IntegerLit(n)
+    })
+
+  def string: Parser[ValueExpression] =
+    positioned(
+      (("'" ~> """[^'\n]*""".r <~ "'") |
+        ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit)
+
+  def ident =
+    positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
+
   def definition = rep1(block) ^^ DefinitionERD
 
   def block = typeBlock | entityBlock
 
   def typeBlock =
-    "type" ~ "=" ~ ident ~ ":" ~ condition
+    "type" ~> ident ~ "=" ~ ident ~ ":" ~ condition ^^ {
+      case n ~ _ ~ u ~ _ ~ c => TypeBlockERD(n, u, c)
+    }
 
-  def condition = boolCond
+  def condition = boolCondition
 
-  def boolCond =
-    orCond ~ rep("and" ~ orCond)
+  def boolCondition =
+    orCondition ~ rep("and" ~ orCondition)
 
-  def orCond =
-    compCond ~ rep("or" ~ compCond)
+  def orCondition =
+    compCondition ~ rep("or" ~ compCondition)
 
-  def compCond =
-    notCond ~ rep(("<" | "<=") ~ notCond)
+  def compCondition =
+    notCondition ~ rep(("<" | "<=") ~ notCondition)
 
-  def notCond =
-    "not" ~ primaryCond |
-      primaryCond
+  def notCondition =
+    "not" ~ primaryCondition |
+      primaryCondition
 
-  def primaryCond = ident | number
+  def primaryCondition = ident | number
 
-  def entityBlock = "entity" ~ ident ~ "{" ~ rep
+  def entityBlock = "entity" ~ ident ~ "{" ~ rep1(field) ~ "}"
 
-//  def parseFromString[T](src: String, grammar: Parser[T]) =
-//    parseAll(grammar, new CharSequenceReader(src)) match {
-//      case Success(tree, _)       => tree
-//      case NoSuccess(error, rest) => problem(rest.pos, error)
-//    }
+  def field = ident ~ ":" ~ typeSpec
+
+  def typeSpec = ident
+
+  def parseFromString[T](src: String, grammar: Parser[T]) =
+    parseAll(grammar, new CharSequenceReader(src)) match {
+      case Success(tree, _)       => tree
+      case NoSuccess(error, rest) => problem(rest.pos, error)
+    }
 
 }
 

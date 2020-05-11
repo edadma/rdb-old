@@ -10,7 +10,7 @@ movie
  908                  The Usual Suspects        1995               106                English         1995-08-25        GB                    
  909                  Chinatown                 1974               130                English         1974-08-09        GB                    
  910                  Boogie Nights             1997               155                English         1998-02-16        GB                    
- 911                  Annie Hall                1977               93                 English         1977-04-20        US
+ 911                  Annie Hall                1977               93                 English         1977-04-20        US                    
  912                  Princess Mononoke         1997               134                Japanese        2001-10-19        GB                    
  913                  The Shawshank Redemption  1994               142                English         1995-02-17        GB                    
  914                  American Beauty           1999               122                English         null              GB                    
@@ -102,30 +102,30 @@ actor
  124                  Ali              Astin            F                
 
 movie_cast
- act_id: integer, fk, actor, act_id   mov_id: integer, fk, movie, mov_id       role: text
- 101                  901                                 John Scottie Ferguson 
- 102                  902                                 Miss Giddens          
- 103                  903                                 T.E. Lawrence         
- 104                  904                                 Michael               
- 105                  905                                 Antonio Salieri       
- 106                  906                                 Rick Deckard          
- 107                  907                                 Alice Harford         
- 108                  908                                 McManus               
- 110                  910                                 Eddie Adams           
- 111                  911                                 Alvy Singer           
- 112                  912                                 San                   
- 113                  913                                 Andy Dufresne         
- 114                  914                                 Lester Burnham        
- 115                  915                                 Rose DeWitt Bukater   
- 116                  916                                 Sean Maguire          
- 117                  917                                 Ed                    
- 118                  918                                 Renton                
- 120                  920                                 Elizabeth Darko       
- 121                  921                                 Older Jamal           
- 122                  922                                 Ripley                
- 114                  923                                 Bobby Darin           
- 109                  909                                 J.J. Gittes           
- 119                  919                                 Alfred Borden         
+ act_id: integer, fk, actor, act_id  mov_id: integer, fk, movie, mov_id       role: text       
+ 101                                 901                                 John Scottie Ferguson 
+ 102                                 902                                 Miss Giddens          
+ 103                                 903                                 T.E. Lawrence         
+ 104                                 904                                 Michael               
+ 105                                 905                                 Antonio Salieri       
+ 106                                 906                                 Rick Deckard          
+ 107                                 907                                 Alice Harford         
+ 108                                 908                                 McManus               
+ 110                                 910                                 Eddie Adams           
+ 111                                 911                                 Alvy Singer           
+ 112                                 912                                 San                   
+ 113                                 913                                 Andy Dufresne         
+ 114                                 914                                 Lester Burnham        
+ 115                                 915                                 Rose DeWitt Bukater   
+ 116                                 916                                 Sean Maguire          
+ 117                                 917                                 Ed                    
+ 118                                 918                                 Renton                
+ 120                                 920                                 Elizabeth Darko       
+ 121                                 921                                 Older Jamal           
+ 122                                 922                                 Ripley                
+ 114                                 923                                 Bobby Darin           
+ 109                                 909                                 J.J. Gittes           
+ 119                                 919                                 Alfred Borden         
 
 director
  dir_id: integer, pk  dir_fname: text  dir_lname: text 
@@ -154,30 +154,30 @@ director
  223                  Peter            Jackson         
 
 movie_direction
- dir_id: integer, fk, director, dir_id   mov_id: integer, fk, movie, mov_id
- 201                  901                                
- 202                  902                                
- 203                  903                                
- 204                  904                                
- 205                  905                                
- 206                  906                                
- 207                  907                                
- 208                  908                                
- 209                  909                                
- 210                  910                                
- 211                  911                                
- 212                  912                                
- 213                  913                                
- 214                  914                                
- 215                  915                                
- 216                  916                                
- 217                  917                                
- 218                  918                                
- 219                  919                                
- 220                  920                                
- 218                  921                                
- 215                  922                                
- 221                  923                                
+ dir_id: integer, fk, director, dir_id  mov_id: integer, fk, movie, mov_id 
+ 201                                    901                                
+ 202                                    902                                
+ 203                                    903                                
+ 204                                    904                                
+ 205                                    905                                
+ 206                                    906                                
+ 207                                    907                                
+ 208                                    908                                
+ 209                                    909                                
+ 210                                    910                                
+ 211                                    911                                
+ 212                                    912                                
+ 213                                    913                                
+ 214                                    914                                
+ 215                                    915                                
+ 216                                    916                                
+ 217                                    917                                
+ 218                                    918                                
+ 219                                    919                                
+ 220                                    920                                
+ 218                                    921                                
+ 215                                    922                                
+ 221                                    923                                
 
 genres
  gen_id: integer, pk  gen_title: text 
