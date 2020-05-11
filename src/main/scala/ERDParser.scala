@@ -45,7 +45,9 @@ class ERDParser extends RegexParsers {
   def condition = boolCondition
 
   def boolCondition =
-    orCondition ~ rep("and" ~ orCondition)
+    orCondition ~ rep("and" ~> orCondition) ^^ {
+      case first ~ rest =>
+    }
 
   def orCondition =
     compCondition ~ rep("or" ~ compCondition)
