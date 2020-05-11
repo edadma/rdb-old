@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
+import scalajs.js.Dynamic.{global => g}
+
 object Main extends App {
   private val fs = g.require("fs")
   val conn = new Connection { load(readFile("samples/movie.tab"), true) }
