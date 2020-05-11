@@ -1,0 +1,9 @@
+entity movie {
+ *mov_id: integer
+  mov_title: text
+  mov_year: integer
+  mov_time: integer
+  mov_lang: text
+  mov_dt_rel: date
+  mov_rel_country: text
+}

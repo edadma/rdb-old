@@ -40,10 +40,10 @@ class OQLParser extends RegexParsers {
 
   def project: Parser[ProjectOQL] =
     "{" ~> rep1sep(projectExpression, ",") <~ "}" ^^ (ps =>
-      ProjectOQL(false, ps)) |
+      ProjectOQL(lift = false, ps)) |
       ("." | "^") ~ simpleProjectExpression ^^ {
-        case "." ~ p => ProjectOQL(false, List(p))
-        case "^" ~ p => ProjectOQL(true, List(p))
+        case "." ~ p => ProjectOQL(lift = false, List(p))
+        case _ ~ p   => ProjectOQL(lift = true, List(p))
       }
 
   def simpleProjectExpression: Parser[ExpressionOQL] = fieldProject | variable

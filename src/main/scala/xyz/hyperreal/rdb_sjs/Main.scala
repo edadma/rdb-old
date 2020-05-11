@@ -4,8 +4,16 @@ import scalajs.js.Dynamic.{global => g}
 
 object Main extends App {
   private val fs = g.require("fs")
-  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
-  val statement = readFile("samples/w3r-movie-join-2.sql")
+
+  private def readFile(name: String) = {
+    fs.readFileSync(name).toString
+  }
+
+  val erd = ERDefinition(readFile("samples/movie.erd"))
+
+  println(erd)
+//  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
+//  val statement = readFile("samples/w3r-movie-join-2.sql")
 //  """
 //			|SELECT *
 //			|  FROM movie
@@ -19,12 +27,7 @@ object Main extends App {
 //			|  FROM (Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID) INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID
 //			|  WHERE Categories.CategoryName = 'Produce'
 //		""".stripMargin
-
-  private def readFile(name: String) = {
-    fs.readFileSync(name).toString
-  }
-
-  REPLMain.printResult(conn.executeSQLStatement(statement))
+//  REPLMain.printResult(conn.executeSQLStatement(statement))
 
 //		"""
 //			|SELECT SupplierName
