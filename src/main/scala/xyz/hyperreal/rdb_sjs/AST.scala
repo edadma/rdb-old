@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import scala.util.parsing.input.{Positional, Position}
+import scala.util.parsing.input.{Position, Positional}
 
 abstract class AST
 

@@ -1,7 +1,5 @@
 package xyz.hyperreal.rdb_sjs
 
-import java.io.PrintWriter
-
 import xyz.hyperreal.table_sjs.TextTable
 
 object REPLMain /*extends App*/ {

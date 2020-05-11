@@ -1,7 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
+import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{CharSequenceReader, Positional}
-import util.parsing.combinator.RegexParsers
 
 object OQLParser {
 
@@ -63,8 +63,8 @@ class OQLParser extends RegexParsers {
   def order = "<" ~> rep1sep(orderExpression, ",") <~ ">"
 
   def orderExpression = expression ~ opt("/" | "\\") ^^ {
-    case e ~ (Some("/")|None) => (e, true)
-    case e ~ _   => (e, false)
+    case e ~ (Some("/") | None) => (e, true)
+    case e ~ _                  => (e, false)
   }
 
   def group = "(" ~> rep1sep(expression, ",") <~ ")"

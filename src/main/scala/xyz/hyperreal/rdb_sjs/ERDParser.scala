@@ -1,11 +1,11 @@
 package xyz.hyperreal.rdb_sjs
 
-import scala.util.parsing.input.{CharSequenceReader, Positional}
-import util.parsing.combinator.RegexParsers
+import scala.util.parsing.combinator.RegexParsers
+import scala.util.parsing.input.{CharSequenceReader, Position, Positional}
 
 object ERDParser {
 
-  def parseStatement(query: String) = {
+  def parseStatement(query: String): OQLQuery = {
     val p = new OQLParser
 
     p.parseFromString(query, p.query)
@@ -15,70 +15,76 @@ object ERDParser {
 
 class ERDParser extends RegexParsers {
 
-  def pos = positioned(success(new Positional {})) ^^ {
+  def pos: Parser[Position] = positioned(success(new Positional {})) ^^ {
     _.pos
   }
 
   def number: Parser[ExpressionERD] =
-    positioned("""(?:\d+(?:\.\d+)?|\.\d+)(?:(?:e|E)(?:\+|-)?\d+)?""".r ^^ {
+    positioned("""(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?""".r ^^ {
       case n if (n contains '.') || (n contains 'e') || (n contains 'E') =>
         FloatLiteralERD(n)
       case n => IntegerLiteralERD(n)
     })
 
-  def string =
+  def string: Parser[StringLiteralERD] =
     positioned(
       (("'" ~> """[^'\n]*""".r <~ "'") |
         ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLiteralERD)
 
-  def ident =
+  def ident: Parser[Ident] =
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
-  def variable = ident ^^ VariableExpressionERD
+  def variable: Parser[VariableExpressionERD] = ident ^^ VariableExpressionERD
 
-  def definition = rep1(block) ^^ DefinitionERD
+  def definition: Parser[DefinitionERD] = rep1(block) ^^ DefinitionERD
 
-  def block = typeBlock | entityBlock
+  def block: Parser[BlockERD] = typeBlock | entityBlock
 
-  def typeBlock =
+  def typeBlock: Parser[TypeBlockERD] =
     "type" ~> ident ~ "=" ~ ident ~ ":" ~ condition ^^ {
       case n ~ _ ~ u ~ _ ~ c => TypeBlockERD(n, u, c)
     }
 
-  def condition = boolCondition
+  def condition: Parser[ExpressionERD] = boolCondition
 
-  def boolCondition =
+  def boolCondition: Parser[ExpressionERD] =
     orCondition ~ rep("and" ~> orCondition) ^^ {
       case first ~ rest =>
         rest.foldLeft(first) { case (l, r) => AndExpressionERD(l, r) }
     }
 
-  def orCondition =
+  def orCondition: Parser[ExpressionERD] =
     compCondition ~ rep("or" ~> compCondition) ^^ {
       case first ~ rest =>
         rest.foldLeft(first) { case (l, r) => OrExpressionERD(l, r) }
     }
 
-  def compCondition =
+  def compCondition: Parser[ExpressionERD] =
     positioned(notCondition ~ rep(("<" | "<=") ~ notCondition) ^^ {
       case first ~ Nil => first
       case first ~ rest =>
         ComparisonExpressionERD(first, rest map { case c ~ r => (c, r) })
     })
 
-  def notCondition =
+  def notCondition: Parser[ExpressionERD] =
     positioned("not" ~> primaryCondition ^^ NotExpressionERD) |
       primaryCondition
 
   def primaryCondition: Parser[ExpressionERD] = variable | number
 
-  def entityBlock = "entity" ~ ident ~ "{" ~ rep1(field) ~ "}"
+  def entityBlock: Parser[EntityBlockERD] =
+    "entity" ~ ident ~ "{" ~ rep1(field) ~ "}" ^^ {
+      case _ ~ n ~ _ ~ fs ~ _ => EntityBlockERD(n, fs)
+    }
 
-  def field = ident ~ ":" ~ typeSpec
+  def field: Parser[EntityFieldERD] = opt("*") ~ ident ~ ":" ~ typeSpec ^^ {
+    case None ~ n ~ _ ~ t      => EntityFieldERD(n, t, pk = false)
+    case Some("*") ~ n ~ _ ~ t => EntityFieldERD(n, t, pk = true)
+  }
 
-  def typeSpec = ident ^^ SimpleTypeERD
+  def typeSpec: Parser[TypeSpecifierERD] = ident ^^ SimpleTypeERD
 
-  def parseFromString[T](src: String, grammar: Parser[T]) =
+  def parseFromString[T](src: String, grammar: Parser[T]): T =
     parseAll(grammar, new CharSequenceReader(src)) match {
       case Success(tree, _)       => tree
       case NoSuccess(error, rest) => problem(rest.pos, error)

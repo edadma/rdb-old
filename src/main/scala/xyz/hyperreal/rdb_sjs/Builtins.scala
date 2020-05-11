@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import math.Pi
+import math._
 
 object Builtins {
 
@@ -28,6 +28,6 @@ object Builtins {
   val constants =
     List(
       "pi" -> Pi
-    ).asInstanceOf[List[(String, Any)]]
+    )
 
 }

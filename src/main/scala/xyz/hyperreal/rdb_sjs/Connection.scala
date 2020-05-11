@@ -1,12 +1,10 @@
 package xyz.hyperreal.rdb_sjs
 
-import scala.collection.mutable.{ArrayBuffer, HashMap}
-
-import scala.util.parsing.input.Position
-
+import xyz.hyperreal.dal_sjs.BasicDAL.{compute, negate, relate}
 import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 
-import xyz.hyperreal.dal_sjs.BasicDAL.{compute, relate, negate}
+import scala.collection.mutable.{ArrayBuffer, HashMap}
+import scala.util.parsing.input.Position
 
 class Connection {
 

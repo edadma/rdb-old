@@ -1,9 +1,8 @@
 package xyz.hyperreal.rdb_sjs
 
-import java.util.UUID
 import java.time.{Instant, LocalDate}
 
-import xyz.hyperreal.dal_sjs.BasicDAL.{compute, relate, compare => dcompare}
+import xyz.hyperreal.dal_sjs.BasicDAL.{compute, compare => dcompare}
 
 object Type {
 

@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
+import scala.collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 
 class BaseRelation(val name: String, definition: Seq[BaseRelationColumn])
     extends AbstractRelation {
