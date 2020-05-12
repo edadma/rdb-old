@@ -386,6 +386,15 @@ class Connection {
         val cond = evalLogical(afuse, rel.metadata :: context, condition)
 
         new SelectionRelation(this, rel, cond, afuse.state)
+      case AliasVariableExpression(rel, alias) =>
+        val r = evalRelation(rel, context)
+
+        if (r.metadata.tableSet.size > 1)
+          problem(
+            alias.pos,
+            "the relation being aliased is a product of more than one table")
+
+        new AliasRelation(r, alias.name)
       case RelationVariableExpression(v @ Ident(n)) =>
         baseRelations get n match {
           case None =>

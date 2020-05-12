@@ -103,7 +103,11 @@ class SQLParser extends RegexParsers {
   def relation: Parser[RelationExpression] = primaryRelation
 
   def primaryRelation =
-    ident ^^ RelationVariableExpression |
+    ident ~ ("AS" | "as") ~ ident ^^ {
+      case t ~ _ ~ a =>
+        AliasVariableExpression(RelationVariableExpression(t), a)
+    } |
+      ident ^^ RelationVariableExpression |
       "(" ~> relation <~ ")"
 
   def where = ("WHERE" | "where") ~> logicalExpression

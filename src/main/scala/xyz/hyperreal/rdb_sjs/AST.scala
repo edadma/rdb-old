@@ -55,6 +55,8 @@ abstract class RelationExpression
     extends TupleCollectionExpression
     with Positional
 case class RelationVariableExpression(name: Ident) extends RelationExpression
+case class AliasVariableExpression(rel: RelationExpression, alias: Ident)
+    extends RelationExpression
 case class ListRelationExpression(columns: List[ColumnSpec],
                                   data: List[TupleExpression])
     extends RelationExpression
