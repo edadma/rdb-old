@@ -33,11 +33,13 @@ class OQL(erd: String, conn: Connection) {
         .relation
         .collect
 
-    println(res.metadata.tableColumnMap)
-    for (r <- res)
-      yield {
-        build(r, res.metadata, graph)
-      }
+    val set =
+      for (r <- res)
+        yield {
+          build(r, res.metadata, graph)
+        }
+
+    set.toList
   }
 
   private def build(row: Tuple, md: Metadata, branch: ProjectionBranch) = {
