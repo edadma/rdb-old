@@ -52,7 +52,11 @@ class OQL(erd: String, conn: Connection) {
               case PrimitiveProjectionNode(table, field, typ) =>
                 obj(field) = row(md.tableColumnMap(table, field))
             }
+
+          obj
       }
+
+    build(branch)
   }
 
 //model.list(resource.name, resource.pos)
