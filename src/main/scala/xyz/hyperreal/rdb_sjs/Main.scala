@@ -9,7 +9,7 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val erd = ERDefinition(readFile("samples/star-trek.erd"))
+  val erd = ERModel(readFile("samples/star-trek.erd"))
   val query = "characters"
 
   println(erd)

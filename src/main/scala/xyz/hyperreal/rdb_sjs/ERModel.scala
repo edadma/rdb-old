@@ -3,9 +3,9 @@ package xyz.hyperreal.rdb_sjs
 import scala.collection.mutable
 import scala.util.parsing.input.Position
 
-object ERDefinition {
+object ERModel {
 
-  def apply(defn: String) = {
+  def apply(defn: String): ERModel = {
     val d = ERDParser.parseDefinition(defn)
     val m = new mutable.HashMap[String, Entity]
 
@@ -44,12 +44,12 @@ object ERDefinition {
           }
         case TypeBlockERD(name, underlying, condition) =>
       }
-    m.toMap
+    new ERModel(m.toMap)
   }
 
 }
 
-class ERDefinition(entities: Map[String, Entity]) {
+class ERModel(entities: Map[String, Entity]) {
 
   def list(table: String, pos: Position): Seq[(String, EntityType)] =
     entities get table match {
