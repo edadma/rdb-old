@@ -3,10 +3,19 @@ package xyz.hyperreal.rdb_sjs
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.input.Position
+import scala.scalajs.js
+import js.JSConverters._
+import scala.scalajs.js.JSON
 
 class OQL(erd: String, conn: Connection) {
 
   private val model = ERModel(erd)
+
+  def toJS(res: List[Map[String, Any]]) =
+    res.map(_.toJSDictionary).toJSArray
+
+  def pretty(res: List[Map[String, Any]]) =
+    JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
 
   def query(s: String) = {
     val OQLQuery(resource, project, select, order, group) =
@@ -56,7 +65,7 @@ class OQL(erd: String, conn: Connection) {
                 obj(field) = row(md.tableColumnMap(table, field))
             }
 
-          obj
+          obj.toMap
       }
 
     build(branch)

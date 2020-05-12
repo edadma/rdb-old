@@ -1,6 +1,8 @@
 package xyz.hyperreal.rdb_sjs
 
-import scalajs.js.Dynamic.{global => g}
+import scala.scalajs.js
+import js.Dynamic.{global => g}
+import js.JSON
 
 object Main extends App {
   private val fs = g.require("fs")
@@ -13,7 +15,7 @@ object Main extends App {
   val oql = new OQL(readFile("samples/star-trek.erd"), conn)
   val res = oql.query("character")
 
-  println(res)
+  println(oql.pretty(res))
 //  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
 //  val statement = //readFile("samples/w3r-movie-join-2.sql")
 //    """
