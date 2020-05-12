@@ -184,8 +184,8 @@ class SQLParser extends RegexParsers {
     number |
       string |
       "(" ~> valueExpression <~ ")" |
-      positioned("A" ^^^ MarkLit(A)) |
-      positioned("I" ^^^ MarkLit(I)) |
+      positioned(("NULL" | "null") ^^^ MarkLit(A)) |
+//      positioned("I" ^^^ MarkLit(I)) |
       columnPrimary
 
   def columnPrimary =
@@ -194,7 +194,7 @@ class SQLParser extends RegexParsers {
     }) |
       positioned(ident ^^ ValueVariableExpression)
 
-  def comparison = "<" | "<=" | "=" | "/=" | ">" | ">="
+  def comparison = "<" | "<=" | "=" | "!=" | ">" | ">="
 
   def logicalExpression =
     orExpression
@@ -243,3 +243,4 @@ class SQLParser extends RegexParsers {
   }
 
 }
+//todo:use table names or aliases after "SELECT" (ex:https://www.w3schools.com/sql/sql_join_self.asp)

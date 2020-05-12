@@ -1,19 +1,19 @@
 entity character {
  *char_id: integer
-  name: string
-  home: planet
+  name: text
+  home: integer ;planet
   species: integer ;species
 }
 
 entity planet {
  *plan_id: integer
-  name: string
-  climate: string
+  name: text
+  climate: text
 }
 
 entity species {
  *spec_id: integer
-  name: string
+  name: text
   lifespace: integer
   origin: planet
 }
