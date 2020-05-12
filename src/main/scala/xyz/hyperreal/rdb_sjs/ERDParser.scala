@@ -1,5 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
+import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{CharSequenceReader, Position, Positional}
 
@@ -14,6 +15,8 @@ object ERDParser {
 }
 
 class ERDParser extends RegexParsers {
+
+  override protected val whiteSpace: Regex = """(\s|;.*)+""".r
 
   def pos: Parser[Position] = positioned(success(new Positional {})) ^^ {
     _.pos

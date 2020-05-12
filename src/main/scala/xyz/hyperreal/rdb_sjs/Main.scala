@@ -9,16 +9,17 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val erd = ERDefinition(readFile("samples/movie.erd"))
-//  val query =
-//    println(erd)
-  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
-  val statement = //readFile("samples/w3r-movie-join-2.sql")
-    """
-			|SELECT *
-			|  FROM movie as m JOIN rating ON m.mov_id = rating.mov_id
-      |  WHERE mov_title = 'Vertigo'
-		""".stripMargin
+  val erd = ERDefinition(readFile("samples/star-trek.erd"))
+  val query = "characters"
+
+  println(erd)
+//  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
+//  val statement = //readFile("samples/w3r-movie-join-2.sql")
+//    """
+//			|SELECT *
+//			|  FROM movie as m JOIN rating ON m.mov_id = rating.mov_id
+//      |  WHERE mov_title = 'Vertigo'
+//		""".stripMargin
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =
 //    """
@@ -26,7 +27,7 @@ object Main extends App {
 //			|  FROM (Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID) INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID
 //			|  WHERE Categories.CategoryName = 'Produce'
 //		""".stripMargin
-  REPLMain.printResult(conn.executeSQLStatement(statement))
+//  REPLMain.printResult(conn.executeSQLStatement(statement))
 
 //		"""
 //			|SELECT SupplierName

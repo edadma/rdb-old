@@ -3,8 +3,8 @@ package xyz.hyperreal.rdb_sjs
 abstract class OQLAST extends AST
 
 case class OQLQuery(resource: Ident,
-                    select: Option[ExpressionOQL],
                     project: Option[ProjectOQL],
+                    select: Option[ExpressionOQL],
                     order: Option[List[(ExpressionOQL, Boolean)]],
                     group: Option[List[ExpressionOQL]])
 

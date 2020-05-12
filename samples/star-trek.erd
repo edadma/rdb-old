@@ -1,0 +1,19 @@
+entity character {
+ *char_id: integer
+  name: string
+  home: planet
+  species: integer ;species
+}
+
+entity planet {
+ *plan_id: integer
+  name: string
+  climate: string
+}
+
+entity species {
+ *spec_id: integer
+  name: string
+  lifespace: integer
+  origin: planet
+}

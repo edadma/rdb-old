@@ -1,6 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
 import scala.collection.mutable
+import scala.util.parsing.input.Position
 
 object ERDefinition {
 
@@ -15,7 +16,7 @@ object ERDefinition {
             problem(entity.pos, s"entity '${entity.name}' already defined")
           else {
             var epk: String = null
-            var e = Map.empty[String, ERDefinition.EntityType]
+            var e = Map.empty[String, EntityType]
 
             for (EntityFieldERD(field, typ, pk) <- fields) {
               if (e contains field.name)
@@ -46,15 +47,14 @@ object ERDefinition {
     m.toMap
   }
 
-  private[rdb_sjs] case class Entity(pk: Option[String],
-                                     fields: Map[String, EntityType])
-  private[rdb_sjs] abstract class EntityType
-  private[rdb_sjs] case class SimpleEntityType(name: String) extends EntityType
-
 }
 
-class ERDefinition(entities: Map[String, ERDefinition.Entity]) {
+class ERDefinition(entities: Map[String, Entity]) {
 
-  import ERDefinition._
+  def list(table: String, pos: Position): Seq[(String, EntityType)] =
+    entities get table match {
+      case None    => problem(pos, s"unknown resource: '$table'")
+      case Some(e) => e.fields.toList
+    }
 
 }
