@@ -1,5 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.input.Position
 
@@ -13,8 +14,10 @@ class OQL(erd: String, conn: Connection) {
 
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[String]
-    val graph =
-      if (project isDefined) {} else {
+    val graph: ProjectionBranch =
+      if (project isDefined) {
+        null
+      } else {
         branches(resource.name, resource.pos, projectbuf)
       }
 
@@ -30,6 +33,26 @@ class OQL(erd: String, conn: Connection) {
         .relation
         .collect
 
+    for (r <- res)
+      yield {
+        build(r, res.metadata, graph)
+      }
+  }
+
+  private def build(row: Tuple, md: Metadata, branch: ProjectionBranch) = {
+    def build(branch: ProjectionBranch) =
+      branch match {
+//        case LiftedProjectionBranch(subfield) =>
+        case ObjectProjectionBranch(fields) =>
+          val obj = new mutable.HashMap[String, Any]
+
+          for (f <- fields)
+            f match {
+//              case EntityProjectionNode(table, field, branch) =>
+              case PrimitiveProjectionNode(table, field, typ) =>
+                obj(field) = row(md.tableColumnMap(table, field))
+            }
+      }
   }
 
 //model.list(resource.name, resource.pos)
@@ -55,6 +78,7 @@ class OQL(erd: String, conn: Connection) {
 
   abstract class ProjectionBranch
   case class ObjectProjectionBranch(fields: Seq[ProjectionNode])
+      extends ProjectionBranch
   case class LiftedProjectionBranch(subfield: ProjectionNode)
       extends ProjectionBranch
 

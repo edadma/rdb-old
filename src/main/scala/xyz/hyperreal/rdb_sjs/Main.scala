@@ -9,10 +9,11 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val oql = new OQL(readFile("samples/star-trek.erd"))
-//  val sql = oql.query("character")
-//
-//  println(sql)
+  val conn = new Connection { load(readFile("samples/star-trek.tab"), true) }
+  val oql = new OQL(readFile("samples/star-trek.erd"), conn)
+  val res = oql.query("character")
+
+  println(res)
 //  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
 //  val statement = //readFile("samples/w3r-movie-join-2.sql")
 //    """
@@ -20,21 +21,21 @@ object Main extends App {
 //			|  FROM movie as m JOIN rating ON m.mov_id = rating.mov_id
 //      |  WHERE m.mov_title = 'Vertigo'
 //		""".stripMargin
-  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
-  val statement =
-    """
-  			|SELECT A.CompanyName, A.City
-        |FROM Customers AS A JOIN Customers AS B ON A.City = B.City
-        |WHERE A.CustomerID != B.CustomerID
-        |ORDER BY A.City
-  		""".stripMargin
+//  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
+//  val statement =
+//    """
+//  			|SELECT A.CompanyName, A.City
+//        |FROM Customers AS A JOIN Customers AS B ON A.City = B.City
+//        |WHERE A.CustomerID != B.CustomerID
+//        |ORDER BY A.City
+//  		""".stripMargin
 //  val statement =
 //    """
 //			|SELECT ProductName, CompanyName
 //			|  FROM (Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID) INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID
 //			|  WHERE Categories.CategoryName = 'Produce'
 //		""".stripMargin
-  REPLMain.printResult(conn.executeSQLStatement(statement))
+//  REPLMain.printResult(conn.executeSQLStatement(statement))
 
 //		"""
 //			|SELECT SupplierName
