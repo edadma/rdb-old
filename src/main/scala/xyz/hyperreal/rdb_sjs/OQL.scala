@@ -35,6 +35,8 @@ class OQL(erd: String, conn: Connection) {
     sql append s"SELECT ${projectbuf.mkString(", ")}\n"
     sql append s"  FROM ${resource.name}"
 
+    println(sql)
+
     val res =
       conn
         .executeSQLStatement(sql.toString)
@@ -56,7 +58,7 @@ class OQL(erd: String, conn: Connection) {
       branch match {
 //        case LiftedProjectionBranch(subfield) =>
         case ObjectProjectionBranch(fields) =>
-          val obj = new mutable.HashMap[String, Any]
+          val obj = new mutable.LinkedHashMap[String, Any]
 
           for (f <- fields)
             f match {
