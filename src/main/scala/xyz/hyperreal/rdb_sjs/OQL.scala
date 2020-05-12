@@ -33,6 +33,7 @@ class OQL(erd: String, conn: Connection) {
         .relation
         .collect
 
+    println(res.metadata.tableColumnMap)
     for (r <- res)
       yield {
         build(r, res.metadata, graph)
