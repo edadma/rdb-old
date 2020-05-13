@@ -31,7 +31,12 @@ class OQL(erd: String) {
     val projectbuf = new ListBuffer[(String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph: ProjectionBranch =
-      branches(resource.name, resource.pos, project, projectbuf, joinbuf, Nil)
+      branches(resource.name,
+               resource.pos,
+               project,
+               projectbuf,
+               joinbuf,
+               List(resource.name))
 
     val sql = new StringBuilder
 
@@ -76,7 +81,7 @@ class OQL(erd: String) {
       }
     ObjectProjectionBranch(attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
-        val e = if (attrbuf == Nil) entity else attrbuf mkString "$"
+        val e = attrbuf mkString "$"
 
         projectbuf += (e -> field)
         PrimitiveProjectionNode(e, field, attr)
