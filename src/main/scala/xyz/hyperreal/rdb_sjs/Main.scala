@@ -28,7 +28,7 @@ object Main extends App {
     """
   			|SELECT A.CompanyName, B.CompanyName, A.City
         |FROM Customers AS A JOIN Customers AS B ON A.City = B.City
-        |WHERE A.CustomerID != B.CustomerID AND (A.City = 'Lisboa' OR A.City = 'Buenos Aires')
+        |WHERE A.CustomerID != B.CustomerID --AND (A.City = 'Lisboa' OR A.City = 'Buenos Aires')
         |ORDER BY City
   		""".stripMargin
 //  val statement =
