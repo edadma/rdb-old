@@ -24,7 +24,8 @@ object ERModel {
             else {
               val fieldtype =
                 typ match {
-                  case SimpleTypeERD(typ) => PrimitiveEntityType(typ.name)
+                  case SimpleTypeERD(typ) =>
+                    PrimitiveEntityType(typ.name)
                 }
 
               e += (field.name -> fieldtype)
