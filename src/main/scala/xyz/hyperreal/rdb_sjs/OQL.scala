@@ -22,41 +22,60 @@ class OQL(erd: String, conn: Connection) {
       OQLParser.parseQuery(s)
 
     val entity = model.get(resource.name, resource.pos)
-    val projectbuf = new ListBuffer[String]
+    val projectbuf = new ListBuffer[(String, String)]
+    val joinbuf = new ListBuffer[String]
     val graph: ProjectionBranch =
       if (project isDefined) {
         null
       } else {
-        branches(resource.name, resource.pos, projectbuf)
+        branches(resource.name, resource.pos, projectbuf, joinbuf)
       }
 
     val sql = new StringBuilder
 
-    sql append s"SELECT ${projectbuf.mkString(", ")}\n"
+    sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString (", ")}\n"
     sql append s"  FROM ${resource.name}"
 
     println(sql)
+    //    val res =
+    //      conn
+    //        .executeSQLStatement(sql.toString)
+    //        .asInstanceOf[RelationResult]
+    //        .relation
+    //        .collect
+    //
+    //    res.toList map (build(_, res.metadata, graph))
 
-    val res =
-      conn
-        .executeSQLStatement(sql.toString)
-        .asInstanceOf[RelationResult]
-        .relation
-        .collect
+  }
 
-    res.toList map (build(_, res.metadata, graph))
+  private def branches(entity: String,
+                       pos: Position,
+                       projectbuf: ListBuffer[(String, String)],
+                       joinbuf: ListBuffer[String]): ObjectProjectionBranch = {
+    ObjectProjectionBranch(model.list(entity, pos) map {
+      case (field, attr: PrimitiveEntityAttribute) =>
+        projectbuf += (entity -> field)
+        PrimitiveProjectionNode(entity, field, attr)
+      case (field, attr: ObjectEntityAttribute) =>
+        joinbuf += entity
+        EntityProjectionNode(
+          entity,
+          field,
+          branches(attr.entityType, pos, projectbuf, joinbuf))
+    })
   }
 
   private def build(row: Tuple, md: Metadata, branch: ProjectionBranch) = {
-    def build(branch: ProjectionBranch) =
+    def build(branch: ProjectionBranch): Map[String, Any] =
       branch match {
-//        case LiftedProjectionBranch(subfield) =>
+        //        case LiftedProjectionBranch(subfield) =>
         case ObjectProjectionBranch(fields) =>
           val obj = new mutable.LinkedHashMap[String, Any]
 
           for (f <- fields)
             f match {
-//              case EntityProjectionNode(table, field, branch) =>
+              case EntityProjectionNode(table, field, branch) =>
+                obj(field) = build(branch)
               case PrimitiveProjectionNode(table, field, typ) =>
                 obj(field) = row(md.tableColumnMap(table, field))
             }
@@ -67,21 +86,10 @@ class OQL(erd: String, conn: Connection) {
     build(branch)
   }
 
-//model.list(resource.name, resource.pos)
-  private def branches(entity: String,
-                       pos: Position,
-                       project: ListBuffer[String]) = {
-    ObjectProjectionBranch(model.list(entity, pos) map {
-      case (field, typ: PrimitiveEntityType) =>
-        project += field
-        PrimitiveProjectionNode(entity, field, typ)
-    })
-  }
-
   abstract class ProjectionNode { val table: String; val field: String }
   case class PrimitiveProjectionNode(table: String,
                                      field: String,
-                                     typ: EntityType)
+                                     typ: EntityAttribute)
       extends ProjectionNode
   case class EntityProjectionNode(table: String,
                                   field: String,

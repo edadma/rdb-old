@@ -1,10 +1,3 @@
-entity character {
- *char_id: integer
-  name: text
-  home: integer ;planet
-  species: integer ;species
-}
-
 entity planet {
  *plan_id: integer
   name: text
@@ -16,4 +9,11 @@ entity species {
   name: text
   lifespace: integer
   origin: planet
+}
+
+entity character {
+ *char_id: integer
+  name: text
+  home: planet
+  species: integer ;species
 }

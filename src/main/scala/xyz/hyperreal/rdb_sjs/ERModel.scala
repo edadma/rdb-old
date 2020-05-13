@@ -15,7 +15,7 @@ object ERModel {
           problem(entity.pos, s"entity '${entity.name}' already defined")
         else {
           var epk: String = null
-          var e = Map.empty[String, EntityType]
+          var e = Map.empty[String, EntityAttribute]
 
           for (EntityFieldERD(field, typ, pk) <- fields) {
             if (e contains field.name)
@@ -25,7 +25,10 @@ object ERModel {
               val fieldtype =
                 typ match {
                   case SimpleTypeERD(typ) =>
-                    PrimitiveEntityType(typ.name)
+                    m get typ.name match {
+                      case Some(e) => ObjectEntityAttribute(typ.name, e)
+                      case None    => PrimitiveEntityAttribute(typ.name)
+                    }
                 }
 
               e += (field.name -> fieldtype)
@@ -57,12 +60,15 @@ class ERModel(entities: Map[String, Entity]) {
       case Some(e) => e
     }
 
-  def list(table: String, pos: Position): Seq[(String, EntityType)] =
-    get(table, pos).fields.toList
+  def list(table: String, pos: Position): Seq[(String, EntityAttribute)] =
+    get(table, pos).attributes.toList
 
 }
 
-case class Entity(pk: Option[String], fields: Map[String, EntityType])
+case class Entity(pk: Option[String], attributes: Map[String, EntityAttribute])
 
-abstract class EntityType
-case class PrimitiveEntityType(name: String) extends EntityType
+abstract class EntityAttribute
+case class PrimitiveEntityAttribute(primitiveType: String)
+    extends EntityAttribute
+case class ObjectEntityAttribute(entityType: String, entity: Entity)
+    extends EntityAttribute
