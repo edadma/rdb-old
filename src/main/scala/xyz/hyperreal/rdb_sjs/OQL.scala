@@ -28,7 +28,6 @@ class OQL(erd: String, conn: Connection) {
     val OQLQuery(resource, project, select, order, group) =
       OQLParser.parseQuery(s)
 
-    val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph: ProjectionBranch =
@@ -56,10 +55,7 @@ class OQL(erd: String, conn: Connection) {
         .relation
         .collect
 
-    val a = res.toList map (build(_, res.metadata, graph))
-
-    println(a)
-    a
+    res.toList map (build(_, res.metadata, graph))
   }
 
   private def branches(
@@ -73,7 +69,7 @@ class OQL(erd: String, conn: Connection) {
         val e = if (attrbuf == Nil) entity else attrbuf mkString "$"
 
         projectbuf += (e -> field)
-        PrimitiveProjectionNode(entity, field, attr)
+        PrimitiveProjectionNode(e, field, attr)
       case (field, attr: ObjectEntityAttribute) =>
         if (attr.entity.pk isEmpty)
           problem(
