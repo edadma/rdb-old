@@ -199,7 +199,7 @@ class SQLParser extends RegexParsers {
 
   def comparison = "<" | "<=" | "=" | "!=" | ">" | ">="
 
-  def logicalExpression =
+  def logicalExpression: Parser[LogicalExpression] =
     orExpression
 
   def orExpression =
@@ -231,12 +231,13 @@ class SQLParser extends RegexParsers {
       ("EXISTS" | "exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
       logicalPrimary
 
-  def logicalPrimary = positioned(
-    "true" ^^^ LiteralLogicalExpression(TRUE) |
-      "false" ^^^ LiteralLogicalExpression(FALSE) |
-      "maybe-a" ^^^ LiteralLogicalExpression(MAYBE_A) |
-      "maybe-i" ^^^ LiteralLogicalExpression(MAYBE_I)
-  )
+  def logicalPrimary =
+    positioned(
+      "true" ^^^ LiteralLogicalExpression(TRUE) |
+        "false" ^^^ LiteralLogicalExpression(FALSE) |
+        "maybe-a" ^^^ LiteralLogicalExpression(MAYBE_A) |
+        "maybe-i" ^^^ LiteralLogicalExpression(MAYBE_I)
+    ) | "(" ~> logicalExpression <~ ")"
 
   def parseFromString[T](src: String, grammar: Parser[T]) = {
     parseAll(grammar, new CharSequenceReader(src)) match {

@@ -7,7 +7,7 @@ entity planet {
 entity species {
  *spec_id: integer
   name: text
-  lifespace: integer
+  lifespan: integer
   origin: planet
 }
 

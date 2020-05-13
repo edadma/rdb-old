@@ -56,8 +56,10 @@ class OQL(erd: String, conn: Connection) {
         .relation
         .collect
 
-    res.toList map (build(_, res.metadata, graph))
+    val a = res.toList map (build(_, res.metadata, graph))
 
+    println(a)
+    a
   }
 
   private def branches(
