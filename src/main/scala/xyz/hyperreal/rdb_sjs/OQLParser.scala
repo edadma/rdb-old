@@ -43,7 +43,8 @@ class OQLParser extends RegexParsers {
     }
 
   def project: Parser[ProjectExpressionOQL] =
-    "{" ~> rep1sep(attributeProject, ",") <~ "}" ^^ (ps => ProjectFieldsOQL(ps)) |
+    "{" ~> rep1(attributeProject) <~ "}" ^^ (ps =>
+      ProjectAttributesOQL(lift = false, ps)) |
       ("." | "^") ~ attributeProject ^^ {
         case "." ~ p => ProjectAttributesOQL(lift = false, List(p))
         case _ ~ p   => ProjectAttributesOQL(lift = true, List(p))

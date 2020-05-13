@@ -62,25 +62,25 @@ class OQL(erd: String) {
       joinbuf: ListBuffer[(String, String, String, String, String)],
       attrbuf: List[String]): ObjectProjectionBranch = {
     val attrs =
-      if (project == ProjectAllOQL)
-        model.list(entity, pos)
-      else {
-        val entity = model.get(entity, pos)
-        for (a <- project.asInstanceOf[ProjectAttributesOQL].attrs)
-          yield {
-            entity.attributes get a.attr.name match {
-              case None => problem(pos, s"unknown attribute: '${a.attr.name}'")
-              case Some()
-            }
-          }
+      if (project == ProjectAllOQL) {
+        model.list(entity, pos) map { case (k, v) => (k, v, null) }
+      } else {
+        val ent = model.get(entity, pos)
+
+        project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
+          ent.attributes get attr.attr.name match {
+            case None =>
+              problem(pos, s"unknown attribute: '${attr.attr.name}'")
+            case Some(typ) => (attr.attr.name, typ, attr.project)
+          })
       }
     ObjectProjectionBranch(attrs map {
-      case (field, attr: PrimitiveEntityAttribute) =>
+      case (field, attr: PrimitiveEntityAttribute, _) =>
         val e = if (attrbuf == Nil) entity else attrbuf mkString "$"
 
         projectbuf += (e -> field)
         PrimitiveProjectionNode(e, field, attr)
-      case (field, attr: ObjectEntityAttribute) =>
+      case (field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
           problem(
             pos,
@@ -93,15 +93,11 @@ class OQL(erd: String) {
                      attr.entityType,
                      attrbuf1 mkString "$",
                      attr.entity.pk.get))
-        EntityProjectionNode(entity,
-                             field,
-                             branches(attr.entityType,
-                                      pos,
-                                      if (project == ProjectAllOQL) project
-                                      else null,
-                                      projectbuf,
-                                      joinbuf,
-                                      attrbuf1))
+        EntityProjectionNode(
+          entity,
+          field,
+          branches(attr.entityType, pos, project, projectbuf, joinbuf, attrbuf1)
+        )
     })
   }
 
