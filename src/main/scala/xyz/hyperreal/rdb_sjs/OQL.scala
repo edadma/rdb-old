@@ -68,10 +68,11 @@ class OQL(erd: String) {
       attrbuf: List[String]): ObjectProjectionBranch = {
     val attrs =
       if (project == ProjectAllOQL) {
-        model.list(entity, pos) map { case (k, v) => (k, v, null) }
+        model.list(entity, pos) map { case (k, v) => (k, v, ProjectAllOQL) }
       } else {
         val ent = model.get(entity, pos)
 
+        println(project)
         project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
           ent.attributes get attr.attr.name match {
             case None =>
@@ -91,9 +92,9 @@ class OQL(erd: String) {
             pos,
             s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
-        val attrbuf1 = attr.entityType :: attrbuf
+        val attrbuf1 = field :: attrbuf
 
-        joinbuf += ((entity,
+        joinbuf += ((attrbuf mkString "$",
                      field,
                      attr.entityType,
                      attrbuf1 mkString "$",
