@@ -11,7 +11,7 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new Connection { load(readFile("samples/st.tab"), true) }
+  val conn = new Connection { load(readFile("samples/star-trek.tab"), true) }
   val oql = new OQL(readFile("samples/star-trek.erd"), conn)
   val res = oql.query("character")
 
