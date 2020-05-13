@@ -38,15 +38,16 @@ class OQLParser extends RegexParsers {
 
   def query =
     ident ~ opt(project) ~ opt(select) ~ opt(order) ~ opt(group) ^^ {
-      case r ~ p ~ s ~ o ~ g => OQLQuery(r, p, s, o, g)
+      case r ~ None ~ s ~ o ~ g    => OQLQuery(r, ProjectAllOQL, s, o, g)
+      case r ~ Some(p) ~ s ~ o ~ g => OQLQuery(r, p, s, o, g)
     }
 
-  def project: Parser[ProjectOQL] =
+  def project: Parser[ProjectExpressionOQL] =
     "{" ~> rep1sep(projectExpression, ",") <~ "}" ^^ (ps =>
-      ProjectOQL(lift = false, ps)) |
+      ProjectFieldsOQL(lift = false, ps)) |
       ("." | "^") ~ simpleProjectExpression ^^ {
-        case "." ~ p => ProjectOQL(lift = false, List(p))
-        case _ ~ p   => ProjectOQL(lift = true, List(p))
+        case "." ~ p => ProjectFieldsOQL(lift = false, List(p))
+        case _ ~ p   => ProjectFieldsOQL(lift = true, List(p))
       }
 
   def simpleProjectExpression: Parser[ExpressionOQL] = fieldProject | variable
