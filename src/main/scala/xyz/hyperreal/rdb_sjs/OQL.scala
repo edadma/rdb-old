@@ -88,7 +88,8 @@ class OQL(erd: String) {
                              field,
                              branches(attr.entityType,
                                       pos,
-                               if (project == ProjectAllOQL) project else ,
+                                      if (project == ProjectAllOQL) project
+                                      else null,
                                       projectbuf,
                                       joinbuf,
                                       attrbuf1))
