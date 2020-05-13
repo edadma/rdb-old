@@ -12,15 +12,9 @@ abstract class ExpressionOQL extends OQLAST
 
 case class VariableExpressionOQL(ids: List[Ident]) extends ExpressionOQL
 
-case class AttributeOQL(v: Ident) extends ProjectExpressionOQL
-
 abstract class ProjectExpressionOQL
-case class ProjectFieldsOQL(props: List[ProjectExpressionOQL])
+case class ProjectAttributesOQL(lift: Boolean, attrs: List[AttributeOQL])
     extends ProjectExpressionOQL
-case class ProjectLiftedOQL(props: ProjectExpressionOQL)
-    extends ProjectExpressionOQL
-
 case object ProjectAllOQL extends ProjectExpressionOQL
 
-case class ProjectionExpressionOQL(id: Ident, project: ProjectExpressionOQL)
-    extends ProjectExpressionOQL
+case class AttributeOQL(attr: Ident, project: ProjectExpressionOQL)

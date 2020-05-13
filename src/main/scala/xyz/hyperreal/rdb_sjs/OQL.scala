@@ -64,7 +64,16 @@ class OQL(erd: String) {
     val attrs =
       if (project == ProjectAllOQL)
         model.list(entity, pos)
-      else { null }
+      else {
+        val entity = model.get(entity, pos)
+        for (a <- project.asInstanceOf[ProjectAttributesOQL].attrs)
+          yield {
+            entity.attributes get a.attr.name match {
+              case None => problem(pos, s"unknown attribute: '${a.attr.name}'")
+              case Some()
+            }
+          }
+      }
     ObjectProjectionBranch(attrs map {
       case (field, attr: PrimitiveEntityAttribute) =>
         val e = if (attrbuf == Nil) entity else attrbuf mkString "$"
