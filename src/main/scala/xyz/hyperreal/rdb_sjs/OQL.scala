@@ -11,8 +11,15 @@ class OQL(erd: String, conn: Connection) {
 
   private val model = ERModel(erd)
 
-  def toJS(res: List[Map[String, Any]]) =
-    res.map(_.toJSDictionary).toJSArray
+  def toJS(a: Any): js.Any =
+    a match {
+      case l: List[_] => l map toJS toJSArray
+      case m: Map[_, _] =>
+        (m map { case (k, v) => k -> toJS(v) })
+          .asInstanceOf[Map[String, Any]]
+          .toJSDictionary
+      case _ => a.asInstanceOf[js.Any]
+    }
 
   def pretty(res: List[Map[String, Any]]) =
     JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
@@ -23,7 +30,7 @@ class OQL(erd: String, conn: Connection) {
 
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(String, String)]
-    val joinbuf = new ListBuffer[String]
+    val joinbuf = new ListBuffer[(String, String, String, String)]
     val graph: ProjectionBranch =
       if (project isDefined) {
         null
@@ -36,28 +43,39 @@ class OQL(erd: String, conn: Connection) {
     sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString (", ")}\n"
     sql append s"  FROM ${resource.name}"
 
-    println(sql)
-    //    val res =
-    //      conn
-    //        .executeSQLStatement(sql.toString)
-    //        .asInstanceOf[RelationResult]
-    //        .relation
-    //        .collect
-    //
-    //    res.toList map (build(_, res.metadata, graph))
+    for ((lt, lf, rt, rf) <- joinbuf)
+      sql append s" JOIN $rt ON $lt.$lf = $rt.$rf"
+
+    sql append '\n'
+
+    print(sql)
+    val res =
+      conn
+        .executeSQLStatement(sql.toString)
+        .asInstanceOf[RelationResult]
+        .relation
+        .collect
+
+    res.toList map (build(_, res.metadata, graph))
 
   }
 
   private def branches(entity: String,
                        pos: Position,
                        projectbuf: ListBuffer[(String, String)],
-                       joinbuf: ListBuffer[String]): ObjectProjectionBranch = {
+                       joinbuf: ListBuffer[(String, String, String, String)])
+    : ObjectProjectionBranch = {
     ObjectProjectionBranch(model.list(entity, pos) map {
       case (field, attr: PrimitiveEntityAttribute) =>
         projectbuf += (entity -> field)
         PrimitiveProjectionNode(entity, field, attr)
       case (field, attr: ObjectEntityAttribute) =>
-        joinbuf += entity
+        if (attr.entity.pk isEmpty)
+          problem(
+            pos,
+            s"entity '${attr.entityType}' is referenced as a type but has no primary key")
+
+        joinbuf += ((entity, field, attr.entityType, attr.entity.pk.get))
         EntityProjectionNode(
           entity,
           field,

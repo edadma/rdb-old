@@ -15,7 +15,7 @@ object Main extends App {
   val oql = new OQL(readFile("samples/star-trek.erd"), conn)
   val res = oql.query("character")
 
-//  println(oql.pretty(res))
+  println(oql.pretty(res))
 //  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
 //  val statement = //readFile("samples/w3r-movie-join-2.sql")
 //    """
