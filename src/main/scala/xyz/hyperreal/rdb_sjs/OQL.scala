@@ -68,7 +68,7 @@ class OQL(erd: String, conn: Connection) {
       attrbuf: List[String]): ObjectProjectionBranch = {
     ObjectProjectionBranch(model.list(entity, pos) map {
       case (field, attr: PrimitiveEntityAttribute) =>
-        val e = if (attrbuf == Nil) entity else attrbuf.reverse mkString "$"
+        val e = if (attrbuf == Nil) entity else attrbuf mkString "$"
 
         projectbuf += (e -> field)
         PrimitiveProjectionNode(entity, field, attr)
@@ -83,7 +83,7 @@ class OQL(erd: String, conn: Connection) {
         joinbuf += ((entity,
                      field,
                      attr.entityType,
-                     attrbuf1.reverse mkString "$",
+                     attrbuf1 mkString "$",
                      attr.entity.pk.get))
         EntityProjectionNode(
           entity,
