@@ -15,5 +15,5 @@ entity character {
  *char_id: integer
   name: text
   home: planet
-  species: integer ;species
+  species: species
 }

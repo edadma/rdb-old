@@ -30,12 +30,12 @@ class OQL(erd: String, conn: Connection) {
 
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(String, String)]
-    val joinbuf = new ListBuffer[(String, String, String, String)]
+    val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph: ProjectionBranch =
       if (project isDefined) {
         null
       } else {
-        branches(resource.name, resource.pos, projectbuf, joinbuf)
+        branches(resource.name, resource.pos, projectbuf, joinbuf, Nil)
       }
 
     val sql = new StringBuilder
@@ -43,8 +43,8 @@ class OQL(erd: String, conn: Connection) {
     sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString (", ")}\n"
     sql append s"  FROM ${resource.name}"
 
-    for ((lt, lf, rt, rf) <- joinbuf)
-      sql append s" JOIN $rt ON $lt.$lf = $rt.$rf"
+    for ((lt, lf, rt, rta, rf) <- joinbuf)
+      sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
 
     sql append '\n'
 
@@ -60,14 +60,17 @@ class OQL(erd: String, conn: Connection) {
 
   }
 
-  private def branches(entity: String,
-                       pos: Position,
-                       projectbuf: ListBuffer[(String, String)],
-                       joinbuf: ListBuffer[(String, String, String, String)])
-    : ObjectProjectionBranch = {
+  private def branches(
+      entity: String,
+      pos: Position,
+      projectbuf: ListBuffer[(String, String)],
+      joinbuf: ListBuffer[(String, String, String, String, String)],
+      attrbuf: List[String]): ObjectProjectionBranch = {
     ObjectProjectionBranch(model.list(entity, pos) map {
       case (field, attr: PrimitiveEntityAttribute) =>
-        projectbuf += (entity -> field)
+        val e = if (attrbuf == Nil) entity else attrbuf.reverse mkString "$"
+
+        projectbuf += (e -> field)
         PrimitiveProjectionNode(entity, field, attr)
       case (field, attr: ObjectEntityAttribute) =>
         if (attr.entity.pk isEmpty)
@@ -75,11 +78,17 @@ class OQL(erd: String, conn: Connection) {
             pos,
             s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
-        joinbuf += ((entity, field, attr.entityType, attr.entity.pk.get))
+        val attrbuf1 = attr.entityType :: attrbuf
+
+        joinbuf += ((entity,
+                     field,
+                     attr.entityType,
+                     attrbuf1.reverse mkString "$",
+                     attr.entity.pk.get))
         EntityProjectionNode(
           entity,
           field,
-          branches(attr.entityType, pos, projectbuf, joinbuf))
+          branches(attr.entityType, pos, projectbuf, joinbuf, attrbuf1))
     })
   }
 
