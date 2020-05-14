@@ -39,10 +39,9 @@ class OQL(erd: String) {
                List(resource.name))
 
     val sql = new StringBuilder
-    val varlist = projectbuf map { case (e, f) => s"$e.$f" }
-    val varset = varlist.toSet
+    val entityset = joinbuf.map(_._4).toSet + resource.name
 
-    sql append s"SELECT ${varlist mkString ", "}\n"
+    sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString ", "}\n"
     sql append s"  FROM ${resource.name}"
 
     for ((lt, lf, rt, rta, rf) <- joinbuf)
@@ -65,11 +64,14 @@ class OQL(erd: String) {
         case GroupedExpressionOQL(expr) => sql append s"($expr)"
         case v @ VariableExpressionOQL(ids) =>
           val ns = ids map (_.name)
-          val vselect =
-            s"${(resource.name :: ns.init).reverse.mkString("$")}.${ns.last}"
+          val entity = (resource.name :: ns.init).reverse mkString "$"
+          val vselect = s"$entity.${ns.last}"
 
-          if (!varset(vselect))
-            problem(v.pos, s"value not found: ${ns mkString "."}")
+          if (!entityset(entity)) {
+            problem(
+              v.pos,
+              s"object not found: ${(resource.name :: ns.init) mkString "."}")
+          }
 
           sql append vselect
       }

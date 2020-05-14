@@ -16,7 +16,9 @@ object Main extends App {
   val res =
     oql.query("character { name species { origin { name } } } [name = 'Spock']",
               conn)
-
+//    oql.query(
+//      "character { name species.origin.name } [species.name = 'Betazoid']",
+//      conn)
   println(oql.pretty(res))
 //  val conn = new Connection { load(readFile("samples/movie.tab"), true) }
 //  val statement = //readFile("samples/w3r-movie-join-2.sql")
