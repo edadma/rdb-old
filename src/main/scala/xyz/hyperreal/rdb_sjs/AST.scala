@@ -97,6 +97,8 @@ case class AndLogicalExpression(left: LogicalExpression,
 case class OrLogicalExpression(left: LogicalExpression,
                                right: LogicalExpression)
     extends LogicalExpression
+case class NotLogicalExpression(expr: LogicalExpression)
+    extends LogicalExpression
 case class ExistsLogicalExpression(tuples: TupleCollectionExpression)
     extends LogicalExpression
 

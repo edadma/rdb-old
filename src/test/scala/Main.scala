@@ -13,17 +13,23 @@ object Main extends App {
   val conn = new Connection {
     load(readFile("samples/star-trek.tab"), doubleSpaces = true)
   }
-  val oql = new OQL(readFile("samples/star-trek.erd"))
-  val res =
-    //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
-    //              conn)
-    oql.query(
-      "character { name species.origin.name } [species.name = 'Betazoid']",
-      conn)
-  println(OQL.pretty(res))
-//  val conn = new Connection { loadFromFile("samples/northwind.tab") }
+  val res = Testing.sqlQuery(
+    "select * from species WHERE NOT (lifespan < 100 OR lifespan > 200)",
+    conn)
+
+  println(res)
+
+  //  val oql = new OQL(readFile("samples/star-trek.erd"))
+//  val res =
+//    //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
+//    //              conn)
+//    oql.query(
+//      "character { name species.origin.name } [species.name = 'Betazoid']",
+//      conn)
+//  println(OQL.pretty(res))
+//  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =
-//		"""
+//    """
 //			|SELECT CompanyName, ContactName
 //			|  FROM Suppliers
 //			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 10)

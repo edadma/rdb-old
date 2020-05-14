@@ -85,6 +85,11 @@ class Connection {
   def executeSQLStatement(statement: String): StatementResult =
     executeStatement(SQLParser.parseStatement(statement))
 
+  def executeSQLQuery(statement: String): Relation =
+    executeStatement(SQLParser.parseStatement(statement))
+      .asInstanceOf[RelationResult]
+      .relation
+
   def executeStatement(ast: AST): StatementResult =
     ast match {
       case CreateBaseRelationStatement(table @ Ident(base), columns) =>
@@ -801,9 +806,11 @@ class Connection {
           case _ => problem(pos, "invalid comparison")
         }
       case AndLogical(_, l, r) =>
-        evalCondition(context, l) and evalCondition(context, r)
+        evalCondition(context, l) && evalCondition(context, r)
       case OrLogical(_, l, r) =>
-        evalCondition(context, l) or evalCondition(context, r)
+        evalCondition(context, l) || evalCondition(context, r)
+      case NotLogical(_, l) =>
+        !evalCondition(context, l)
     }
 
   def evalLogical(afuse: AggregateFunctionUse,
@@ -823,7 +830,7 @@ class Connection {
             case s: TupleseqExpression => evalTupleseq(null, s, fmetadata)
           }
 
-        ExistsLogical(s"exists ($rel)", rel)
+        ExistsLogical(s"EXISTS ($rel)", rel)
       case LiteralLogicalExpression(lit) => LiteralLogical(lit.toString, lit)
       case ComparisonLogicalExpression(left, List((pos, comp, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
@@ -849,17 +856,21 @@ class Connection {
                             compr,
                             r)
 
-        AndLogical(s"${lc.heading} and ${rc.heading}", lc, rc)
+        AndLogical(s"${lc.heading} AND ${rc.heading}", lc, rc)
       case AndLogicalExpression(left, right) =>
         val l = evalLogical(afuse, fmetadata, ametadata, left)
         val r = evalLogical(afuse, fmetadata, ametadata, right)
 
-        AndLogical(s"${l.heading} and ${r.heading}", l, r)
+        AndLogical(s"${l.heading} AND ${r.heading}", l, r)
       case OrLogicalExpression(left, right) =>
         val l = evalLogical(afuse, fmetadata, ametadata, left)
         val r = evalLogical(afuse, fmetadata, ametadata, right)
 
-        OrLogical(s"${l.heading} Or ${r.heading}", l, r)
+        OrLogical(s"${l.heading} OR ${r.heading}", l, r)
+      case NotLogicalExpression(expr) =>
+        val l = evalLogical(afuse, fmetadata, ametadata, expr)
+
+        NotLogical(s"NOT ${l.heading}", l)
     }
   }
 }
@@ -885,6 +896,8 @@ case class AndLogical(heading: String,
                       right: LogicalResult)
     extends LogicalResult
 case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult)
+    extends LogicalResult
+case class NotLogical(heading: String, expr: LogicalResult)
     extends LogicalResult
 case class ComparisonLogical(heading: String,
                              left: ValueResult,

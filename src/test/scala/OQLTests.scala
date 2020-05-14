@@ -7,7 +7,7 @@ import matchers.should.Matchers
 import OQL._
 import Testing._
 
-class Tests extends AnyFreeSpec with Matchers {
+class OQLTests extends AnyFreeSpec with Matchers {
 
   "basic tests" in {
     starTrekER

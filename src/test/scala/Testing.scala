@@ -1,6 +1,25 @@
 package xyz.hyperreal.rdb_sjs
 
+import xyz.hyperreal.table_sjs.TextTable
+
 object Testing {
+
+  def sqlQuery(sql: String, conn: Connection): String = {
+    val l = conn.executeSQLQuery(sql)
+    val res =
+      new TextTable(headerUnderlined = false, headerBold = false) {
+        headerSeq(l.metadata.header map (_.column))
+
+        for (i <- 1 to l.metadata.header.length)
+          if (l.metadata.header(i - 1).typ.isInstanceOf[NumericalType])
+            rightAlignment(i)
+
+        for (r <- l)
+          rowSeq(r)
+      }.toString
+
+    res.replace(" \n", "\n")
+  }
 
   val starTrekDB =
     new Connection {

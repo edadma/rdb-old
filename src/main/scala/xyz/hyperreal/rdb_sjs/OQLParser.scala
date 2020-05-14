@@ -74,6 +74,11 @@ class OQLParser extends RegexParsers {
         }
     }
 
+  def notExpression =
+    ("NOT" | "not") ~> comparisonExpression ^^ (p =>
+      PrefixExpressionOQL("NOT", p)) |
+      comparisonExpression
+
   def comparisonExpression =
     primaryExpression ~ ("<" | ">" | "<=" | ">=" | "=" | "!=") ~ primaryExpression ^^ {
       case l ~ o ~ r => InfixExpressionOQL(l, o, r)

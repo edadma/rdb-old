@@ -215,12 +215,16 @@ class SQLParser extends RegexParsers {
     }
 
   def andExpression =
-    comparisonExpression ~ rep(("AND" | "and") ~> comparisonExpression) ^^ {
+    notExpression ~ rep(("AND" | "and") ~> notExpression) ^^ {
       case expr ~ list =>
         list.foldLeft(expr) {
           case (l, r) => AndLogicalExpression(l, r)
         }
     }
+
+  def notExpression =
+    ("NOT" | "not") ~> comparisonExpression ^^ (p => NotLogicalExpression(p)) |
+      comparisonExpression
 
   def comparisonExpression =
     nonLogicalValueExpression ~ rep1(
