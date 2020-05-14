@@ -4,22 +4,12 @@ import org.scalatest._
 import freespec.AnyFreeSpec
 import matchers.should.Matchers
 
-import scala.scalajs.js
-import js.Dynamic.{global => g}
-
 import OQL._
 import Testing._
 
 class Tests extends AnyFreeSpec with Matchers {
 
-  private val fs = g.require("fs")
-
-  private def readFile(name: String) = {
-    fs.readFileSync(name).toString
-  }
-
   "basic tests" in {
-
     starTrekER
       .query(
         "character { name species.origin.name } [species.name = 'Betazoid']",
