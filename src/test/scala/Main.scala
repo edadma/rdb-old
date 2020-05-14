@@ -20,7 +20,7 @@ object Main extends App {
     oql.query(
       "character { name species.origin.name } [species.name = 'Betazoid']",
       conn)
-  println(oql.pretty(res))
+  println(OQL.pretty(res))
 //  val conn = new Connection { loadFromFile("samples/northwind.tab") }
 //  val statement =
 //		"""

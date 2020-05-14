@@ -7,6 +7,9 @@ import matchers.should.Matchers
 import scala.scalajs.js
 import js.Dynamic.{global => g}
 
+import OQL._
+import Testing._
+
 class Tests extends AnyFreeSpec with Matchers {
 
   private val fs = g.require("fs")
@@ -16,15 +19,11 @@ class Tests extends AnyFreeSpec with Matchers {
   }
 
   "basic tests" in {
-    val conn = new Connection {
-      load(readFile("samples/star-trek.tab"), doubleSpaces = true)
-    }
-    val oql = new OQL(readFile("samples/star-trek.erd"))
 
-    oql
+    starTrekER
       .query(
         "character { name species.origin.name } [species.name = 'Betazoid']",
-        conn) shouldBe
+        starTrekDB) shouldBe
       List(
         Map("name" -> "Deanna Troi",
             "species" -> Map("origin" -> Map("name" -> "Betazed"))),
@@ -32,7 +31,7 @@ class Tests extends AnyFreeSpec with Matchers {
             "species" -> Map("origin" -> Map("name" -> "Betazed")))
       )
 
-    oql.pretty(oql.query("character", conn)) shouldBe
+    pretty(starTrekER.query("character", starTrekDB)) shouldBe
       """
         |[
         |  {

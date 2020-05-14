@@ -7,9 +7,7 @@ import scala.scalajs.js
 import js.JSConverters._
 import scala.scalajs.js.JSON
 
-class OQL(erd: String) {
-
-  private val model = new ERModel(erd)
+object OQL {
 
   def toJS(a: Any): js.Any =
     a match {
@@ -23,6 +21,12 @@ class OQL(erd: String) {
 
   def pretty(res: Seq[Map[String, Any]]): String =
     JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
+
+}
+
+class OQL(erd: String) {
+
+  private val model = new ERModel(erd)
 
   def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
     val OQLQuery(resource, project, select, order, group) =

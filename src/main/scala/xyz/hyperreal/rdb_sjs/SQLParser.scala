@@ -238,9 +238,7 @@ class SQLParser extends RegexParsers {
   def logicalPrimary =
     positioned(
       "true" ^^^ LiteralLogicalExpression(TRUE) |
-        "false" ^^^ LiteralLogicalExpression(FALSE) |
-        "maybe-a" ^^^ LiteralLogicalExpression(MAYBE_A) |
-        "maybe-i" ^^^ LiteralLogicalExpression(MAYBE_I)
+        "false" ^^^ LiteralLogicalExpression(FALSE)
     ) | "(" ~> logicalExpression <~ ")"
 
   def parseFromString[T](src: String, grammar: Parser[T]) = {

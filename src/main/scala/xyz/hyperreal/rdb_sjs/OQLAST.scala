@@ -26,7 +26,7 @@ case class IntegerLiteralOQL(n: String) extends ExpressionOQL
 case class StringLiteralOQL(s: String) extends ExpressionOQL
 
 abstract class ProjectExpressionOQL
-case class ProjectAttributesOQL(lift: Boolean, attrs: List[AttributeOQL])
+case class ProjectAttributesOQL(attrs: List[AttributeOQL])
     extends ProjectExpressionOQL
 case object ProjectAllOQL extends ProjectExpressionOQL
 
