@@ -13,7 +13,7 @@ object Main extends App {
 
   val conn = new Connection { load(readFile("samples/star-trek.tab"), true) }
   val oql = new OQL(readFile("samples/star-trek.erd"))
-  val res = oql.query("character { name home { name } }", conn)
+  val res = oql.query("character { name home { name } } [name = 'Spock']", conn)
 
   println(oql.pretty(res))
 //  val conn = new Connection { load(readFile("samples/movie.tab"), true) }

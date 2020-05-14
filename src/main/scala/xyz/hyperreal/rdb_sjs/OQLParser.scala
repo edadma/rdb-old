@@ -22,16 +22,16 @@ class OQLParser extends RegexParsers {
     _.pos
   }
 
-  def number: Parser[ValueExpression] =
+  def number: Parser[ExpressionOQL] =
     positioned("""\-?\d+(\.\d*)?""".r ^^ {
-      case n if n contains '.' => FloatLit(n)
-      case n                   => IntegerLit(n)
+      case n if n contains '.' => FloatLiteralOQL(n)
+      case n                   => IntegerLiteralOQL(n)
     })
 
-  def string: Parser[ValueExpression] =
+  def string: Parser[StringLiteralOQL] =
     positioned(
       (("'" ~> """[^'\n]*""".r <~ "'") |
-        ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit)
+        ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLiteralOQL)
 
   def ident =
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
@@ -57,9 +57,40 @@ class OQLParser extends RegexParsers {
 
   def variable = rep1sep(ident, ".") ^^ VariableExpressionOQL
 
-  def expression = variable
+  def expression = primaryExpression
 
-  def select = "[" ~> expression <~ "]"
+  def logicalExpression: Parser[ExpressionOQL] =
+    orExpression
+
+  def orExpression =
+    andExpression ~ rep(("OR" | "or") ~> andExpression) ^^ {
+      case expr ~ list =>
+        list.foldLeft(expr) {
+          case (l, r) => InfixExpressionOQL(l, "OR", r)
+        }
+    }
+
+  def andExpression =
+    comparisonExpression ~ rep(("AND" | "and") ~> comparisonExpression) ^^ {
+      case expr ~ list =>
+        list.foldLeft(expr) {
+          case (l, r) => InfixExpressionOQL(l, "AND", r)
+        }
+    }
+
+  def comparisonExpression =
+    primaryExpression ~ ("<" | ">" | "<=" | ">=" | "=" | "!=") ~ primaryExpression ^^ {
+      case l ~ o ~ r => InfixExpressionOQL(l, o, r)
+    } |
+      primaryExpression
+
+  def primaryExpression =
+    number |
+      string |
+      variable |
+      "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL
+
+  def select = "[" ~> logicalExpression <~ "]"
 
   def order = "<" ~> rep1sep(orderExpression, ",") <~ ">"
 

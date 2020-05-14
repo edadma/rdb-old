@@ -39,14 +39,46 @@ class OQL(erd: String) {
                List(resource.name))
 
     val sql = new StringBuilder
+    val varlist = projectbuf map { case (e, f) => s"$e.$f" }
+    val varset = varlist.toSet
 
-    sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString (", ")}\n"
+    sql append s"SELECT ${varlist mkString ", "}\n"
     sql append s"  FROM ${resource.name}"
 
     for ((lt, lf, rt, rta, rf) <- joinbuf)
       sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
 
     sql append '\n'
+
+    def where(expr: ExpressionOQL): Unit =
+      expr match {
+        case InfixExpressionOQL(left, op, right) =>
+          where(left)
+          sql append s" $op "
+          where(right)
+        case PrefixExpressionOQL(op, expr) =>
+          sql append s" $op"
+          where(expr)
+        case FloatLiteralOQL(n)         => sql append n
+        case IntegerLiteralOQL(n)       => sql append n
+        case StringLiteralOQL(s)        => sql append s"'$s'"
+        case GroupedExpressionOQL(expr) => sql append s"($expr)"
+        case v @ VariableExpressionOQL(ids) =>
+          val ns = ids map (_.name)
+          val vselect =
+            s"${(resource.name :: ns.init).reverse.mkString("$")}.${ns.last}"
+
+          if (!varset(vselect))
+            problem(v.pos, s"value not found: ${ns mkString "."}")
+
+          sql append vselect
+      }
+
+    if (select isDefined) {
+      sql append "  WHERE "
+      where(select.get)
+      sql append '\n'
+    }
 
     print(sql)
     val res =
