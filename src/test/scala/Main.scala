@@ -1,14 +1,33 @@
 package xyz.hyperreal.rdb_sjs
 
+import scala.scalajs.js
+import js.Dynamic.{global => g}
 
 object Main extends App {
-	val conn = new Connection {loadFromFile( "samples/northwind.tab" )}
-	val statement =
-		"""
-			|SELECT CompanyName, ContactName
-			|  FROM Suppliers
-			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 10)
-		""".stripMargin
+  private val fs = g.require("fs")
+
+  private def readFile(name: String) = {
+    fs.readFileSync(name).toString
+  }
+
+  val conn = new Connection {
+    load(readFile("samples/star-trek.tab"), doubleSpaces = true)
+  }
+  val oql = new OQL(readFile("samples/star-trek.erd"))
+  val res =
+    //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
+    //              conn)
+    oql.query(
+      "character { name species.origin.name } [species.name = 'Betazoid']",
+      conn)
+  println(oql.pretty(res))
+//  val conn = new Connection { loadFromFile("samples/northwind.tab") }
+//  val statement =
+//		"""
+//			|SELECT CompanyName, ContactName
+//			|  FROM Suppliers
+//			|  WHERE EXISTS (SELECT * FROM Products WHERE SupplierID = Suppliers.SupplierID AND UnitPrice < 10)
+//		""".stripMargin
 
 //		"""
 //			|SELECT SupplierName
@@ -25,9 +44,9 @@ object Main extends App {
 //	""".stripMargin
 
 //    println( SQLParser.parseStatement(statement) )
-	REPLMain.printResult( conn.executeSQLStatement(statement) )
+//  REPLMain.printResult(conn.executeSQLStatement(statement))
 
-	/*
+  /*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))
 
 	{[a, b, c] (1, 2, 9), (3, 4, 8), (1, 5, 9), (3, 6, 0)} [b > 2] <a> [a < 2] (a, sum(b))

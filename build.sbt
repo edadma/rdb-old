@@ -23,8 +23,7 @@ scalaJSUseMainModuleInitializer := true
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 libraryDependencies ++= Seq(
-	"org.scalatest" %% "scalatest" % "3.1.1" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+	"org.scalatest" %%% "scalatest" % "3.1.1" % "test"
 )
 
 libraryDependencies ++= Seq(

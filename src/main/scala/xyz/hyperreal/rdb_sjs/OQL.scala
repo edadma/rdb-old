@@ -13,7 +13,7 @@ class OQL(erd: String) {
 
   def toJS(a: Any): js.Any =
     a match {
-      case l: List[_] => l map toJS toJSArray
+      case l: Seq[_] => l map toJS toJSArray
       case m: Map[_, _] =>
         (m map { case (k, v) => k -> toJS(v) })
           .asInstanceOf[Map[String, Any]]
@@ -21,10 +21,10 @@ class OQL(erd: String) {
       case _ => a.asInstanceOf[js.Any]
     }
 
-  def pretty(res: List[Map[String, Any]]) =
+  def pretty(res: Seq[Map[String, Any]]): String =
     JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
 
-  def query(s: String, conn: Connection) = {
+  def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
     val OQLQuery(resource, project, select, order, group) =
       OQLParser.parseQuery(s)
 
@@ -82,7 +82,7 @@ class OQL(erd: String) {
       sql append '\n'
     }
 
-    print(sql)
+    //print(sql)
     val res =
       conn
         .executeSQLStatement(sql.toString)
