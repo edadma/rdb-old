@@ -104,7 +104,6 @@ class OQL(erd: String) {
       } else {
         val ent = model.get(entity, pos)
 
-        println(project)
         project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
           ent.attributes get attr.attr.name match {
             case None =>
