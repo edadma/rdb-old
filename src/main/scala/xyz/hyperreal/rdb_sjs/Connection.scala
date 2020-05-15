@@ -263,18 +263,6 @@ class Connection {
             types
 
         new ConcreteTupleseq(types1.toIndexedSeq, evalTupleList(types1, data))
-      case SortedTupleseqExpression(relation, names) =>
-        val rel = evalRelation(relation, context)
-        val fields =
-          names map {
-            case (f @ Ident(name), asc) =>
-              rel.metadata.columnMap get name match {
-                case None      => problem(f.pos, "unknown column")
-                case Some(ind) => (ind, asc)
-              }
-          }
-
-        new SortedTupleseq(rel, fields)
     }
   }
 
@@ -328,6 +316,20 @@ class Connection {
   def evalRelation(ast: RelationExpression,
                    context: List[Metadata]): Relation = {
     ast match {
+      case SortedRelationExpression(relation, exprs) =>
+        val rel = evalRelation(relation, context)
+        val afuse = AFUseOrField(NoFieldOrAFUsed)
+        val es = exprs map {
+          case (e, d) => evalExpression(afuse, rel.metadata :: context, e)
+        }
+        names map {
+          case (f @ Ident(name), asc) =>
+            rel.metadata.columnMap get name match {
+              case None      => problem(f.pos, "unknown column")
+              case Some(ind) => (ind, asc)
+            }
+        }
+
       case GroupingRelationExpression(relation,
                                       discriminator,
                                       filter,
@@ -339,7 +341,7 @@ class Connection {
                                                     rel.metadata :: context,
                                                     _)) toVector
         val dismetadata = new Metadata(
-          dis map (c => SimpleColumn("", c.heading, c.typ))) :: context
+          dis map (c => SimpleColumn(c.table, c.heading, c.typ))) :: context
         val filtafuse = AFUseOrField(NoFieldOrAFUsed)
         val filt = filter map (evalLogical(filtafuse,
                                            dismetadata,

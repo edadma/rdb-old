@@ -8,6 +8,10 @@ trait Relation extends collection.Set[Tuple] {
 
   def iterator(context: List[Tuple]): Iterator[Tuple]
 
+  def sort(conn: Connection,
+           context: List[Tuple],
+           exprs: List[(ValueResult, Boolean)])
+
   def boundedIterator(context: List[Tuple],
                       bounds: Seq[Symbol],
                       idx: Int,
@@ -16,10 +20,6 @@ trait Relation extends collection.Set[Tuple] {
 
 abstract class AbstractRelation extends Relation {
 
-//	def -( elem: Tuple ) = sys.error( "unsupported" )
-//
-//	def +( elem: Tuple ) = sys.error( "unsupported" )
-
   def contains(elem: Tuple) =
     iterator contains elem // extending classes can override with a more effecient implementation
 
@@ -27,6 +27,34 @@ abstract class AbstractRelation extends Relation {
     filterNot(that contains) // extending classes can override with a more effecient implementation
 
   def collect = new ConcreteRelation(metadata.header, iterator.toList)
+
+  def sort(conn: Connection,
+           context: List[Tuple],
+           exprs: List[(ValueResult, Int)]) = {
+    val data = iterator(context).toList
+
+    def compare(exprs: List[(ValueResult, Int)], a: Tuple, b: Tuple): Int =
+      exprs match {
+        case Nil => 0
+        case (v, d) :: tail =>
+          val comp =
+            d * ((conn.evalValue(a :: context, v),
+                  conn.evalValue(b :: context, v)) match {
+              case (x: String, y: String) => x compare y
+              case (x: Int, y: Int)       => x compare y
+              case (x: Double, y: Double) => x compare y
+            })
+
+          if (comp != 0)
+            comp
+          else
+            compare(tail, a, b)
+      }
+
+    def lt(a: Tuple, b: Tuple) = compare(exprs, a, b) < 0
+
+    data sortWith lt
+  }
 
   def iterator = iterator(Nil)
 

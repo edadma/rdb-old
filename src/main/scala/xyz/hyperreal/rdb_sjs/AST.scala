@@ -76,14 +76,14 @@ case class GroupingRelationExpression(relation: RelationExpression,
                                       cpos: Position,
                                       columns: List[ValueExpression])
     extends RelationExpression
+case class SortedRelationExpression(relation: RelationExpression,
+                                    exprs: List[(ValueExpression, Int)])
+    extends RelationExpression
 
 abstract class TupleseqExpression
     extends TupleCollectionExpression
     with Positional
 case class TupleseqLit(data: List[TupleExpression]) extends TupleseqExpression
-case class SortedTupleseqExpression(relation: RelationExpression,
-                                    names: List[(Ident, Boolean)])
-    extends TupleseqExpression
 
 abstract class LogicalExpression extends Positional
 case class LiteralLogicalExpression(l: Logical) extends LogicalExpression
