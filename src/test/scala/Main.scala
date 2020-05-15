@@ -13,9 +13,10 @@ object Main extends App {
   val conn = new Connection {
     load(readFile("samples/star-trek.tab"), doubleSpaces = true)
   }
-  val res = Testing.sqlQuery(
-    "select * from species WHERE NOT (lifespan < 100 OR lifespan > 200)",
-    conn)
+  val res =
+    Testing.sqlQuery(
+      "select spec_id, lifespan, lifespan/spec_id from species order by (lifespan/spec_id) desc",
+      conn)
 
   println(res)
 

@@ -8,14 +8,13 @@ trait Relation extends collection.Set[Tuple] {
 
   def iterator(context: List[Tuple]): Iterator[Tuple]
 
-  def sort(conn: Connection,
-           context: List[Tuple],
-           exprs: List[(ValueResult, Boolean)])
+  def sort(conn: Connection, exprs: List[(ValueResult, Int)]): Relation
 
   def boundedIterator(context: List[Tuple],
                       bounds: Seq[Symbol],
                       idx: Int,
                       v: AnyRef): Iterator[Tuple]
+
 }
 
 abstract class AbstractRelation extends Relation {
@@ -28,18 +27,16 @@ abstract class AbstractRelation extends Relation {
 
   def collect = new ConcreteRelation(metadata.header, iterator.toList)
 
-  def sort(conn: Connection,
-           context: List[Tuple],
-           exprs: List[(ValueResult, Int)]) = {
-    val data = iterator(context).toList
+  // todo: sort doesn't take into account context
+  def sort(conn: Connection, exprs: List[(ValueResult, Int)]) = {
+    val data = iterator.toList
 
     def compare(exprs: List[(ValueResult, Int)], a: Tuple, b: Tuple): Int =
       exprs match {
         case Nil => 0
         case (v, d) :: tail =>
           val comp =
-            d * ((conn.evalValue(a :: context, v),
-                  conn.evalValue(b :: context, v)) match {
+            d * ((conn.evalValue(List(a), v), conn.evalValue(List(b), v)) match {
               case (x: String, y: String) => x compare y
               case (x: Int, y: Int)       => x compare y
               case (x: Double, y: Double) => x compare y
@@ -53,7 +50,7 @@ abstract class AbstractRelation extends Relation {
 
     def lt(a: Tuple, b: Tuple) = compare(exprs, a, b) < 0
 
-    data sortWith lt
+    new ConcreteRelation(metadata.header, data sortWith lt)
   }
 
   def iterator = iterator(Nil)
@@ -68,4 +65,5 @@ abstract class AbstractRelation extends Relation {
   def na(comp: String) =
     sys.error(
       s"comparison '$comp' can only be use with a base relation column that is indexed")
+
 }

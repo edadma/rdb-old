@@ -319,17 +319,13 @@ class Connection {
       case SortedRelationExpression(relation, exprs) =>
         val rel = evalRelation(relation, context)
         val afuse = AFUseOrField(NoFieldOrAFUsed)
-        val es = exprs map {
-          case (e, d) => evalExpression(afuse, rel.metadata :: context, e)
-        }
-        names map {
-          case (f @ Ident(name), asc) =>
-            rel.metadata.columnMap get name match {
-              case None      => problem(f.pos, "unknown column")
-              case Some(ind) => (ind, asc)
-            }
-        }
+        val es =
+          exprs map {
+            case (e, d) =>
+              evalExpression(afuse, rel.metadata :: context, e) -> d
+          }
 
+        rel.sort(this, es)
       case GroupingRelationExpression(relation,
                                       discriminator,
                                       filter,

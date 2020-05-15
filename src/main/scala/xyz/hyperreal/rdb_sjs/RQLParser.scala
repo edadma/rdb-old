@@ -64,10 +64,10 @@ class RQLParser extends RegexParsers {
       }
 
   def tupleseq =
-    relation ~ ("order" ~ "by" ~> orderby) ^^ {
-      case r ~ fs => SortedTupleseqExpression(r, fs)
-    } |
-      tupleseqLit
+//    relation ~ ("order" ~ "by" ~> orderby) ^^ {
+//      case r ~ fs => SortedRelationExpression(r, fs)
+//    } |
+    tupleseqLit
 
   def orderby =
     ("order" ~ "by") ~> rep1sep(
