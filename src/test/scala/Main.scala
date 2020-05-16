@@ -11,7 +11,7 @@ object Main extends App {
   }
 
   val conn = new Connection {
-    load(readFile("samples/star-trek.tab"), doubleSpaces = true)
+    load(readFile("samples/employees.tab"), doubleSpaces = true)
   }
   val res =
     Testing.sqlQuery(
