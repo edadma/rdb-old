@@ -11,23 +11,23 @@ object Main extends App {
   }
 
   val conn = new Connection {
-    load(readFile("samples/employees.tab"), doubleSpaces = true)
+    load(readFile("samples/star-trek.tab"), doubleSpaces = true)
   }
-  val res =
-    Testing.sqlQuery(
-      "select spec_id, lifespan, lifespan/spec_id from species order by (lifespan/spec_id) desc",
-      conn)
-
-  println(res)
-
-  //  val oql = new OQL(readFile("samples/star-trek.erd"))
 //  val res =
-//    //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
-//    //              conn)
-//    oql.query(
-//      "character { name species.origin.name } [species.name = 'Betazoid']",
+//    Testing.sqlQuery(
+//      "select spec_id, lifespan, lifespan/spec_id from species order by (lifespan/spec_id) desc",
 //      conn)
-//  println(OQL.pretty(res))
+//
+//  println(res)
+
+  val oql = new OQL(readFile("samples/star-trek.erd"))
+  val res =
+    //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
+    //              conn)
+    oql.query(
+      "character { name species.origin.name } [species.name = 'Betazoid']",
+      conn)
+  println(OQL.pretty(res))
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =
 //    """
