@@ -31,5 +31,8 @@ case class SimpleTypeERD(typ: Ident) extends TypeSpecifierERD
 
 case class EntityBlockERD(entity: Ident, fields: List[EntityFieldERD])
     extends BlockERD
-case class EntityFieldERD(field: Ident, typ: TypeSpecifierERD, pk: Boolean)
+case class EntityFieldERD(field: Ident,
+                          actual: Ident,
+                          typ: TypeSpecifierERD,
+                          pk: Boolean)
     extends ERDAST

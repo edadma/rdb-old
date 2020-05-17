@@ -80,10 +80,11 @@ class ERDParser extends RegexParsers {
       case _ ~ n ~ _ ~ fs ~ _ => EntityBlockERD(n, fs)
     }
 
-  def field: Parser[EntityFieldERD] = opt("*") ~ ident ~ ":" ~ typeSpec ^^ {
-    case None ~ n ~ _ ~ t      => EntityFieldERD(n, t, pk = false)
-    case Some("*") ~ n ~ _ ~ t => EntityFieldERD(n, t, pk = true)
-  }
+  def field: Parser[EntityFieldERD] =
+    opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ^^ {
+      case pk ~ n ~ a ~ _ ~ t =>
+        EntityFieldERD(n, if (a isDefined) a.get else n, t, pk isDefined)
+    }
 
   def typeSpec: Parser[TypeSpecifierERD] = ident ^^ SimpleTypeERD
 

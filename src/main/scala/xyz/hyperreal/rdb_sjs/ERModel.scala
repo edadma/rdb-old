@@ -15,35 +15,44 @@ class ERModel(defn: String) {
           problem(entity.pos, s"entity '${entity.name}' already defined")
         else {
           var epk: String = null
-          var e = Map.empty[String, EntityAttribute]
+          val columns = new mutable.HashSet[String]
+          var attrs = Map.empty[String, EntityAttribute]
 
-          for (EntityFieldERD(field, typ, pk) <- fields) {
-            if (e contains field.name)
-              problem(field.pos,
-                      s"field '${field.name}' already exists in this entity'")
+          for (EntityFieldERD(attr, column, typ, pk) <- fields) {
+            if (columns(column.name))
+              problem(
+                attr.pos,
+                s"column '${column.name}' already exists for this entity'")
+            else if (attrs contains attr.name)
+              problem(
+                attr.pos,
+                s"attribute '${attr.name}' already exists for this entity'")
             else {
               val fieldtype =
                 typ match {
                   case SimpleTypeERD(typ) =>
                     m get typ.name match {
-                      case Some(e) => ObjectEntityAttribute(typ.name, e)
-                      case None    => PrimitiveEntityAttribute(typ.name)
+                      case Some(e) =>
+                        ObjectEntityAttribute(column.name, typ.name, e)
+                      case None =>
+                        PrimitiveEntityAttribute(column.name, typ.name)
                     }
                 }
 
-              e += (field.name -> fieldtype)
+              attrs += (attr.name -> fieldtype)
+              columns += attr.name
             }
             if (pk) {
               if (epk ne null)
                 problem(
-                  field.pos,
+                  attr.pos,
                   "there is already a primary key defined for this entity")
               else
-                epk = field.name
+                epk = attr.name
             }
           }
 
-          m(entity.name) = Entity(if (epk ne null) Some(epk) else None, e)
+          m(entity.name) = Entity(if (epk ne null) Some(epk) else None, attrs)
         }
       case TypeBlockERD(name, underlying, condition) =>
     }
@@ -64,7 +73,9 @@ class ERModel(defn: String) {
 case class Entity(pk: Option[String], attributes: Map[String, EntityAttribute])
 
 abstract class EntityAttribute
-case class PrimitiveEntityAttribute(primitiveType: String)
+case class PrimitiveEntityAttribute(column: String, primitiveType: String)
     extends EntityAttribute
-case class ObjectEntityAttribute(entityType: String, entity: Entity)
+case class ObjectEntityAttribute(column: String,
+                                 entityType: String,
+                                 entity: Entity)
     extends EntityAttribute

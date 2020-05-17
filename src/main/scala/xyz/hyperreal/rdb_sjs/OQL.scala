@@ -28,11 +28,7 @@ class OQL(erd: String) {
   private val model = new ERModel(erd)
 
   def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
-    val OQLQuery(resource,
-                 project,
-                 select,
-                 order: Option[List[(ExpressionOQL, Boolean)]],
-                 restrict) =
+    val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(s)
     val entity = model.get(resource.name, resource.pos)
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -49,15 +45,37 @@ class OQL(erd: String) {
         expression(resource.name, entity, select.get, joinbuf)
       else
         null
+    val orderby =
+      if (order isDefined)
+        order.get map {
+          case (e, o) =>
+            s"(${expression(resource.name, entity, e, joinbuf)}) ${if (o) "ASC"
+            else "DESC"}"
+        } mkString ", "
+      else
+        null
 
-    for ((lt, lf, rt, rta, rf) <- joinbuf.toSet)
-      sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
+    val joins = joinbuf.toSet.toList
 
-    sql append '\n'
+    if (joins nonEmpty) {
+      val (lt, lf, rt, rta, rf) = joins.head
+
+      sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
+
+      for ((lt, lf, rt, rta, rf) <- joins.tail)
+        sql append s"    JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
+    } else
+      sql append '\n'
 
     if (select isDefined) {
       sql append "  WHERE "
       sql append where
+      sql append '\n'
+    }
+
+    if (order isDefined) {
+      sql append "  ORDER BY "
+      sql append orderby
       sql append '\n'
     }
 
@@ -119,7 +137,7 @@ class OQL(erd: String) {
                       s"$entityname doesn't have attribute '${attr.name}'")
             case Some(_: PrimitiveEntityAttribute) =>
               s"${attrlist mkString "$"}.${attr.name}"
-            case Some(ObjectEntityAttribute(entityType, entity)) =>
+            case Some(ObjectEntityAttribute(column, entityType, entity)) =>
               if (tail == Nil)
                 problem(attr.pos,
                         s"attribute '${attr.name}' has non-primitive data type")

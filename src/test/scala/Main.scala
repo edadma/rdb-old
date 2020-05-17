@@ -24,7 +24,8 @@ object Main extends App {
   val res =
     //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
     //              conn)
-    oql.query("character { name } [species.origin.name = 'Earth']", conn)
+    oql.query("character { name } [species.origin.name != 'Earth'] <name>",
+              conn)
   println(OQL.pretty(res))
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =
