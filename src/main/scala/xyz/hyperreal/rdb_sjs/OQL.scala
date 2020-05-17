@@ -31,14 +31,10 @@ class OQL(erd: String) {
   def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
     val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(s)
-    val resentity = model.get(resource.name, resource.pos)
+    val entity = model.get(resource.name, resource.pos)
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph =
-      branches(resource.name,
-               resource.pos,
-               project,
-               joinbuf,
-               List(resource.name))
+      branches(resource.name, entity, project, joinbuf, List(resource.name))
 
     val sql = new StringBuilder
     val wherebuf = new StringBuilder
@@ -60,7 +56,7 @@ class OQL(erd: String) {
         case StringLiteralOQL(s)        => wherebuf append s"'$s'"
         case GroupedExpressionOQL(expr) => wherebuf append s"($expr)"
         case VariableExpressionOQL(ids) =>
-          wherebuf append reference(resource.name, resentity, ids, joinbuf)
+          wherebuf append reference(resource.name, entity, ids, joinbuf)
 //          val ns = ids map (_.name)
 //          val entity = (resource.name :: ns.init).reverse mkString "$"
 //          val vselect = s"$entity.${ns.last}"
@@ -72,7 +68,6 @@ class OQL(erd: String) {
 //          }
 //
 //          sql append vselect
-
       }
 
     if (select isDefined)
@@ -140,32 +135,29 @@ class OQL(erd: String) {
   }
 
   private def branches(
-      entity: String,
-      pos: Position,
+      entityname: String,
+      entity: Entity,
       project: ProjectExpressionOQL,
       joinbuf: ListBuffer[(String, String, String, String, String)],
       attrlist: List[String]): ObjectProjectionBranch = {
     val attrs =
       if (project == ProjectAllOQL) {
-        model.list(entity, pos) map { case (k, v) => (k, v, ProjectAllOQL) }
-      } else {
-        val ent = model.get(entity, pos)
-
+        entity.attributes map { case (k, v) => (k, v, ProjectAllOQL) } toList
+      } else
         project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
-          ent.attributes get attr.attr.name match {
+          entity.attributes get attr.attr.name match {
             case None =>
-              problem(pos, s"unknown attribute: '${attr.attr.name}'")
+              problem(attr.attr.pos, s"unknown attribute: '${attr.attr.name}'")
             case Some(typ) => (attr.attr.name, typ, attr.project)
           })
-      }
     ObjectProjectionBranch(attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
         PrimitiveProjectionNode(attrlist mkString "$", field, attr)
       case (field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
           problem(
-            pos,
-            s"entity '${attr.entityType}' is referenced as a type but has no primary key")
+            null,
+            s"entity '${attr.entityType}' is referenced as a type but has no primary key") // todo: entities that are being referenced should have a primary key
 
         val attrlist1 = field :: attrlist
 
@@ -175,9 +167,9 @@ class OQL(erd: String) {
                      attrlist1 mkString "$",
                      attr.entity.pk.get))
         EntityProjectionNode(
-          entity,
+          entityname,
           field,
-          branches(attr.entityType, pos, project, joinbuf, attrlist1)
+          branches(attr.entityType, attr.entity, project, joinbuf, attrlist1)
         )
     })
   }
@@ -185,7 +177,6 @@ class OQL(erd: String) {
   private def build(row: Tuple, md: Metadata, branch: ProjectionBranch) = {
     def build(branch: ProjectionBranch): Map[String, Any] =
       branch match {
-        //        case LiftedProjectionBranch(subfield) =>
         case ObjectProjectionBranch(fields) =>
           val obj = new mutable.LinkedHashMap[String, Any]
 
