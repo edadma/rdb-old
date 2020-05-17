@@ -41,56 +41,56 @@ class OQL(erd: String) {
                List(resource.name))
 
     val sql = new StringBuilder
-    val entityset = joinbuf.map(_._4).toSet + resource.name
+    val wherebuf = new StringBuilder
 
     sql append s"SELECT *\n"
     sql append s"  FROM ${resource.name}"
-
-    for ((lt, lf, rt, rta, rf) <- joinbuf)
-      sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
-
-    sql append '\n'
 
     def where(expr: ExpressionOQL): Unit =
       expr match {
         case InfixExpressionOQL(left, op, right) =>
           where(left)
-          sql append s" $op "
+          wherebuf append s" $op "
           where(right)
         case PrefixExpressionOQL(op, expr) =>
-          sql append s" $op"
+          wherebuf append s" $op"
           where(expr)
-        case FloatLiteralOQL(n)         => sql append n
-        case IntegerLiteralOQL(n)       => sql append n
-        case StringLiteralOQL(s)        => sql append s"'$s'"
-        case GroupedExpressionOQL(expr) => sql append s"($expr)"
-        case v @ VariableExpressionOQL(ids) =>
-          val ns = ids map (_.name)
-          val entity = (resource.name :: ns.init).reverse mkString "$"
-          val vselect = s"$entity.${ns.last}"
+        case FloatLiteralOQL(n)         => wherebuf append n
+        case IntegerLiteralOQL(n)       => wherebuf append n
+        case StringLiteralOQL(s)        => wherebuf append s"'$s'"
+        case GroupedExpressionOQL(expr) => wherebuf append s"($expr)"
+        case VariableExpressionOQL(ids) =>
+          wherebuf append reference(resource.name, resentity, ids, joinbuf)
+//          val ns = ids map (_.name)
+//          val entity = (resource.name :: ns.init).reverse mkString "$"
+//          val vselect = s"$entity.${ns.last}"
+//
+//          if (!entityset(entity)) {
+//            problem(
+//              v.pos,
+//              s"object not found: ${(resource.name :: ns.init) mkString "."}")
+//          }
+//
+//          sql append vselect
 
-          if (!entityset(entity)) {
-            problem(
-              v.pos,
-              s"object not found: ${(resource.name :: ns.init) mkString "."}")
-          }
-
-          sql append vselect
-
-          //
-
-          val joinbuf = new ListBuffer[(String, String, String, String, String)]
-          println(reference(resource.name, resentity, ids, joinbuf))
-          println(joinbuf)
       }
+
+    if (select isDefined)
+      where(select.get)
+
+    for ((lt, lf, rt, rta, rf) <- joinbuf.toSet)
+      sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
+
+    sql append '\n'
 
     if (select isDefined) {
       sql append "  WHERE "
-      where(select.get)
+      sql append wherebuf
       sql append '\n'
     }
 
-    //print(sql)
+    print(sql)
+
     val res =
       conn
         .executeSQLStatement(sql.toString)

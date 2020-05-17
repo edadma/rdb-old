@@ -111,7 +111,7 @@ class OQLParser extends RegexParsers {
     "(" ~> (integer ~ "," ~ opt(integer)) <~ ")" ^^ {
       case b ~ _ ~ e => (Some(b.n.toInt), e map (_.n.toInt))
     } |
-      "(" ~> "," ~> integer <~ ")" ^^ (e => (None, Some(e)))
+      "(" ~> "," ~> integer <~ ")" ^^ (e => (None, Some(e.n.toInt)))
 
   def parseFromString[T](src: String, grammar: Parser[T]) =
     parseAll(grammar, new CharSequenceReader(src)) match {
