@@ -40,7 +40,7 @@ class ERModel(defn: String) {
                 }
 
               attrs += (attr.name -> fieldtype)
-              columns += attr.name
+              columns += column.name
             }
             if (pk) {
               if (epk ne null)
@@ -48,7 +48,7 @@ class ERModel(defn: String) {
                   attr.pos,
                   "there is already a primary key defined for this entity")
               else
-                epk = attr.name
+                epk = column.name
             }
           }
 

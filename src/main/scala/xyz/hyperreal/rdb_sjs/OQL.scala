@@ -135,17 +135,17 @@ class OQL(erd: String) {
             case None =>
               problem(attr.pos,
                       s"$entityname doesn't have attribute '${attr.name}'")
-            case Some(_: PrimitiveEntityAttribute) =>
-              s"${attrlist mkString "$"}.${attr.name}"
+            case Some(PrimitiveEntityAttribute(column, _)) =>
+              s"${attrlist mkString "$"}.$column"
             case Some(ObjectEntityAttribute(column, entityType, entity)) =>
               if (tail == Nil)
                 problem(attr.pos,
                         s"attribute '${attr.name}' has non-primitive data type")
               else {
-                val attrlist1 = attr.name :: attrlist
+                val attrlist1 = column :: attrlist
 
                 joinbuf += ((attrlist mkString "$",
-                             attr.name,
+                             column,
                              entityType,
                              attrlist1 mkString "$",
                              entity.pk.get))
