@@ -29,7 +29,7 @@ class OQL(erd: String) {
   private val model = new ERModel(erd)
 
   def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
-    val OQLQuery(resource, project, select, order, group) =
+    val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(s)
 
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
