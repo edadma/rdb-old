@@ -95,12 +95,16 @@ class OQL(erd: String) {
     res.toList map (build(_, res.metadata, graph))
   }
 
+  private def reference(
+      ids: List[Ident],
+      joinbuf: ListBuffer[(String, String, String, String, String)]) = {}
+
   private def branches(
       entity: String,
       pos: Position,
       project: ProjectExpressionOQL,
       joinbuf: ListBuffer[(String, String, String, String, String)],
-      attrbuf: List[String]): ObjectProjectionBranch = {
+      attrlist: List[String]): ObjectProjectionBranch = {
     val attrs =
       if (project == ProjectAllOQL) {
         model.list(entity, pos) map { case (k, v) => (k, v, ProjectAllOQL) }
@@ -116,18 +120,16 @@ class OQL(erd: String) {
       }
     ObjectProjectionBranch(attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
-        val e = attrbuf mkString "$"
-
-        PrimitiveProjectionNode(e, field, attr)
+        PrimitiveProjectionNode(attrlist mkString "$", field, attr)
       case (field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
           problem(
             pos,
             s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
-        val attrbuf1 = field :: attrbuf
+        val attrbuf1 = field :: attrlist
 
-        joinbuf += ((attrbuf mkString "$",
+        joinbuf += ((attrlist mkString "$",
                      field,
                      attr.entityType,
                      attrbuf1 mkString "$",
