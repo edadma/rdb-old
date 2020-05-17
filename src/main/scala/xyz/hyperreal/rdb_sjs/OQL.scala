@@ -2,10 +2,9 @@ package xyz.hyperreal.rdb_sjs
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.parsing.input.Position
 import scala.scalajs.js
 import js.JSConverters._
-import scala.scalajs.js.JSON
+import js.JSON
 
 object OQL {
 
@@ -29,7 +28,11 @@ class OQL(erd: String) {
   private val model = new ERModel(erd)
 
   def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
-    val OQLQuery(resource, project, select, order, restrict) =
+    val OQLQuery(resource,
+                 project,
+                 select,
+                 order: Option[List[(ExpressionOQL, Boolean)]],
+                 restrict) =
       OQLParser.parseQuery(s)
     val entity = model.get(resource.name, resource.pos)
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -37,41 +40,15 @@ class OQL(erd: String) {
       branches(resource.name, entity, project, joinbuf, List(resource.name))
 
     val sql = new StringBuilder
-    val wherebuf = new StringBuilder
 
     sql append s"SELECT *\n"
     sql append s"  FROM ${resource.name}"
 
-    def where(expr: ExpressionOQL): Unit =
-      expr match {
-        case InfixExpressionOQL(left, op, right) =>
-          where(left)
-          wherebuf append s" $op "
-          where(right)
-        case PrefixExpressionOQL(op, expr) =>
-          wherebuf append s" $op"
-          where(expr)
-        case FloatLiteralOQL(n)         => wherebuf append n
-        case IntegerLiteralOQL(n)       => wherebuf append n
-        case StringLiteralOQL(s)        => wherebuf append s"'$s'"
-        case GroupedExpressionOQL(expr) => wherebuf append s"($expr)"
-        case VariableExpressionOQL(ids) =>
-          wherebuf append reference(resource.name, entity, ids, joinbuf)
-//          val ns = ids map (_.name)
-//          val entity = (resource.name :: ns.init).reverse mkString "$"
-//          val vselect = s"$entity.${ns.last}"
-//
-//          if (!entityset(entity)) {
-//            problem(
-//              v.pos,
-//              s"object not found: ${(resource.name :: ns.init) mkString "."}")
-//          }
-//
-//          sql append vselect
-      }
-
-    if (select isDefined)
-      where(select.get)
+    val where =
+      if (select isDefined)
+        expression(resource.name, entity, select.get, joinbuf)
+      else
+        null
 
     for ((lt, lf, rt, rta, rf) <- joinbuf.toSet)
       sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
@@ -80,7 +57,7 @@ class OQL(erd: String) {
 
     if (select isDefined) {
       sql append "  WHERE "
-      sql append wherebuf
+      sql append where
       sql append '\n'
     }
 
@@ -94,6 +71,34 @@ class OQL(erd: String) {
         .collect
 
     res.toList map (build(_, res.metadata, graph))
+  }
+
+  private def expression(
+      entityname: String,
+      entity: Entity,
+      expr: ExpressionOQL,
+      joinbuf: ListBuffer[(String, String, String, String, String)]) = {
+    val buf = new StringBuilder
+
+    def expression(expr: ExpressionOQL): Unit =
+      expr match {
+        case InfixExpressionOQL(left, op, right) =>
+          expression(left)
+          buf append s" $op "
+          expression(right)
+        case PrefixExpressionOQL(op, expr) =>
+          buf append s" $op"
+          expression(expr)
+        case FloatLiteralOQL(n)         => buf append n
+        case IntegerLiteralOQL(n)       => buf append n
+        case StringLiteralOQL(s)        => buf append s"'$s'"
+        case GroupedExpressionOQL(expr) => buf append s"($expr)"
+        case VariableExpressionOQL(ids) =>
+          buf append reference(entityname, entity, ids, joinbuf)
+      }
+
+    expression(expr)
+    buf.toString
   }
 
   private def reference(
