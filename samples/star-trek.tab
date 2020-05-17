@@ -14,7 +14,7 @@ species
  4                     Klingon     150                4                                    
 
 character
- char_id: integer, pk      name: text       home: integer, fk, planet, plan_id  spec_id: integer, fk, species, spec_id 
+ char_id: integer, pk      name: text       home: integer, fk, planet, plan_id  species: integer, fk, species, spec_id 
  1                     James Tiberius Kirk  1                                   1                                      
  2                     Spock                1                                   2                                      
  3                     Deanna Troi          1                                   3                                      

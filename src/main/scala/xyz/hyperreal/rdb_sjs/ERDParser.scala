@@ -130,7 +130,7 @@ entity movie_cast {
 entity director {
   dir_fname: text
   dir_lname: text
-  movies: [movie] <movie_direction>
+  movies: [movie] movie_direction
 }
 
 entity genres {
