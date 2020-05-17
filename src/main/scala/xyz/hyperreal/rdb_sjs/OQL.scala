@@ -96,8 +96,15 @@ class OQL(erd: String) {
   }
 
   private def reference(
-      ids: List[Ident],
-      joinbuf: ListBuffer[(String, String, String, String, String)]) = {}
+      joinbuf: ListBuffer[(String, String, String, String, String)],
+      ids: List[Ident]) = {
+    ids match {
+      case Nil =>
+      case attr :: tail =>
+        val ent = model.get(entity, pos)
+
+    }
+  }
 
   private def branches(
       entity: String,
