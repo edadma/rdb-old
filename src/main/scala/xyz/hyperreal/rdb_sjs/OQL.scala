@@ -31,7 +31,7 @@ class OQL(erd: String) {
   def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
     val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(s)
-
+    val resentity = model.get(resource.name, resource.pos)
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph =
       branches(resource.name,
@@ -76,6 +76,12 @@ class OQL(erd: String) {
           }
 
           sql append vselect
+
+          //
+
+          val joinbuf = new ListBuffer[(String, String, String, String, String)]
+          println(reference(resource.name, resentity, ids, joinbuf))
+          println(joinbuf)
       }
 
     if (select isDefined) {
@@ -96,14 +102,41 @@ class OQL(erd: String) {
   }
 
   private def reference(
+      entityname: String,
+      entity: Entity,
+      ids: List[Ident],
       joinbuf: ListBuffer[(String, String, String, String, String)],
-      ids: List[Ident]) = {
-    ids match {
-      case Nil =>
-      case attr :: tail =>
-        val ent = model.get(entity, pos)
+  ) = {
+    def reference(entityname: String,
+                  entity: Entity,
+                  ids: List[Ident],
+                  attrlist: List[String]): String =
+      ids match {
+        case attr :: tail =>
+          entity.attributes get attr.name match {
+            case None =>
+              problem(attr.pos,
+                      s"$entityname doesn't have attribute '${attr.name}'")
+            case Some(_: PrimitiveEntityAttribute) =>
+              s"${attrlist mkString "$"}.${attr.name}"
+            case Some(ObjectEntityAttribute(entityType, entity)) =>
+              if (tail == Nil)
+                problem(attr.pos,
+                        s"attribute '${attr.name}' has non-primitive data type")
+              else {
+                val attrlist1 = attr.name :: attrlist
 
-    }
+                joinbuf += ((attrlist mkString "$",
+                             attr.name,
+                             entityType,
+                             attrlist1 mkString "$",
+                             entity.pk.get))
+                reference(entityType, entity, tail, attrlist1)
+              }
+          }
+      }
+
+    reference(entityname, entity, ids, List(entityname))
   }
 
   private def branches(
@@ -134,17 +167,17 @@ class OQL(erd: String) {
             pos,
             s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
-        val attrbuf1 = field :: attrlist
+        val attrlist1 = field :: attrlist
 
         joinbuf += ((attrlist mkString "$",
                      field,
                      attr.entityType,
-                     attrbuf1 mkString "$",
+                     attrlist1 mkString "$",
                      attr.entity.pk.get))
         EntityProjectionNode(
           entity,
           field,
-          branches(attr.entityType, pos, project, joinbuf, attrbuf1)
+          branches(attr.entityType, pos, project, joinbuf, attrlist1)
         )
     })
   }

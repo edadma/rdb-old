@@ -22,8 +22,8 @@ class OQLParser extends RegexParsers {
     _.pos
   }
 
-  def integer: Parser[Int] =
-    positioned("""\d+""".r ^^ (_.toInt))
+  def integer: Parser[IntegerLiteralOQL] =
+    positioned("""\d+""".r ^^ IntegerLiteralOQL)
 
   def number: Parser[ExpressionOQL] =
     positioned("""\-?\d+(\.\d*)?""".r ^^ {
@@ -109,7 +109,7 @@ class OQLParser extends RegexParsers {
 
   def restrict =
     "(" ~> (integer ~ "," ~ opt(integer)) <~ ")" ^^ {
-      case b ~ _ ~ e => (Some(b), e)
+      case b ~ _ ~ e => (Some(b.n.toInt), e map (_.n.toInt))
     } |
       "(" ~> "," ~> integer <~ ")" ^^ (e => (None, Some(e)))
 
