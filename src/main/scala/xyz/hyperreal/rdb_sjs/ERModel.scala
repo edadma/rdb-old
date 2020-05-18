@@ -21,16 +21,11 @@ class ERModel(defn: String) {
     erDefinition.blocks foreach {
       case EntityBlockERD(entity, fields) =>
         var epk: String = null
-        val columns = new mutable.HashSet[String]
         var attrs = Map.empty[String, EntityAttribute]
 
         for (EntityFieldERD(attr, column, typ, pk) <- fields) {
-          if (columns(column.name))
-            problem(attr.pos,
-                    s"column '${column.name}' already exists for this entity'")
-          else if (attrs contains attr.name)
-            problem(attr.pos,
-                    s"attribute '${attr.name}' already exists for this entity'")
+          if (attrs contains attr.name)
+            problem(attr.pos, s"attribute '${attr.name}' already exists for this entity'")
           else {
             val fieldtype =
               typ match {
@@ -44,7 +39,15 @@ class ERModel(defn: String) {
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>
-                      ObjectArrayEntityAttribute(column.name, t, j)
+                      val ts = j.attributes.toList.filter(a =>
+                        a._2
+                          .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == t)
+
+                      ts.length match {
+                        case 0 => problem(junction.pos, s"does not contain an attribute of type '${typ.name}'")
+                        case 1 => ObjectArrayEntityAttribute(column.name, t, junction.name, j, ts.head._1)
+                        case _ => problem(junction.pos, s"contains more than one attribute of type '${typ.name}'")
+                      }
                     case (None, _) =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None) =>
@@ -53,12 +56,11 @@ class ERModel(defn: String) {
               }
 
             attrs += (attr.name -> fieldtype)
-            columns += column.name
           }
+
           if (pk) {
             if (epk ne null)
-              problem(attr.pos,
-                      "there is already a primary key defined for this entity")
+              problem(attr.pos, "there is already a primary key defined for this entity")
             else
               epk = column.name
           }
@@ -78,22 +80,18 @@ class ERModel(defn: String) {
       case Some(e) => e
     }
 
-  def list(table: String, pos: Position): Seq[(String, EntityAttribute)] =
-    get(table, pos).attributes.toList
+  def list(table: String, pos: Position): Seq[(String, EntityAttribute)] = get(table, pos).attributes.toList
 
 }
 
-class Entity(var pk: Option[String],
-             var attributes: Map[String, EntityAttribute])
+class Entity(var pk: Option[String], var attributes: Map[String, EntityAttribute])
 
 abstract class EntityAttribute
-case class PrimitiveEntityAttribute(column: String, primitiveType: String)
-    extends EntityAttribute
-case class ObjectEntityAttribute(column: String,
-                                 entityType: String,
-                                 entity: Entity)
-    extends EntityAttribute
+case class PrimitiveEntityAttribute(column: String, primitiveType: String) extends EntityAttribute
+case class ObjectEntityAttribute(column: String, entityType: String, entity: Entity) extends EntityAttribute
 case class ObjectArrayEntityAttribute(entityType: String,
                                       entity: Entity,
-                                      junction: Entity)
+                                      junctionType: String,
+                                      junction: Entity,
+                                      junctionAttr: String)
     extends EntityAttribute

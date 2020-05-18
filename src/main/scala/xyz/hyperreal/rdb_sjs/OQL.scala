@@ -69,7 +69,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    // print(sql)
 
     val res =
       conn
@@ -152,6 +152,7 @@ class OQL(erd: String) {
               problem(attr.attr.pos, s"unknown attribute: '${attr.attr.name}'")
             case Some(typ) => (attr.attr.name, typ, attr.project)
           })
+
     attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
         PrimitiveProjectionNode(attrlist mkString "$", field, attr)
@@ -162,38 +163,39 @@ class OQL(erd: String) {
         val attrlist1 = field :: attrlist
 
         joinbuf += ((attrlist mkString "$", field, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
-        EntityProjectionNode(
-          entityname,
-          field,
-          branches(attr.entityType, attr.entity, project, joinbuf, attrlist1)
-        )
-//      case (field,
-//            ObjectArrayEntityAttribute(entityType, entity, junction),
-//            project) =>
-//        val attrlist1 = field :: attrlist
-//        EntityArrayProjectionNode(
-//          null,
-//          null,
-//          null,
-//          s"${attrlist1 mkString "$"}.${attr.entity.pk.get}")
+        EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, joinbuf, attrlist1))
+      case (field, ObjectArrayEntityAttribute(entityType, entity, junctionType, junction), project) =>
+        val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
+
+        EntityArrayProjectionNode(field,
+                                  attrlist mkString "$",
+                                  entity.pk.get,
+                                  subjoinbuf,
+                                  branches(entityType, entity, project, subjoinbuf, List(entityType)))
     }
   }
 
   private def build(row: Tuple, md: Metadata, branches: Seq[ProjectionNode]) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
-        case EntityProjectionNode(table, field, branches) => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, typ)   => field -> row(md.tableColumnMap(table, field))
+        case EntityProjectionNode(field, branches)      => field -> build(branches)
+        case PrimitiveProjectionNode(table, field, typ) => field -> row(md.tableColumnMap(table, field))
+        case EntityArrayProjectionNode(field, tabpk, colpk, _, branches) =>
+          field -> s"$tabpk.$colpk=${row(md.tableColumnMap(tabpk, colpk))}, $branches"
       }) toMap
     }
 
     build(branches)
   }
 
-  abstract class ProjectionNode { val table: String; val field: String }
+  abstract class ProjectionNode { val field: String }
   case class PrimitiveProjectionNode(table: String, field: String, typ: EntityAttribute) extends ProjectionNode
-  case class EntityProjectionNode(table: String, field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
-  case class EntityArrayProjectionNode(table: String, field: String, branches: Seq[ProjectionNode])
+  case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
+  case class EntityArrayProjectionNode(field: String,
+                                       tabpk: String,
+                                       colpk: String,
+                                       subjoinbuf: ListBuffer[(String, String, String, String, String)],
+                                       branches: Seq[ProjectionNode])
       extends ProjectionNode
 
 }
