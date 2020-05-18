@@ -33,18 +33,17 @@ class OQL(erd: String) {
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, joinbuf, List(resource.name))
 
-    executeQuery(resource.name, project, select, order, restrict, entity, joinbuf, graph, conn)
+    executeQuery(resource.name, select, order, restrict, entity, joinbuf, graph, conn)
   }
 
   private def executeQuery(resource: String,
-                           project: ProjectExpressionOQL,
                            select: Option[ExpressionOQL],
                            order: Option[List[(ExpressionOQL, Boolean)]],
                            restrict: (Option[Int], Option[Int]),
                            entity: Entity,
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode],
-                           conn: Connection) = {
+                           conn: Connection): List[Map[String, Any]] = {
     val sql = new StringBuilder
 
     sql append s"SELECT *\n"
@@ -81,7 +80,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    // print(sql)
+    print(sql)
 
     val res =
       conn
@@ -90,7 +89,7 @@ class OQL(erd: String) {
         .relation
         .collect
 
-    res.toList map (build(_, res.metadata, graph))
+    res.toList map (build(_, res.metadata, graph, conn))
   }
 
   private def expression(entityname: String,
@@ -185,7 +184,7 @@ class OQL(erd: String) {
         val junctionAttr =
           ts.length match {
             case 0 => problem(null, s"does not contain an attribute of type '$entityType'")
-            case 1 => ts.head._1
+            case 1 => ts.head._2.asInstanceOf[ObjectEntityAttribute].column
             case _ => problem(null, s"contains more than one attribute of type '$entityType'")
           }
 
@@ -195,6 +194,7 @@ class OQL(erd: String) {
           entity.pk.get,
           subjoinbuf,
           junctionType,
+          junction,
           branches(junctionType,
                    junction,
                    ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
@@ -204,16 +204,28 @@ class OQL(erd: String) {
     }
   }
 
-  private def build(row: Tuple, md: Metadata, branches: Seq[ProjectionNode]) = {
+  private def build(row: Tuple, md: Metadata, branches: Seq[ProjectionNode], conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches)      => field -> build(branches)
         case PrimitiveProjectionNode(table, field, typ) => field -> row(md.tableColumnMap(table, field))
-        case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, branches) =>
-          val res = executeQuery()
+        case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, resource, entity, branches) =>
+          val res =
+            executeQuery(
+              resource,
+              Some(
+                InfixExpressionOQL(VariableExpressionOQL(List(Ident(tabpk), Ident(colpk))),
+                                   "=",
+                                   IntegerLiteralOQL(row(md.tableColumnMap(tabpk, colpk)).toString))),
+              None,
+              (None, None),
+              entity,
+              subjoinbuf,
+              branches,
+              conn
+            )
 
-          //
-          field -> s"$tabpk.$colpk=${row(md.tableColumnMap(tabpk, colpk))}, $branches, $subjoinbuf"
+          field -> res
       }) toMap
     }
 
@@ -227,6 +239,8 @@ class OQL(erd: String) {
                                        tabpk: String,
                                        colpk: String,
                                        subjoinbuf: ListBuffer[(String, String, String, String, String)],
+                                       resource: String,
+                                       entity: Entity,
                                        branches: Seq[ProjectionNode])
       extends ProjectionNode
 

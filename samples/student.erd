@@ -10,6 +10,6 @@ entity student {
 }
 
 entity enrollment {
-  student (id): student
-  class (id): class
+  student (studentid): student
+  class (classid): class
 }
