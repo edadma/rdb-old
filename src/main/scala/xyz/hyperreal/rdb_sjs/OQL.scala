@@ -33,20 +33,32 @@ class OQL(erd: String) {
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, joinbuf, List(resource.name))
 
+    executeQuery(resource.name, project, select, order, restrict, entity, joinbuf, graph, conn)
+  }
+
+  private def executeQuery(resource: String,
+                           project: ProjectExpressionOQL,
+                           select: Option[ExpressionOQL],
+                           order: Option[List[(ExpressionOQL, Boolean)]],
+                           restrict: (Option[Int], Option[Int]),
+                           entity: Entity,
+                           joinbuf: ListBuffer[(String, String, String, String, String)],
+                           graph: Seq[ProjectionNode],
+                           conn: Connection) = {
     val sql = new StringBuilder
 
     sql append s"SELECT *\n"
-    sql append s"  FROM ${resource.name}"
+    sql append s"  FROM $resource"
 
     val where =
       if (select isDefined)
-        expression(resource.name, entity, select.get, joinbuf)
+        expression(resource, entity, select.get, joinbuf)
       else
         null
     val orderby =
       if (order isDefined)
         order.get map {
-          case (e, o) => s"(${expression(resource.name, entity, e, joinbuf)}) ${if (o) "ASC" else "DESC"}"
+          case (e, o) => s"(${expression(resource, entity, e, joinbuf)}) ${if (o) "ASC" else "DESC"}"
         } mkString ", "
       else
         null
@@ -182,6 +194,7 @@ class OQL(erd: String) {
           attrlist mkString "$",
           entity.pk.get,
           subjoinbuf,
+          junctionType,
           branches(junctionType,
                    junction,
                    ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
@@ -197,6 +210,9 @@ class OQL(erd: String) {
         case EntityProjectionNode(field, branches)      => field -> build(branches)
         case PrimitiveProjectionNode(table, field, typ) => field -> row(md.tableColumnMap(table, field))
         case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, branches) =>
+          val res = executeQuery()
+
+          //
           field -> s"$tabpk.$colpk=${row(md.tableColumnMap(tabpk, colpk))}, $branches, $subjoinbuf"
       }) toMap
     }
