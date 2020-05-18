@@ -11,20 +11,14 @@ object Main extends App {
   }
 
   val conn = new Connection {
-//    load(readFile("samples/student.tab"), doubleSpaces = true)
-    load(readFile("samples/star_trek.tab"), doubleSpaces = true)
+    load(readFile("samples/student.tab"), doubleSpaces = true)
+//    load(readFile("samples/star_trek.tab"), doubleSpaces = true)
   }
-//  val res =
-//    Testing.sqlQuery(
-//      "select spec_id, lifespan, lifespan/spec_id from species order by (lifespan/spec_id) desc",
-//      conn)
-//
-//  println(res)
 
-//  val oql = new OQL(readFile("samples/student.erd"))
-//  val res = oql.query("student", conn)
-  val oql = new OQL(readFile("samples/star_trek.erd"))
-  val res = oql.query("character [species.lifespan < 150] <home.name>", conn)
+  val oql = new OQL(readFile("samples/student.erd"))
+  val res = oql.query("student", conn)
+//  val oql = new OQL(readFile("samples/star_trek.erd"))
+//  val res = oql.query("character [species.lifespan < 150] <home.name>", conn)
   println(OQL.pretty(res))
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =

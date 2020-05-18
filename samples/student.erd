@@ -1,11 +1,11 @@
 entity class {
- *classid: integer
-  classname: text
+ *id: integer
+  name: text
 }
 
 entity student {
- *studentid: integer
-  studentname: text
+ *id: integer
+  name: text
   classes: [class] enrollment
 }
 

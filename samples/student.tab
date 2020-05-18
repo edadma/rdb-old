@@ -1,19 +1,19 @@
 student
- studentid: integer, pk  studentname: text 
- 1                       John              
- 2                       Debbie            
+ id: integer, pk  name: text 
+ 1                John       
+ 2                Debbie     
 
 class
- classid: integer, pk   classname: text   
- 1                     English            
- 2                     Maths              
- 3                     Spanish            
- 4                     Biology            
- 5                     Science            
- 6                     Programming        
- 7                     Law                
- 8                     Commerce           
- 9                     Physical Education 
+ id: integer, pk      name: text     
+ 1                English            
+ 2                Maths              
+ 3                Spanish            
+ 4                Biology            
+ 5                Science            
+ 6                Programming        
+ 7                Law                
+ 8                Commerce           
+ 9                Physical Education 
 
 enrollment
  studentid: integer, fk, student, studentid  classid: integer, fk, class, classid 
