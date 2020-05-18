@@ -181,15 +181,10 @@ class OQL(erd: String) {
 
   private def build(row: Tuple, md: Metadata, branches: Seq[ProjectionNode]) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
-      val obj = new mutable.LinkedHashMap[String, Any]
-
-      for (f <- branches)
-        f match {
-          case EntityProjectionNode(table, field, branches) => obj(field) = build(branches)
-          case PrimitiveProjectionNode(table, field, typ)   => obj(field) = row(md.tableColumnMap(table, field))
-        }
-
-      obj.toMap
+      (branches map {
+        case EntityProjectionNode(table, field, branches) => field -> build(branches)
+        case PrimitiveProjectionNode(table, field, typ)   => field -> row(md.tableColumnMap(table, field))
+      }) toMap
     }
 
     build(branches)
