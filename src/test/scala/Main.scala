@@ -11,7 +11,7 @@ object Main extends App {
   }
 
   val conn = new Connection {
-    load(readFile("samples/star-trek.tab"), doubleSpaces = true)
+    load(readFile("samples/student.tab"), doubleSpaces = true)
   }
 //  val res =
 //    Testing.sqlQuery(
@@ -20,12 +20,11 @@ object Main extends App {
 //
 //  println(res)
 
-  val oql = new OQL(readFile("samples/star-trek.erd"))
+  val oql = new OQL(readFile("samples/student.erd"))
   val res =
     //    oql.query("character { name species { origin { name } } } [name = 'Spock']",
     //              conn)
-    oql.query("character { name } [species.origin.name != 'Earth'] <name>",
-              conn)
+    oql.query("student", conn)
   println(OQL.pretty(res))
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =

@@ -28,6 +28,8 @@ case class OrExpressionERD(left: ExpressionERD, right: ExpressionERD)
 
 abstract class TypeSpecifierERD extends ERDAST with Positional
 case class SimpleTypeERD(typ: Ident) extends TypeSpecifierERD
+case class JunctionArrayTypeERD(typ: Ident, junction: Ident)
+    extends TypeSpecifierERD
 
 case class EntityBlockERD(entity: Ident, fields: List[EntityFieldERD])
     extends BlockERD

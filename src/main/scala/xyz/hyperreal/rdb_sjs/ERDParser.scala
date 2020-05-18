@@ -86,7 +86,11 @@ class ERDParser extends RegexParsers {
         EntityFieldERD(n, if (a isDefined) a.get else n, t, pk isDefined)
     }
 
-  def typeSpec: Parser[TypeSpecifierERD] = ident ^^ SimpleTypeERD
+  def typeSpec: Parser[TypeSpecifierERD] =
+    ident ^^ SimpleTypeERD |
+      ("[" ~> ident <~ "]") ~ ident ^^ {
+        case e ~ j => JunctionArrayTypeERD(e, j)
+      }
 
   def parseFromString[T](src: String, grammar: Parser[T]): T =
     parseAll(grammar, new CharSequenceReader(src)) match {
