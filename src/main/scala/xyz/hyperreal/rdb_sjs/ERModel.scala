@@ -39,15 +39,7 @@ class ERModel(defn: String) {
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>
-                      val ts = j.attributes.toList.filter(a =>
-                        a._2
-                          .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == t)
-
-                      ts.length match {
-                        case 0 => problem(junction.pos, s"does not contain an attribute of type '${typ.name}'")
-                        case 1 => ObjectArrayEntityAttribute(column.name, t, junction.name, j, ts.head._1)
-                        case _ => problem(junction.pos, s"contains more than one attribute of type '${typ.name}'")
-                      }
+                      ObjectArrayEntityAttribute(column.name, t, junction.name, j)
                     case (None, _) =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None) =>
@@ -89,9 +81,5 @@ class Entity(var pk: Option[String], var attributes: Map[String, EntityAttribute
 abstract class EntityAttribute
 case class PrimitiveEntityAttribute(column: String, primitiveType: String) extends EntityAttribute
 case class ObjectEntityAttribute(column: String, entityType: String, entity: Entity) extends EntityAttribute
-case class ObjectArrayEntityAttribute(entityType: String,
-                                      entity: Entity,
-                                      junctionType: String,
-                                      junction: Entity,
-                                      junctionAttr: String)
+case class ObjectArrayEntityAttribute(entityType: String, entity: Entity, junctionType: String, junction: Entity)
     extends EntityAttribute

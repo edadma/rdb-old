@@ -158,7 +158,7 @@ class OQL(erd: String) {
         PrimitiveProjectionNode(attrlist mkString "$", field, attr)
       case (field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
-          problem(null, s"entity '${attr.entityType}' is referenced as a type but has no primary key") // todo: entities that are being referenced should have a primary key
+          problem(null, s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
         val attrlist1 = field :: attrlist
 
@@ -166,12 +166,28 @@ class OQL(erd: String) {
         EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, joinbuf, attrlist1))
       case (field, ObjectArrayEntityAttribute(entityType, entity, junctionType, junction), project) =>
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
+        val ts = junction.attributes.toList.filter(
+          a =>
+            a._2
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+        val junctionAttr =
+          ts.length match {
+            case 0 => problem(null, s"does not contain an attribute of type '$entityType'")
+            case 1 => ts.head._1
+            case _ => problem(null, s"contains more than one attribute of type '$entityType'")
+          }
 
-        EntityArrayProjectionNode(field,
-                                  attrlist mkString "$",
-                                  entity.pk.get,
-                                  subjoinbuf,
-                                  branches(entityType, entity, project, subjoinbuf, List(entityType)))
+        EntityArrayProjectionNode(
+          field,
+          attrlist mkString "$",
+          entity.pk.get,
+          subjoinbuf,
+          branches(junctionType,
+                   junction,
+                   ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
+                   subjoinbuf,
+                   List(junctionType))
+        )
     }
   }
 
@@ -180,8 +196,8 @@ class OQL(erd: String) {
       (branches map {
         case EntityProjectionNode(field, branches)      => field -> build(branches)
         case PrimitiveProjectionNode(table, field, typ) => field -> row(md.tableColumnMap(table, field))
-        case EntityArrayProjectionNode(field, tabpk, colpk, _, branches) =>
-          field -> s"$tabpk.$colpk=${row(md.tableColumnMap(tabpk, colpk))}, $branches"
+        case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, branches) =>
+          field -> s"$tabpk.$colpk=${row(md.tableColumnMap(tabpk, colpk))}, $branches, $subjoinbuf"
       }) toMap
     }
 
