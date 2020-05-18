@@ -55,7 +55,7 @@ class OQL(erd: String) {
       else
         null
 
-    val joins = joinbuf.toSet.toList
+    val joins = joinbuf.distinct
 
     if (joins nonEmpty) {
       val (lt, lf, rt, rta, rf) = joins.head
@@ -67,17 +67,11 @@ class OQL(erd: String) {
     } else
       sql append '\n'
 
-    if (select isDefined) {
-      sql append "  WHERE "
-      sql append where
-      sql append '\n'
-    }
+    if (select isDefined)
+      sql append s"  WHERE $where\n"
 
-    if (order isDefined) {
-      sql append "  ORDER BY "
-      sql append orderby
-      sql append '\n'
-    }
+    if (order isDefined)
+      sql append s"  ORDER BY $orderby\n"
 
     print(sql)
 
