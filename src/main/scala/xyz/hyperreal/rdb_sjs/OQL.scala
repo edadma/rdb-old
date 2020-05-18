@@ -173,7 +173,7 @@ class OQL(erd: String) {
 
         val attrlist1 = field :: attrlist
 
-        joinbuf += ((attrlist mkString "$", field, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
+        joinbuf += ((attrlist mkString "$", attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
         EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, joinbuf, attrlist1))
       case (field, ObjectArrayEntityAttribute(entityType, entity, junctionType, junction), project) =>
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -184,10 +184,11 @@ class OQL(erd: String) {
         val junctionAttr =
           ts.length match {
             case 0 => problem(null, s"does not contain an attribute of type '$entityType'")
-            case 1 => ts.head._2.asInstanceOf[ObjectEntityAttribute].column
+            case 1 => ts.head._1 //_2.asInstanceOf[ObjectEntityAttribute].column
             case _ => problem(null, s"contains more than one attribute of type '$entityType'")
           }
 
+        println(junctionAttr)
         EntityArrayProjectionNode(
           field,
           attrlist mkString "$",
@@ -226,6 +227,7 @@ class OQL(erd: String) {
             )
 
           field -> res
+//          field -> ""
       }) toMap
     }
 
