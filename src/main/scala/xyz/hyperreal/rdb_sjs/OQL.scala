@@ -79,7 +79,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    //print(sql)
+    print(sql)
 
     val res =
       conn
@@ -183,9 +183,9 @@ class OQL(erd: String) {
               .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == attrEntity)
         val junctionAttr =
           ts.length match {
-            case 0 => problem(null, s"does not contain an attribute of type '$entityType'")
+            case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
             case 1 => ts.head._1 //_2.asInstanceOf[ObjectEntityAttribute].column
-            case _ => problem(null, s"contains more than one attribute of type '$entityType'")
+            case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
           }
         val es = junction.attributes.toList.filter(
           a =>

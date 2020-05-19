@@ -7,7 +7,7 @@ entity movie {
   mov_dt_rel: date
   mov_rel_country: text
   cast: [actor] movie_cast
-  ratings: [rating] rating
+  ;ratings: [rating] rating
   directors: [director] movie_direction
   genres: [genre] movie_genres
 }
