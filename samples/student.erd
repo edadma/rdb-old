@@ -1,6 +1,7 @@
 entity class {
  *id: integer
   name: text
+  students: [student] enrollment
 }
 
 entity student {

@@ -155,13 +155,14 @@ class OQL(erd: String) {
     val attrs =
       if (project == ProjectAllOQL) {
         entity.attributes map { case (k, v) => (k, v, ProjectAllOQL) } toList
-      } else
+      } else {
         project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
           entity.attributes get attr.attr.name match {
             case None =>
               problem(attr.attr.pos, s"unknown attribute: '${attr.attr.name}'")
             case Some(typ) => (attr.attr.name, typ, attr.project)
           })
+      }
 
     attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
@@ -200,7 +201,7 @@ class OQL(erd: String) {
         EntityArrayProjectionNode(
           field,
           attrlist mkString "$",
-          attrEntity.pk.get,
+          entity.pk.get, // used to be attrEntity.pk.get
           subjoinbuf,
           junctionType,
           column,

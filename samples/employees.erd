@@ -3,6 +3,10 @@ entity employee {
   emp_name: text
   job_name: text
   manager (manager_id): employee
+  hire_date: date
+  salary: currency
+  commission: text
+  department (dep_id): department
 }
 
 entity department {
