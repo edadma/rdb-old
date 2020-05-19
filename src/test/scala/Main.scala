@@ -16,7 +16,7 @@ object Main extends App {
   }
 
   val oql = new OQL(readFile("samples/student.erd"))
-  val res = oql.query("student { id classes { name } }", conn)
+  val res = oql.query("student { id classes }", conn)
 //  val oql = new OQL(readFile("samples/star_trek.erd"))
 //  val res = oql.query("character [species.lifespan < 150] <home.name>", conn)
   println(OQL.pretty(res))

@@ -1,6 +1,5 @@
 package xyz.hyperreal.rdb_sjs
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.scalajs.js
 import js.JSConverters._
@@ -80,7 +79,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    //print(sql)
 
     val res =
       conn
@@ -100,6 +99,7 @@ class OQL(erd: String) {
 
     def expression(expr: ExpressionOQL): Unit =
       expr match {
+        case EqualsExpressionOQL(table, column, value) => buf append s"$table.$column = $value"
         case InfixExpressionOQL(left, op, right) =>
           expression(left)
           buf append s" $op "
@@ -111,8 +111,7 @@ class OQL(erd: String) {
         case IntegerLiteralOQL(n)       => buf append n
         case StringLiteralOQL(s)        => buf append s"'$s'"
         case GroupedExpressionOQL(expr) => buf append s"($expr)"
-        case VariableExpressionOQL(ids) =>
-          buf append reference(entityname, entity, ids, joinbuf)
+        case VariableExpressionOQL(ids) => buf append reference(entityname, entity, ids, joinbuf)
       }
 
     expression(expr)
@@ -175,26 +174,36 @@ class OQL(erd: String) {
 
         joinbuf += ((attrlist mkString "$", attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
         EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, joinbuf, attrlist1))
-      case (field, ObjectArrayEntityAttribute(entityType, entity, junctionType, junction), project) =>
+      case (field, ObjectArrayEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
           a =>
             a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == attrEntity)
         val junctionAttr =
           ts.length match {
             case 0 => problem(null, s"does not contain an attribute of type '$entityType'")
             case 1 => ts.head._1 //_2.asInstanceOf[ObjectEntityAttribute].column
             case _ => problem(null, s"contains more than one attribute of type '$entityType'")
           }
+        val es = junction.attributes.toList.filter(
+          a =>
+            a._2
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+        val column =
+          es.length match {
+            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+          }
 
-        println(junctionAttr)
         EntityArrayProjectionNode(
           field,
           attrlist mkString "$",
-          entity.pk.get,
+          attrEntity.pk.get,
           subjoinbuf,
           junctionType,
+          column,
           junction,
           branches(junctionType,
                    junction,
@@ -210,14 +219,11 @@ class OQL(erd: String) {
       (branches map {
         case EntityProjectionNode(field, branches)      => field -> build(branches)
         case PrimitiveProjectionNode(table, field, typ) => field -> row(md.tableColumnMap(table, field))
-        case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, resource, entity, branches) =>
+        case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, resource, column, entity, branches) =>
           val res =
             executeQuery(
               resource,
-              Some(
-                InfixExpressionOQL(VariableExpressionOQL(List(Ident(tabpk), Ident(colpk))),
-                                   "=",
-                                   IntegerLiteralOQL(row(md.tableColumnMap(tabpk, colpk)).toString))),
+              Some(EqualsExpressionOQL(resource, column, row(md.tableColumnMap(tabpk, colpk)).toString)),
               None,
               (None, None),
               entity,
@@ -242,6 +248,7 @@ class OQL(erd: String) {
                                        colpk: String,
                                        subjoinbuf: ListBuffer[(String, String, String, String, String)],
                                        resource: String,
+                                       column: String,
                                        entity: Entity,
                                        branches: Seq[ProjectionNode])
       extends ProjectionNode
