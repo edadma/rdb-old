@@ -79,7 +79,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    //print(sql)
 
     val res =
       conn
