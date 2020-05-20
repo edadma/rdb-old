@@ -11,18 +11,19 @@ object Main extends App {
   }
 
   val conn = new Connection {
-    load(readFile("samples/movie.tab"), doubleSpaces = true)
-//    load(readFile("samples/student.tab"), doubleSpaces = true)
+//    load(readFile("samples/movie.tab"), doubleSpaces = true)
+    load(readFile("samples/student.tab"), doubleSpaces = true)
 //    load(readFile("samples/star_trek.tab"), doubleSpaces = true)
   }
 
-  val oql = new OQL(readFile("samples/movie.erd"))
-  val res = oql.query("movie { mov_title cast { act_fname } directors { dir_fname dir_lname } }", conn) // ratings { rev_stars }
-//  val oql = new OQL(readFile("samples/student.erd"))
+//  val oql = new OQL(readFile("samples/movie.erd"))
+//  val res = oql.query("movie { mov_title cast { act_fname } directors { dir_fname dir_lname } }", conn) // ratings { rev_stars }
+  val oql = new OQL(readFile("samples/student.erd"))
 //  val res = oql.query("student { id classes { name } }", conn)
-//  val res = oql.query("class { name students { name } }", conn)
+  val res = oql.query("class {name students.name}", conn)
 //  val res = oql.query("enrollment { student { name } class { name } }", conn)
 //  val oql = new OQL(readFile("samples/star_trek.erd"))
+//  val res = oql.query("character.name [species.name = 'Human'] <name>", conn)
 //  val res = oql.query("character [species.lifespan < 150] <home.name>", conn)
   println(OQL.pretty(res))
 //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
