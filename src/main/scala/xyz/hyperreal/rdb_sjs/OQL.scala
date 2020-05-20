@@ -89,8 +89,9 @@ class OQL(erd: String) {
         .asInstanceOf[RelationResult]
         .relation
         .collect
+    val projectmap = projectbuf.zipWithIndex.toMap
 
-    res.toList map (build(_, res.metadata, graph, conn))
+    res.toList map (build(_, projectmap, graph, conn))
   }
 
   private def expression(entityname: String,
@@ -226,11 +227,14 @@ class OQL(erd: String) {
     }
   }
 
-  private def build(row: Tuple, md: Metadata, branches: Seq[ProjectionNode], conn: Connection) = {
+  private def build(row: Tuple,
+                    projectmap: Map[(String, String), Int],
+                    branches: Seq[ProjectionNode],
+                    conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches)      => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, typ) => field -> row(md.tableColumnMap(table, field))
+        case PrimitiveProjectionNode(table, field, typ) => field -> row(projectmap(table, field))
         case EntityArrayProjectionNode(field,
                                        tabpk,
                                        colpk,
@@ -243,7 +247,7 @@ class OQL(erd: String) {
           val res =
             executeQuery(
               resource,
-              Some(EqualsExpressionOQL(resource, column, row(md.tableColumnMap(tabpk, colpk)).toString)),
+              Some(EqualsExpressionOQL(resource, column, row(projectmap(tabpk, colpk)).toString)),
               None,
               (None, None),
               entity,
