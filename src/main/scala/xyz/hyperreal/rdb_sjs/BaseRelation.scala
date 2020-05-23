@@ -2,8 +2,7 @@ package xyz.hyperreal.rdb_sjs
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
 
-class BaseRelation(val name: String, definition: Seq[BaseRelationColumn])
-    extends AbstractRelation {
+class BaseRelation(val name: String, definition: Seq[BaseRelationColumn]) extends AbstractRelation {
 
   private val rows = new ArrayBuffer[Array[Any]]
 
@@ -34,9 +33,7 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn])
     count
   }
 
-  def update(conn: Connection,
-             cond: LogicalResult,
-             updates: List[(Int, ValueResult)]) = {
+  def update(conn: Connection, cond: LogicalResult, updates: List[(Int, ValueResult)]) = {
     var count = 0
 
     for (i <- rows.length - 1 to 0 by -1)
@@ -53,24 +50,24 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn])
     var auto = Map.empty[String, Any]
 
     for (((r, d), i) <- (row zip definition) zipWithIndex) {
-      if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains(
-            PrimaryKey)))
+      if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains(PrimaryKey)))
         sys.error(s"column '${d.column}' of table '${d.table}' is unmarkable")
 
       d.constraint match {
         case Some(PrimaryKey) if indexes(i) contains r => return None
         case Some(Unique) if indexes(i) contains r =>
-          sys.error(
-            s"Uniqueness constraint violation: $r exists in column ${d.column}")
+          sys.error(s"Uniqueness constraint violation: $r exists in column ${d.column}")
         case Some(ForeignKey(table, column)) =>
-          if (!table.exists(t => t(column) == r))
+          if (r != null && !table.exists(t => t(column) == r)) { //todo: "r != null" should be checking for a mark not a null, should be done correctly
             sys.error(
               s"referential integrity violation: $r does not exist in ${table.name}(${table.metadata.header(column).column})")
+          }
         case _ =>
       }
 
-      if (indexes(i) ne null)
+      if ((indexes(i) ne null) && r != null) { // todo: handle null foreign keys correctly
         indexes(i)(r) = rows.length
+      }
 
       if (d.auto)
         auto += (d.column -> r)

@@ -23,8 +23,7 @@ class Connection {
         case _          => Type.names(t)
       }
 
-    for (Table(name, header, data) <- Importer.importFromString(data,
-                                                                doubleSpaces)) {
+    for (Table(name, header, data) <- Importer.importFromString(data, doubleSpaces)) {
       val t =
         createTable(
           name,
@@ -32,12 +31,7 @@ class Connection {
             case ImpColumn(cname, typ, Nil) =>
               BaseRelationColumn(name, cname, types(typ), None, false, false)
             case ImpColumn(cname, typ, List("pk")) =>
-              BaseRelationColumn(name,
-                                 cname,
-                                 types(typ),
-                                 Some(PrimaryKey),
-                                 false,
-                                 false)
+              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), false, false)
             case ImpColumn(cname, typ, List("fk", tref, cref)) =>
               baseRelations get tref match {
                 case None => sys.error(s"unknown table: $tref")
@@ -47,15 +41,9 @@ class Connection {
                     case Some(col) =>
                       tab.metadata.baseRelationHeader(col).constraint match {
                         case Some(PrimaryKey | Unique) =>
-                          BaseRelationColumn(name,
-                                             cname,
-                                             types(typ),
-                                             Some(ForeignKey(tab, col)),
-                                             false,
-                                             false)
+                          BaseRelationColumn(name, cname, types(typ), Some(ForeignKey(tab, col)), false, false)
                         case _ =>
-                          sys.error(
-                            s"target column must be a primary key or unique: $cref")
+                          sys.error(s"target column must be a primary key or unique: $cref")
                       }
                   }
               }
@@ -115,8 +103,7 @@ class Connection {
           }
 
         if (!pk)
-          problem(table.pos,
-                  "one of the columns must be declared to be the primary key")
+          problem(table.pos, "one of the columns must be declared to be the primary key")
 
         val header =
           columns map {
@@ -138,9 +125,7 @@ class Connection {
                             case Some(PrimaryKey | Unique) =>
                               Some(ForeignKey(t, c))
                             case _ =>
-                              problem(
-                                fkc.pos,
-                                "target column must be a primary key or unique")
+                              problem(fkc.pos, "target column must be a primary key or unique")
                           }
                       }
                   }
@@ -181,10 +166,8 @@ class Connection {
                   .isInstanceOf[Mark]
             } match {
               case None =>
-              case Some(
-                  ((BaseRelationColumn(table, column, _, _, _, _), _), e)) =>
-                problem(e.pos,
-                        s"column '$column' of table '$table' is unmarkable")
+              case Some(((BaseRelationColumn(table, column, _, _, _, _), _), e)) =>
+                problem(e.pos, s"column '$column' of table '$table' is unmarkable")
             }
 
             b.insertRow(t) match {
@@ -237,8 +220,7 @@ class Connection {
                   b.metadata.columnMap get col.name match {
                     case None => problem(col.pos, "unknown column")
                     case Some(ind) =>
-                      (ind,
-                       evalExpression(AFUseNotAllowed, List(b.metadata), expr))
+                      (ind, evalExpression(AFUseNotAllowed, List(b.metadata), expr))
                   }
                 }
 
@@ -251,9 +233,7 @@ class Connection {
         TupleseqResult(evalTupleseq(null, t, Nil))
     }
 
-  def evalTupleseq(types: Array[Type],
-                   tupleseq: TupleseqExpression,
-                   context: List[Metadata]): Tupleseq = {
+  def evalTupleseq(types: Array[Type], tupleseq: TupleseqExpression, context: List[Metadata]): Tupleseq = {
     tupleseq match {
       case TupleseqLit(data) =>
         val types1 =
@@ -303,8 +283,7 @@ class Connection {
     row toVector
   }
 
-  def evalTupleList(types: Array[Type],
-                    data: List[TupleExpression]): List[Tuple] = {
+  def evalTupleList(types: Array[Type], data: List[TupleExpression]): List[Tuple] = {
     val body = new ArrayBuffer[Tuple]
 
     for (t @ TupleExpression(r) <- data)
@@ -313,8 +292,7 @@ class Connection {
     body.toList
   }
 
-  def evalRelation(ast: RelationExpression,
-                   context: List[Metadata]): Relation = {
+  def evalRelation(ast: RelationExpression, context: List[Metadata]): Relation = {
     ast match {
       case SortedRelationExpression(relation, exprs) =>
         val rel = evalRelation(relation, context)
@@ -326,63 +304,40 @@ class Connection {
           }
 
         rel.sort(this, es)
-      case GroupingRelationExpression(relation,
-                                      discriminator,
-                                      filter,
-                                      cpos,
-                                      columns) =>
+      case GroupingRelationExpression(relation, discriminator, filter, cpos, columns) =>
         val rel = evalRelation(relation, context) //todo (nested): don't know if this is right
         val disafuse = AFUseOrField(NoFieldOrAFUsed)
-        val dis = discriminator map (evalExpression(disafuse,
-                                                    rel.metadata :: context,
-                                                    _)) toVector
-        val dismetadata = new Metadata(
-          dis map (c => SimpleColumn(c.table, c.heading, c.typ))) :: context
+        val dis = discriminator map (evalExpression(disafuse, rel.metadata :: context, _)) toVector
+        val dismetadata = new Metadata(dis map (c => SimpleColumn(c.table, c.heading, c.typ))) :: context
         val filtafuse = AFUseOrField(NoFieldOrAFUsed)
-        val filt = filter map (evalLogical(filtafuse,
-                                           dismetadata,
-                                           rel.metadata,
-                                           _))
+        val filt = filter map (evalLogical(filtafuse, dismetadata, rel.metadata, _))
         val colafuse = AFUseOrField(NoFieldOrAFUsed)
-        val cols = columns map (evalExpression(colafuse,
-                                               dismetadata,
-                                               rel.metadata,
-                                               _)) toVector
+        val cols = columns map (evalExpression(colafuse, dismetadata, rel.metadata, _)) toVector
 
         if (cols isEmpty)
           problem(cpos, "at least one expression must be given for grouping")
 
-        new GroupingRelation(this,
-                             rel,
-                             disafuse.state,
-                             dis,
-                             filtafuse.state,
-                             filt,
-                             colafuse.state,
-                             cols)
+        new GroupingRelation(this, rel, disafuse.state, dis, filtafuse.state, filt, colafuse.state, cols)
       case ProjectionRelationExpression(relation, columns) =>
         val rel = evalRelation(relation, context)
         val afuse = AFUseOrField(NoFieldOrAFUsed)
 
         new ProjectionRelation(this,
                                rel,
-                               columns map (evalExpression(
-                                 afuse,
-                                 rel.metadata :: context,
-                                 _)) toVector,
+                               columns map (evalExpression(afuse, rel.metadata :: context, _)) toVector,
                                afuse.state)
       case InnerJoinRelationExpression(left, condition, right) =>
         val lrel = evalRelation(left, context)
         val rrel = evalRelation(right, context)
-        val metadata = new Metadata(
-          lrel.metadata.header ++ rrel.metadata.header)
+        val metadata = new Metadata(lrel.metadata.header ++ rrel.metadata.header)
 
-        new InnerJoinRelation(
-          this,
-          metadata,
-          lrel,
-          evalLogical(AFUseNotAllowed, metadata :: context, condition),
-          rrel)
+        new InnerJoinRelation(this, metadata, lrel, evalLogical(AFUseNotAllowed, metadata :: context, condition), rrel)
+      case LeftJoinRelationExpression(left, condition, right) =>
+        val lrel = evalRelation(left, context)
+        val rrel = evalRelation(right, context)
+        val metadata = new Metadata(lrel.metadata.header ++ rrel.metadata.header)
+
+        new LeftJoinRelation(this, metadata, lrel, evalLogical(AFUseNotAllowed, metadata :: context, condition), rrel)
       case SelectionRelationExpression(relation, condition) =>
         val rel = evalRelation(relation, context)
         val afuse = AFUseOrField(NoFieldOrAFUsed)
@@ -393,9 +348,7 @@ class Connection {
         val r = evalRelation(rel, context)
 
         if (r.metadata.tableSet.size > 1)
-          problem(
-            alias.pos,
-            "the relation being aliased is a product of more than one table")
+          problem(alias.pos, "the relation being aliased is a product of more than one table")
 
         new AliasRelation(r, alias.name)
       case RelationVariableExpression(v @ Ident(n)) =>
@@ -422,8 +375,7 @@ class Connection {
           columns map {
             case ColumnSpec(_, _, None) => null
             case ColumnSpec(_, p, Some(t)) =>
-              Type.names.getOrElse(t,
-                                   problem(p, s"unrecognized type name '$t'"))
+              Type.names.getOrElse(t, problem(p, s"unrecognized type name '$t'"))
           } toArray
         val body =
           if (data isEmpty)
@@ -438,9 +390,7 @@ class Connection {
         val header =
           columns zip types map {
             case (ColumnSpec(_, p, _), null) =>
-              problem(
-                p,
-                "missing type specification in relation with missing values")
+              problem(p, "missing type specification in relation with missing values")
             case (ColumnSpec(Ident(n), _, _), t) => SimpleColumn(tab, n, t)
           }
 
@@ -451,9 +401,7 @@ class Connection {
   private val oporder =
     List(List("b^"), List("u-"), List("b*", "b/"), List("b+", "b-"))
 
-  private def brackets(p: ValueExpression,
-                       c: ValueExpression,
-                       right: Boolean): Boolean = {
+  private def brackets(p: ValueExpression, c: ValueExpression, right: Boolean): Boolean = {
     def s(e: ValueExpression) =
       e match {
         case BinaryValueExpression(_, _, operation, _) =>
@@ -483,13 +431,8 @@ class Connection {
     sys.error(s"not found: $p1, $c1")
   }
 
-  def evalExpression(afuse: AggregateFunctionUse,
-                     metadata: List[Metadata],
-                     ast: ValueExpression): ValueResult =
-    evalExpression(afuse,
-                   metadata,
-                   if (metadata eq null) null else metadata.head,
-                   ast) //todo (nested): aggregates can't see outer scopes
+  def evalExpression(afuse: AggregateFunctionUse, metadata: List[Metadata], ast: ValueExpression): ValueResult =
+    evalExpression(afuse, metadata, if (metadata eq null) null else metadata.head, ast) //todo (nested): aggregates can't see outer scopes
 
   def evalExpression(afuse: AggregateFunctionUse,
                      fmetadata: List[Metadata],
@@ -520,8 +463,7 @@ class Connection {
               case use @ AFUseOrField(OnlyAFUsed) => use.state = FieldAndAFUsed
               case use @ AFUseOrField(NoFieldOrAFUsed) =>
                 use.state = OnlyFieldUsed
-              case AFUseNotAllowed | AFUseOrField(
-                    OnlyFieldUsed | FieldAndAFUsed) =>
+              case AFUseNotAllowed | AFUseOrField(OnlyFieldUsed | FieldAndAFUsed) =>
             }
 
             FieldValue(ast.pos,
@@ -543,16 +485,10 @@ class Connection {
                   use.state = FieldAndAFUsed
                 case use @ AFUseOrField(NoFieldOrAFUsed) =>
                   use.state = OnlyFieldUsed
-                case AFUseNotAllowed | AFUseOrField(
-                      OnlyFieldUsed | FieldAndAFUsed) =>
+                case AFUseNotAllowed | AFUseOrField(OnlyFieldUsed | FieldAndAFUsed) =>
               }
 
-              FieldValue(ast.pos,
-                         t.name,
-                         c.name,
-                         fmetadata(depth).header(ind).typ,
-                         ind,
-                         depth)
+              FieldValue(ast.pos, t.name, c.name, fmetadata(depth).header(ind).typ, ind, depth)
           }
       case e @ BinaryValueExpression(left, oppos, operation, right) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
@@ -576,13 +512,7 @@ class Connection {
               else
                 r.heading
 
-            BinaryValue(oppos,
-                        null,
-                        s"$lh$space$operation$space$rh",
-                        l.typ,
-                        l,
-                        operation,
-                        r) //todo: handle type promotion correctly
+            BinaryValue(oppos, null, s"$lh$space$operation$space$rh", l.typ, l, operation, r) //todo: handle type promotion correctly
         }
       case UnaryValueExpression(oppos, operation, expr) =>
         val e = evalExpression(afuse, fmetadata, ametadata, expr)
@@ -593,12 +523,7 @@ class Connection {
 
             LiteralValue(p, null, res.toString, Type.fromValue(res).get, res)
           case _ =>
-            UnaryValue(oppos,
-                       null,
-                       s"$operation${e.heading}",
-                       e.typ,
-                       e,
-                       operation) //todo: handle type promotion correctly
+            UnaryValue(oppos, null, s"$operation${e.heading}", e.typ, e, operation) //todo: handle type promotion correctly
         }
       case e @ ApplicativeValueExpression(func, args) =>
         val f = evalExpression(afuse, fmetadata, ametadata, func)
@@ -614,22 +539,14 @@ class Connection {
               case AFUseOrField(OnlyAFUsed | FieldAndAFUsed) =>
             }
 
-            val a = args map (evalExpression(AFUseNotAllowed,
-                                             List(ametadata),
-                                             null,
-                                             _))
+            val a = args map (evalExpression(AFUseNotAllowed, List(ametadata), null, _))
             val heading =
               if (a == Nil)
                 s"${f.heading}()"
               else
                 s"${f.heading}(${a map (_.heading) mkString ","})"
 
-            AggregateFunctionValue(e.pos,
-                                   null,
-                                   heading,
-                                   af.typ(a map (_.typ)),
-                                   af,
-                                   a)
+            AggregateFunctionValue(e.pos, null, heading, af.typ(a map (_.typ)), af, a)
           case VariableValue(_, _, _, _, sf: ScalarFunction) =>
             val a = args map (evalExpression(afuse, fmetadata, ametadata, _))
             val heading =
@@ -638,12 +555,7 @@ class Connection {
               else
                 s"${f.heading}(${a map (_.heading) mkString ","})"
 
-            ScalarFunctionValue(e.pos,
-                                null,
-                                heading,
-                                sf.typ(a map (_.typ)),
-                                sf,
-                                a)
+            ScalarFunctionValue(e.pos, null, heading, sf.typ(a map (_.typ)), sf, a)
           case _ => problem(e.pos, s"'$f' is not a function")
         }
       case e @ LogicalValueExpression(logical) =>
@@ -652,9 +564,7 @@ class Connection {
         LogicalValue(e.pos, null, log.heading, LogicalType, log)
     }
 
-  def aggregateCondition(tuples: Iterable[Tuple],
-                         condition: LogicalResult,
-                         afuse: AggregateFunctionUseState) =
+  def aggregateCondition(tuples: Iterable[Tuple], condition: LogicalResult, afuse: AggregateFunctionUseState) =
     if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
       initAggregation(condition)
 
@@ -662,9 +572,7 @@ class Connection {
         aggregate(t, condition)
     }
 
-  def aggregateColumns(tuples: Iterable[Tuple],
-                       columns: Vector[ValueResult],
-                       afuse: AggregateFunctionUseState) =
+  def aggregateColumns(tuples: Iterable[Tuple], columns: Vector[ValueResult], afuse: AggregateFunctionUseState) =
     if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
       for (c <- columns)
         initAggregation(c)
@@ -681,10 +589,7 @@ class Connection {
       case UnaryValue(_, _, _, _, v, _) =>
         aggregate(row, v)
       case a @ AggregateFunctionValue(_, _, _, _, _, args) =>
-        a.func.next(
-          args map (evalValue(
-            List(row) /*todo (nested): this may not be right*/,
-            _)))
+        a.func.next(args map (evalValue(List(row) /*todo (nested): this may not be right*/, _)))
       case ScalarFunctionValue(_, _, _, _, _, args) =>
         for (a <- args)
           aggregate(row, a)
@@ -797,11 +702,11 @@ class Connection {
           case (`I`, _) | (_, `I`) => MAYBE_I
           case (`A`, _) | (_, `A`) => MAYBE_A
           case (_: String, _) | (_, _: String) =>
-            Logical.fromBoolean(
-              comparison(lv.toString compareTo rv.toString, comp, 0))
+            Logical.fromBoolean(comparison(lv.toString compareTo rv.toString, comp, 0))
           case (l: Number, r: Number) =>
             Logical.fromBoolean(comparison(l, comp, r))
-          case _ => problem(pos, "invalid comparison")
+          case (null, _) | (_, null) => FALSE //todo: nulls should be marks and should be handled correctly
+          case _                     => problem(pos, "invalid comparison")
         }
       case AndLogical(_, l, r) =>
         evalCondition(context, l) && evalCondition(context, r)
@@ -811,9 +716,7 @@ class Connection {
         !evalCondition(context, l)
     }
 
-  def evalLogical(afuse: AggregateFunctionUse,
-                  metadata: List[Metadata],
-                  ast: LogicalExpression): LogicalResult =
+  def evalLogical(afuse: AggregateFunctionUse, metadata: List[Metadata], ast: LogicalExpression): LogicalResult =
     evalLogical(afuse, metadata, metadata.head, ast) //todo (nested): aggregates can't see outer scopers
 
   def evalLogical(afuse: AggregateFunctionUse,
@@ -835,24 +738,14 @@ class Connection {
         val r = evalExpression(afuse, fmetadata, ametadata, right)
 
         ComparisonLogical(s"${l.heading} $comp ${r.heading}", l, pos, comp, r)
-      case ComparisonLogicalExpression(
-          left,
-          List((posm, compm, middle), (posr, compr, right))) =>
+      case ComparisonLogicalExpression(left, List((posm, compm, middle), (posr, compr, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val m = evalExpression(afuse, fmetadata, ametadata, middle)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
         val lc =
-          ComparisonLogical(s"${l.heading} $compm ${m.heading}",
-                            l,
-                            posm,
-                            compm,
-                            m)
+          ComparisonLogical(s"${l.heading} $compm ${m.heading}", l, posm, compm, m)
         val rc =
-          ComparisonLogical(s"${m.heading} $compr ${r.heading}",
-                            m,
-                            posr,
-                            compr,
-                            r)
+          ComparisonLogical(s"${m.heading} $compr ${r.heading}", m, posr, compr, r)
 
         AndLogical(s"${lc.heading} AND ${rc.heading}", lc, rc)
       case AndLogicalExpression(left, right) =>
@@ -881,38 +774,25 @@ case object FieldAndAFUsed extends AggregateFunctionUseState
 
 trait AggregateFunctionUse
 case object AFUseNotAllowed extends AggregateFunctionUse
-case class AFUseOrField(var state: AggregateFunctionUseState)
-    extends AggregateFunctionUse
+case class AFUseOrField(var state: AggregateFunctionUseState) extends AggregateFunctionUse
 
 trait LogicalResult {
   val heading: String
 }
 
 case class LiteralLogical(heading: String, value: Logical) extends LogicalResult
-case class AndLogical(heading: String,
-                      left: LogicalResult,
-                      right: LogicalResult)
+case class AndLogical(heading: String, left: LogicalResult, right: LogicalResult) extends LogicalResult
+case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult) extends LogicalResult
+case class NotLogical(heading: String, expr: LogicalResult) extends LogicalResult
+case class ComparisonLogical(heading: String, left: ValueResult, pos: Position, comp: String, right: ValueResult)
     extends LogicalResult
-case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult)
-    extends LogicalResult
-case class NotLogical(heading: String, expr: LogicalResult)
-    extends LogicalResult
-case class ComparisonLogical(heading: String,
-                             left: ValueResult,
-                             pos: Position,
-                             comp: String,
-                             right: ValueResult)
-    extends LogicalResult
-case class ExistsLogical(heading: String, tuples: Iterable[Tuple])
-    extends LogicalResult
+case class ExistsLogical(heading: String, tuples: Iterable[Tuple]) extends LogicalResult
 
 trait StatementResult
 case class CreateResult(name: String) extends StatementResult
 case class DropResult(name: String) extends StatementResult
-case class AssignResult(name: String, update: Boolean, count: Int)
-    extends StatementResult
-case class InsertResult(auto: List[Map[String, Any]], count: Int)
-    extends StatementResult
+case class AssignResult(name: String, update: Boolean, count: Int) extends StatementResult
+case class InsertResult(auto: List[Map[String, Any]], count: Int) extends StatementResult
 case class DeleteResult(count: Int) extends StatementResult
 case class UpdateResult(count: Int) extends StatementResult
 case class RelationResult(relation: Relation) extends StatementResult

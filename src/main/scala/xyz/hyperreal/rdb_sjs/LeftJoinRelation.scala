@@ -13,20 +13,19 @@ class LeftJoinRelation(conn: Connection,
     val buf = new ListBuffer[Tuple]
 
     for (x <- left) {
-      var mismatch = false
+      var matched = false
 
       for (y <- right) {
         val r = x ++ y
 
-        if (conn.evalCondition(r :: context, condition) == TRUE)
+        if (conn.evalCondition(r :: context, condition) == TRUE) {
           buf += r
-        else {
-          if (!mismatch) {
-            buf += x ++ IndexedSeq.fill(y.length)(null)
-            mismatch = true
-          }
+          matched = true
         }
       }
+
+      if (!matched)
+        buf += x ++ IndexedSeq.fill(right.metadata.header.length)(null)
     }
 
     buf.iterator
@@ -34,6 +33,6 @@ class LeftJoinRelation(conn: Connection,
 
   def iterator(context: List[Tuple]) = nestedLoopIterator(context)
 
-  override def toString = s"innerJoin( $left, $condition, $right )"
+  override def toString = s"leftJoin( $left, $condition, $right )"
 
 }

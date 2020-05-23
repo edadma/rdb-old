@@ -115,9 +115,9 @@ object REPLMain /*extends App*/ {
         }
 
         l.size match {
-          case 0 => println("empty relation")
-          case 1 => println("1 row")
-          case s => println(s"$s rows")
+          case 0 => println("(empty relation)")
+          case 1 => println("(1 row)")
+          case s => println(s"($s rows)")
         }
       case CreateResult(name) => println(s"base relation '$name' was created")
       case DropResult(name)   => println(s"base relation '$name' was droped")

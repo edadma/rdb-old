@@ -10,17 +10,21 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new Connection {
-//    load(readFile("samples/movie.tab"), doubleSpaces = true)
-    load(readFile("samples/student.tab"), doubleSpaces = true)
-  }
+//  val conn = new Connection { load(readFile("samples/student.tab"), doubleSpaces = true) }
+//  val statement =
+//    """
+//      |SELECT *
+//      |  FROM student
+//    """.stripMargin
+
+  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
   val statement =
     """
-      |SELECT *
-      |  FROM student
-    """.stripMargin
+        |SELECT *
+        |  FROM character LEFT JOIN planet ON character.home = planet.plan_id
+      """.stripMargin
 
-//  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
+  //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =
 //    """
 //			|SELECT CompanyName, ContactName
