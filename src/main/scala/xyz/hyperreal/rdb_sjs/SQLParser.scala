@@ -86,7 +86,7 @@ class SQLParser extends RegexParsers {
 
   def joinRelation: Parser[RelationExpression] =
     primaryRelation ~ rep(
-      ((("LEFT" | "left") | opt("INNER" | "inner")) ~ (("JOIN" | "join") ~> primaryRelation)) ~ (("ON" | "on") ~> logicalExpression)) ^^ {
+      (((("LEFT" | "left") <~ opt("OUTER" | "outer")) | opt("INNER" | "inner")) ~ (("JOIN" | "join") ~> primaryRelation)) ~ (("ON" | "on") ~> logicalExpression)) ^^ {
       case expr ~ list =>
         list.foldLeft(expr) {
           case (l, (None | Some(_)) ~ r ~ c)  => InnerJoinRelationExpression(l, c, r)
