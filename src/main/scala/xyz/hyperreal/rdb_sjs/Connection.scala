@@ -745,6 +745,16 @@ class Connection {
         }
 
       case LiteralLogical(_, lit) => lit
+      case LikeLogical(heading, left, pos, comp, right) =>
+        val lv = evalValue(context, left)
+        val rv = evalValue(context, right)
+
+        (lv, rv) match {
+          case (_: String, _) | (_, _: String) =>
+            Logical.fromBoolean(
+              if (comp startsWith "NOT") !like(lv.toString, rv.toString) else like(lv.toString, rv.toString))
+          case _ => problem(pos, "invalid 'like' comparison")
+        }
       case ComparisonLogical(_, left, pos, comp, right) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
@@ -784,6 +794,11 @@ class Connection {
 
         ExistsLogical(s"EXISTS ($rel)", rel)
       case LiteralLogicalExpression(lit) => LiteralLogical(lit.toString, lit)
+      case LikeLogicalExpression(left, lpos, comp, right) =>
+        val l = evalExpression(afuse, fmetadata, ametadata, left)
+        val r = evalExpression(afuse, fmetadata, ametadata, right)
+
+        LikeLogical(s"${l.heading} $comp ${r.heading}", l, lpos, comp, r)
       case ComparisonLogicalExpression(left, List((pos, comp, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
@@ -836,6 +851,8 @@ case class AndLogical(heading: String, left: LogicalResult, right: LogicalResult
 case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult) extends LogicalResult
 case class NotLogical(heading: String, expr: LogicalResult) extends LogicalResult
 case class ComparisonLogical(heading: String, left: ValueResult, pos: Position, comp: String, right: ValueResult)
+    extends LogicalResult
+case class LikeLogical(heading: String, left: ValueResult, pos: Position, like: String, right: ValueResult)
     extends LogicalResult
 case class ExistsLogical(heading: String, tuples: Iterable[Tuple]) extends LogicalResult
 

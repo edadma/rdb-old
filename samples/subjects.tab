@@ -1,0 +1,9 @@
+subjects
+ id: integer, pk  subject: text  semester: text  attendee: text 
+ 1                ITB001         1               John           
+ 2                ITB001         1               Bob            
+ 3                ITB001         1               Mickey         
+ 4                ITB001         2               Jenny          
+ 5                ITB001         2               James          
+ 6                MKB114         1               John           
+ 7                MKB114         1               Erica          

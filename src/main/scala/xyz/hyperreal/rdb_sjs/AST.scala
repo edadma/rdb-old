@@ -61,6 +61,8 @@ abstract class LogicalExpression extends Positional
 case class LiteralLogicalExpression(l: Logical) extends LogicalExpression
 case class ComparisonLogicalExpression(left: ValueExpression, comp: List[(Position, String, ValueExpression)])
     extends LogicalExpression
+case class LikeLogicalExpression(left: ValueExpression, lpos: Position, like: String, right: ValueExpression)
+    extends LogicalExpression
 case class AndLogicalExpression(left: LogicalExpression, right: LogicalExpression) extends LogicalExpression
 case class OrLogicalExpression(left: LogicalExpression, right: LogicalExpression) extends LogicalExpression
 case class NotLogicalExpression(expr: LogicalExpression) extends LogicalExpression

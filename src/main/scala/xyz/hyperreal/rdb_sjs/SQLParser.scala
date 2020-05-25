@@ -219,12 +219,11 @@ class SQLParser extends RegexParsers {
           ComparisonLogicalExpression(l, List((p, "<=", c), (p, "<=", u)))
       } |
       ("EXISTS" | "exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
-      nonLogicalValueExpression ~ ("LIKE" | "like") ~ nonLogicalValueExpression ^^ {
-        case l ~ cs =>
-          ComparisonLogicalExpression(l, cs map { case p ~ c ~ v => (p, c, v) })
+      nonLogicalValueExpression ~ pos ~ ("LIKE" | "like" | (("NOT" | "not") ~ ("LIKE" | "like") ^^^ "NOT LIKE")) ~ nonLogicalValueExpression ^^ {
+        case l ~ p ~ op ~ r =>
+          LikeLogicalExpression(l, p, op, r)
       } |
-      (("NOT" | "not") ~ ("LIKE" | "like") ^^^ "NOT LIKE")
-  logicalPrimary
+      logicalPrimary
 
   def logicalPrimary =
     positioned(

@@ -17,11 +17,21 @@ object Main extends App {
 //      |  FROM student
 //    """.stripMargin
 
-  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
+//  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
+//  val statement =
+//    """
+//        |SELECT *
+//        |  FROM character LEFT JOIN planet ON character.home = planet.plan_id
+//      """.stripMargin
+
+  val conn = new Connection { load(readFile("samples/subjects.tab"), doubleSpaces = true) }
   val statement =
     """
-        |SELECT *
-        |  FROM character LEFT JOIN planet ON character.home = planet.plan_id
+      |SELECT subject, semester, count(semester)
+      |  FROM subjects
+      |  GROUP BY subject, semester
+      |  HAVING count(semester) = 2
+      |  ORDER BY subject, semester
       """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
