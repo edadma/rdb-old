@@ -24,14 +24,12 @@ object Main extends App {
 //        |  FROM character LEFT JOIN planet ON character.home = planet.plan_id
 //      """.stripMargin
 
-  val conn = new Connection { load(readFile("samples/subjects.tab"), doubleSpaces = true) }
+  val conn = new Connection { load(readFile("samples/grouping.tab"), doubleSpaces = true) }
   val statement =
     """
-      |SELECT subject, semester, count(semester)
-      |  FROM subjects
-      |  GROUP BY subject, semester
-      |  HAVING count(semester) = 2
-      |  ORDER BY subject, semester
+      |SELECT dept_id, SUM(salary), MIN(salary)
+      |  FROM employees
+      |  GROUP BY dept_id
       """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }

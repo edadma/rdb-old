@@ -1,0 +1,6 @@
+employees
+ employee_number: integer, pk  last_name: text  first_name: text  salary: currency  dept_id: integer 
+ 1001                          Smith            John              62000             500              
+ 1002                          Anderson         Jane              57500             500              
+ 1003                          Everest          Brad              71000             501              
+ 1004                          Horvath          Jack              42000             501              
