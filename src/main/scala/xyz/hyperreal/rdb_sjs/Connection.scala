@@ -3,6 +3,7 @@ package xyz.hyperreal.rdb_sjs
 import xyz.hyperreal.dal_sjs.BasicDAL.{compute, negate, relate}
 import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.util.parsing.input.Position
 
@@ -14,6 +15,56 @@ class Connection {
   variables ++= Builtins.aggregateFunctions
   variables ++= Builtins.scalarFunctions
   variables ++= Builtins.constants
+
+  def like(s: String, pattern: String): Boolean = {
+    var sp = 0
+    var pp = 0
+    val choices = new mutable.ArrayStack[ChoicePoint]
+
+    case class ChoicePoint(sp: Int, pp: Int)
+
+    def move(): Unit = {
+      sp += 1
+      pp += 1
+    }
+
+    def choice: Boolean =
+      if (choices nonEmpty) {
+        val ChoicePoint(nsp, npp) = choices.pop
+
+        sp = nsp
+        pp = npp
+        true
+      } else
+        false
+
+    while (sp < s.length || pp < pattern.length) {
+      if (pp == pattern.length && !choice)
+        return false
+      else
+        pattern(pp) match {
+          case '%' =>
+            if (pp == pattern.length - 1)
+              return true
+
+            if (sp < s.length - 1)
+              choices push ChoicePoint(sp + 1, pp)
+
+            pp += 1
+          case '_' => move()
+          case c =>
+            if (c == '\\')
+              pp += 1
+
+            if (sp < s.length && s(sp) == pattern(pp))
+              move()
+            else if (!choice)
+              return false
+        }
+    }
+
+    true
+  }
 
   def load(data: String, doubleSpaces: Boolean = false): Unit = {
     def types(t: String) =
