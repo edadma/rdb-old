@@ -24,13 +24,23 @@ object Main extends App {
 //        |  FROM character LEFT JOIN planet ON character.home = planet.plan_id
 //      """.stripMargin
 
-  val conn = new Connection { load(readFile("samples/grouping.tab"), doubleSpaces = true) }
+//  val conn = new Connection { load(readFile("samples/grouping.tab"), doubleSpaces = true) }
+//  val statement =
+//    """
+//      |SELECT dept_id, SUM(salary), MIN(salary)
+//      |  FROM employees
+//      |  GROUP BY dept_id
+//      """.stripMargin
+
+  val conn = new Connection { load(readFile("samples/orders.tab"), doubleSpaces = true) }
   val statement =
     """
-      |SELECT dept_id, SUM(salary), MIN(salary)
-      |  FROM employees
-      |  GROUP BY dept_id
-      """.stripMargin
+        |SELECT agents.agent_code, agents.agent_name, SUM(orders.advance_amount)
+        |  FROM agents
+        |  JOIN orders ON agents.agent_code = orders.agent_code
+        |  GROUP BY agents.agent_code, agents.agent_name
+        |  ORDER BY agents.agent_code
+        """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =

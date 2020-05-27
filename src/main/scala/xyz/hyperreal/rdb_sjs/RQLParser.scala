@@ -57,9 +57,7 @@ class RQLParser extends RegexParsers {
       ("delete" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ^^ {
         case n ~ c => DeleteStatement(n, c)
       } |
-      ("update" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ~ ("(" ~> rep1sep(
-        ident ~ ("=" ~> valueExpression),
-        ",") <~ ")") ^^ {
+      ("update" ~> ident) ~ ("[" ~> logicalExpression <~ "]") ~ ("(" ~> rep1sep(ident ~ ("=" ~> valueExpression), ",") <~ ")") ^^ {
         case n ~ c ~ u => UpdateStatement(n, c, u map { case f ~ e => (f, e) })
       }
 
@@ -70,9 +68,7 @@ class RQLParser extends RegexParsers {
     tupleseqLit
 
   def orderby =
-    ("order" ~ "by") ~> rep1sep(
-      ident ~ opt(("ASC" | "asc") | ("DESC" | "desc")),
-      ",") ^^ (l =>
+    ("order" ~ "by") ~> rep1sep(ident ~ opt(("ASC" | "asc") | ("DESC" | "desc")), ",") ^^ (l =>
       l.map {
         case i ~ None    => (i, true)
         case i ~ Some(a) => (i, a.toLowerCase == "asc")
@@ -89,8 +85,7 @@ class RQLParser extends RegexParsers {
     projectionRelation
 
   def projectionRelation: Parser[RelationExpression] = positioned(
-    selectionRelation ~ ("<" ~> rep1sep(nonLogicalValueExpression, ",") <~ ">") ~ opt(
-      "[" ~> logicalExpression <~ "]") ~ ("(" ~> expressions <~ ")") ^^ {
+    selectionRelation ~ ("<" ~> rep1sep(nonLogicalValueExpression, ",") <~ ">") ~ opt("[" ~> logicalExpression <~ "]") ~ ("(" ~> expressions <~ ")") ^^ {
       case r ~ d ~ f ~ c => GroupingRelationExpression(r, d, f, null, c)
     } |
       selectionRelation ~ ("(" ~> expressions <~ ")") ^^ {
@@ -134,13 +129,11 @@ class RQLParser extends RegexParsers {
   def columnsDef = "[" ~> rep1sep(columnDef, ",") <~ "]"
 
   def columnDef =
-    ident ~ pos ~ (":" ~> columnType) ~ ("->" ~> ident) ~ ("(" ~> ident <~ ")") ~ opt(
-      "unmarkable") ^^ {
+    ident ~ pos ~ (":" ~> columnType) ~ ("->" ~> ident) ~ ("(" ~> ident <~ ")") ~ opt("unmarkable") ^^ {
       case n ~ tp ~ t ~ fkr ~ fkc ~ u =>
         ColumnDef(n, tp, t, null, fkr, fkc, u isDefined, false)
     } |
-      ident ~ pos ~ (":" ~> columnType) ~ opt(pos <~ "*") ~ opt("unmarkable") ~ opt(
-        "auto") ^^ {
+      ident ~ pos ~ (":" ~> columnType) ~ opt(pos <~ "*") ~ opt("unmarkable") ~ opt("auto") ^^ {
         case n ~ tp ~ t ~ None ~ u ~ a =>
           ColumnDef(n, tp, t, null, null, null, u isDefined, a isDefined)
         case n ~ tp ~ t ~ Some(p) ~ u ~ a =>
@@ -172,8 +165,7 @@ class RQLParser extends RegexParsers {
       additiveExpression
 
   def additiveExpression: Parser[ValueExpression] =
-    multiplicativeExpression ~ rep(
-      pos ~ "+" ~ multiplicativeExpression | pos ~ "-" ~ multiplicativeExpression) ^^ {
+    multiplicativeExpression ~ rep(pos ~ "+" ~ multiplicativeExpression | pos ~ "-" ~ multiplicativeExpression) ^^ {
       case expr ~ list =>
         list.foldLeft(expr) {
           case (x, p ~ o ~ y) => BinaryValueExpression(x, p, o, y)
@@ -181,8 +173,7 @@ class RQLParser extends RegexParsers {
     }
 
   def multiplicativeExpression: Parser[ValueExpression] =
-    negativeExpression ~ rep(
-      pos ~ "*" ~ negativeExpression | pos ~ "/" ~ negativeExpression) ^^ {
+    negativeExpression ~ rep(pos ~ "*" ~ negativeExpression | pos ~ "/" ~ negativeExpression) ^^ {
       case expr ~ list =>
         list.foldLeft(expr) {
           case (x, p ~ o ~ y) => BinaryValueExpression(x, p, o, y)
@@ -218,7 +209,7 @@ class RQLParser extends RegexParsers {
       }) |
       positioned(ident ^^ ValueVariableExpression)
 
-  def comparison = "<" | "<=" | "=" | "/=" | ">" | ">="
+  def comparison = "<=" | "<" | "=" | "!=" | ">=" | ">"
 
   def logicalExpression =
     orExpression
@@ -240,8 +231,7 @@ class RQLParser extends RegexParsers {
     }
 
   def comparisonExpression =
-    nonLogicalValueExpression ~ rep1(
-      pos ~ comparison ~ nonLogicalValueExpression) ^^ {
+    nonLogicalValueExpression ~ rep1(pos ~ comparison ~ nonLogicalValueExpression) ^^ {
       case l ~ cs =>
         ComparisonLogicalExpression(l, cs map {
           case p ~ c ~ v => (p, c, v)

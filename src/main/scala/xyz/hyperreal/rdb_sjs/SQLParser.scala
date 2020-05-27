@@ -184,7 +184,7 @@ class SQLParser extends RegexParsers {
     }) |
       positioned(ident ^^ ValueVariableExpression)
 
-  def comparison = "<" | "<=" | "=" | "!=" | ">" | ">="
+  def comparison = "<=" | "<" | "=" | "!=" | ">=" | ">"
 
   def logicalExpression: Parser[LogicalExpression] =
     orExpression
