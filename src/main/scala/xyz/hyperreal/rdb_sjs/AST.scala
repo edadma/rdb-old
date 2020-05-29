@@ -29,6 +29,8 @@ case class ApplicativeValueExpression(func: ValueExpression, args: List[ValueExp
 case class UnaryValueExpression(oppos: Position, operation: String, expr: ValueExpression) extends ValueExpression
 case class LogicalValueExpression(logical: LogicalExpression) extends ValueExpression
 case class AliasValueExpression(expr: ValueExpression, alias: Ident) extends ValueExpression
+case class CaseValueExpression(whens: List[(LogicalExpression, ValueExpression)], els: Option[ValueExpression])
+    extends ValueExpression
 
 abstract class TupleCollectionExpression extends StatementAST
 abstract class RelationExpression extends TupleCollectionExpression with Positional

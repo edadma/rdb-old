@@ -173,10 +173,21 @@ class SQLParser extends RegexParsers {
   def valuePrimary: Parser[ValueExpression] =
     number |
       string |
+      caseExpression |
       "(" ~> valueExpression <~ ")" |
       positioned(("NULL" | "null") ^^^ MarkLit(A)) |
 //      positioned("I" ^^^ MarkLit(I)) |
       columnPrimary
+
+  def caseExpression =
+    positioned(("CASE" | "case") ~ rep1(when) ~ opt(("ELSE" | "else") ~> valueExpression) ~ ("END" | "end") ^^ {
+      case _ ~ ws ~ e ~ _ => CaseValueExpression(ws, e)
+    })
+
+  def when: Parser[(LogicalExpression, ValueExpression)] =
+    ("WHEN" | "when") ~ logicalExpression ~ ("THEN" | "then") ~ valueExpression ^^ {
+      case _ ~ c ~ _ ~ r => (c, r)
+    }
 
   def columnPrimary =
     positioned(ident ~ ("." ~> ident) ^^ {
@@ -239,4 +250,4 @@ class SQLParser extends RegexParsers {
   }
 
 }
-//todo:use table names or aliases after "SELECT" (ex:https://www.w3schools.com/sql/sql_join_self.asp)
+// todo: use table names or aliases after "SELECT" (ex:https://www.w3schools.com/sql/sql_join_self.asp)

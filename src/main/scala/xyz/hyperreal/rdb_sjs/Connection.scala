@@ -565,6 +565,29 @@ class Connection {
 
             BinaryValue(oppos, null, s"$lh$space$operation$space$rh", l.typ, l, operation, r) //todo: handle type promotion correctly
         }
+      case expr @ CaseValueExpression(whens, els) =>
+        val ws = whens map {
+          case (c, r) => (evalLogical(afuse, fmetadata, ametadata, c), evalExpression(afuse, fmetadata, ametadata, r))
+        }
+        val optels = els map (evalExpression(afuse, fmetadata, ametadata, _))
+        val buf = new StringBuilder
+
+        buf ++= "CASE"
+
+        for ((c, r) <- ws) {
+          buf ++= " WHEN "
+          buf ++= c.heading
+          buf ++= " THEN "
+          buf ++= r.heading
+        }
+
+        optels foreach (e => {
+          buf ++= " ELSE "
+          buf ++= e.heading
+        })
+
+        buf ++= " END"
+        CaseValue(expr.pos, null, buf.toString, ws.head._2.typ, ws, optels)
       case UnaryValueExpression(oppos, operation, expr) =>
         val e = evalExpression(afuse, fmetadata, ametadata, expr)
 
