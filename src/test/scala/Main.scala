@@ -32,15 +32,22 @@ object Main extends App {
 //      |  GROUP BY dept_id
 //      """.stripMargin
 
-  val conn = new Connection { load(readFile("samples/orders.tab"), doubleSpaces = true) }
+//  val conn = new Connection { load(readFile("samples/orders.tab"), doubleSpaces = true) }
+//  val statement =
+//    """
+//        |SELECT agents.agent_code, agents.agent_name, SUM(orders.advance_amount), case when agent_code = 'A010' then 'best' when agent_code = 'A002' then 'second best' else 'ok' end
+//        |  FROM agents
+//        |  JOIN orders ON agents.agent_code = orders.agent_code
+//        |  GROUP BY agents.agent_code, agents.agent_name
+//        |  ORDER BY agents.agent_code
+//        |  LIMIT 3 OFFSET 3
+//        """.stripMargin
+
+  val conn = new Connection { load(readFile("samples/employees.tab"), doubleSpaces = true) }
   val statement =
     """
-        |SELECT agents.agent_code, agents.agent_name, SUM(orders.advance_amount), case when agent_code = 'A010' then 'best' when agent_code = 'A002' then 'second best' else 'ok' end
-        |  FROM agents
-        |  JOIN orders ON agents.agent_code = orders.agent_code
-        |  GROUP BY agents.agent_code, agents.agent_name
-        |  ORDER BY agents.agent_code
-        |  LIMIT 3 OFFSET 3
+      |SELECT e.emp_name, m.emp_name
+      |  FROM employee as e JOIN employee as m ON e.emp_id = m.manager_id
         """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }

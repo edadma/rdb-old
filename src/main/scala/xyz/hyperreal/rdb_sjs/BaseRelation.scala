@@ -1,8 +1,9 @@
 package xyz.hyperreal.rdb_sjs
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer, TreeMap}
+import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer, TreeMap}
 
-class BaseRelation(val name: String, definition: Seq[BaseRelationColumn]) extends AbstractRelation {
+class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRelations: HashMap[Symbol, BaseRelation])
+    extends AbstractRelation {
 
   private val rows = new ArrayBuffer[Array[Any]]
 
@@ -58,9 +59,9 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn]) extend
         case Some(Unique) if indexes(i) contains r =>
           sys.error(s"Uniqueness constraint violation: $r exists in column ${d.column}")
         case Some(ForeignKey(table, column)) =>
-          if (r != null && !table.exists(t => t(column) == r)) { //todo: "r != null" should be checking for a mark not a null, should be done correctly
+          if (r != null && !baseRelations(table).exists(t => t(column) == r)) { //todo: "r != null" should be checking for a mark not a null, should be done correctly
             sys.error(
-              s"referential integrity violation: $r does not exist in ${table.name}(${table.metadata.header(column).column})")
+              s"referential integrity violation: $r does not exist in ${table.name}(${baseRelations(table).metadata.header(column).column})")
           }
         case _ =>
       }
