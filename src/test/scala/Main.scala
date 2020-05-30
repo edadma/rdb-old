@@ -40,6 +40,7 @@ object Main extends App {
         |  JOIN orders ON agents.agent_code = orders.agent_code
         |  GROUP BY agents.agent_code, agents.agent_name
         |  ORDER BY agents.agent_code
+        |  LIMIT 3 OFFSET 3
         """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }

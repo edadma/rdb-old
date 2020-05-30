@@ -345,6 +345,8 @@ class Connection {
 
   def evalRelation(ast: RelationExpression, context: List[Metadata]): Relation = {
     ast match {
+      case LimitOffsetRelationExpression(relation, limit, offset) =>
+        new LimitOffsetRelation(evalRelation(relation, context), limit, offset)
       case SortedRelationExpression(relation, exprs) =>
         val rel = evalRelation(relation, context)
         val afuse = AFUseOrField(NoFieldOrAFUsed)

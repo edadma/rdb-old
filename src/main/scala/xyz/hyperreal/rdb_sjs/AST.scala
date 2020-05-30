@@ -41,6 +41,8 @@ case class ProjectionRelationExpression(relation: RelationExpression, columns: L
     extends RelationExpression
 case class SelectionRelationExpression(relation: RelationExpression, condition: LogicalExpression)
     extends RelationExpression
+case class LimitOffsetRelationExpression(relation: RelationExpression, limit: Option[Int], offset: Option[Int])
+    extends RelationExpression
 case class InnerJoinRelationExpression(left: RelationExpression,
                                        condition: LogicalExpression,
                                        right: RelationExpression)

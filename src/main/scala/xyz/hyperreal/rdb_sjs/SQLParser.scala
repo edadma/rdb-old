@@ -20,6 +20,9 @@ class SQLParser extends RegexParsers {
 
   def pos = positioned(success(new Positional {})) ^^ { _.pos }
 
+  def integer: Parser[Int] =
+    """\d+""".r ^^ (_.toInt)
+
   def number: Parser[ValueExpression] =
     positioned("""\-?\d+(\.\d*)?""".r ^^ {
       case n if n contains '.' => FloatLit(n)
@@ -55,29 +58,47 @@ class SQLParser extends RegexParsers {
 
   def query: Parser[TupleCollectionExpression] =
     (("SELECT" | "select") ~> pos ~ (expressions | "*" ^^^ Nil) <~ ("FROM" | "from")) ~ fromRelation ~ opt(where) ~ opt(
-      groupby) ~ opt(orderby) ^^ {
-      case _ ~ Nil ~ r ~ None ~ None ~ None => r
-      case _ ~ e ~ r ~ None ~ None ~ None   => ProjectionRelationExpression(r, e)
-      case _ ~ Nil ~ r ~ Some(w) ~ None ~ None =>
+      groupby) ~ opt(orderby) ~ opt(("LIMIT" | "limit") ~> integer) ~ opt(("OFFSET" | "offset") ~> integer) ^^ {
+      case _ ~ Nil ~ r ~ None ~ None ~ None ~ None ~ None => r
+      case _ ~ e ~ r ~ None ~ None ~ None ~ None ~ None   => ProjectionRelationExpression(r, e)
+      case _ ~ Nil ~ r ~ Some(w) ~ None ~ None ~ None ~ None =>
         SelectionRelationExpression(r, w)
-      case _ ~ e ~ r ~ Some(w) ~ None ~ None =>
+      case _ ~ e ~ r ~ Some(w) ~ None ~ None ~ None ~ None =>
         ProjectionRelationExpression(SelectionRelationExpression(r, w), e)
-      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ None =>
+      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ None ~ None ~ None =>
         GroupingRelationExpression(r, d, h, p, e)
-      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ None =>
+      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ None ~ None ~ None =>
         GroupingRelationExpression(SelectionRelationExpression(r, w), d, h, p, e)
-      case _ ~ Nil ~ r ~ None ~ None ~ Some(fs) =>
+      case _ ~ Nil ~ r ~ None ~ None ~ Some(fs) ~ None ~ None =>
         SortedRelationExpression(r, fs)
-      case _ ~ e ~ r ~ None ~ None ~ Some(fs) =>
+      case _ ~ Nil ~ r ~ None ~ None ~ Some(fs) ~ l ~ o =>
+        LimitOffsetRelationExpression(SortedRelationExpression(r, fs), l, o)
+      case _ ~ e ~ r ~ None ~ None ~ Some(fs) ~ None ~ None =>
         SortedRelationExpression(ProjectionRelationExpression(r, e), fs)
-      case _ ~ Nil ~ r ~ Some(w) ~ None ~ Some(fs) =>
+      case _ ~ e ~ r ~ None ~ None ~ Some(fs) ~ l ~ o =>
+        LimitOffsetRelationExpression(SortedRelationExpression(ProjectionRelationExpression(r, e), fs), l, o)
+      case _ ~ Nil ~ r ~ Some(w) ~ None ~ Some(fs) ~ None ~ None =>
         SortedRelationExpression(SelectionRelationExpression(r, w), fs)
-      case _ ~ e ~ r ~ Some(w) ~ None ~ Some(fs) =>
+      case _ ~ Nil ~ r ~ Some(w) ~ None ~ Some(fs) ~ l ~ o =>
+        LimitOffsetRelationExpression(SortedRelationExpression(SelectionRelationExpression(r, w), fs), l, o)
+      case _ ~ e ~ r ~ Some(w) ~ None ~ Some(fs) ~ None ~ None =>
         SortedRelationExpression(ProjectionRelationExpression(SelectionRelationExpression(r, w), e), fs)
-      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ Some(fs) =>
+      case _ ~ e ~ r ~ Some(w) ~ None ~ Some(fs) ~ l ~ o =>
+        LimitOffsetRelationExpression(
+          SortedRelationExpression(ProjectionRelationExpression(SelectionRelationExpression(r, w), e), fs),
+          l,
+          o)
+      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ Some(fs) ~ None ~ None =>
         SortedRelationExpression(GroupingRelationExpression(r, d, h, p, e), fs)
-      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ Some(fs) =>
+      case p ~ e ~ r ~ None ~ Some(d ~ h) ~ Some(fs) ~ l ~ o =>
+        LimitOffsetRelationExpression(SortedRelationExpression(GroupingRelationExpression(r, d, h, p, e), fs), l, o)
+      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ Some(fs) ~ None ~ None =>
         SortedRelationExpression(GroupingRelationExpression(SelectionRelationExpression(r, w), d, h, p, e), fs)
+      case p ~ e ~ r ~ Some(w) ~ Some(d ~ h) ~ Some(fs) ~ l ~ o =>
+        LimitOffsetRelationExpression(
+          SortedRelationExpression(GroupingRelationExpression(SelectionRelationExpression(r, w), d, h, p, e), fs),
+          l,
+          o)
     }
 
   def fromRelation =
