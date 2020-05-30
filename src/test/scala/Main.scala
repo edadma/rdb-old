@@ -35,7 +35,7 @@ object Main extends App {
   val conn = new Connection { load(readFile("samples/orders.tab"), doubleSpaces = true) }
   val statement =
     """
-        |SELECT agents.agent_code, agents.agent_name, SUM(orders.advance_amount)
+        |SELECT agents.agent_code, agents.agent_name, SUM(orders.advance_amount), case when agent_code = 'A010' then 'best' when agent_code = 'A002' then 'second best' else 'ok' end
         |  FROM agents
         |  JOIN orders ON agents.agent_code = orders.agent_code
         |  GROUP BY agents.agent_code, agents.agent_name

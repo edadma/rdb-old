@@ -748,6 +748,20 @@ class Connection {
         val rv = evalValue(row, r)
 
         binaryOperation(lv, p, op, rv)
+      case CaseValue(_, _, _, _, whens, els) =>
+        @scala.annotation.tailrec
+        def casevalue(whens: List[(LogicalResult, ValueResult)]): Any =
+          whens match {
+            case Nil =>
+              els.fold(null.asInstanceOf[Any])(evalValue(row, _))
+            case (c, r) :: tail =>
+              if (evalCondition(row, c) == TRUE)
+                evalValue(row, r)
+              else
+                casevalue(tail)
+          }
+
+        casevalue(whens)
       case UnaryValue(p, _, _, _, v, op) =>
         unaryOperation(p, op, evalValue(row, v))
       case ScalarFunctionValue(_, _, _, _, func, args) =>
