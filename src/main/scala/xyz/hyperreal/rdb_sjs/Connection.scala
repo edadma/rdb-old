@@ -9,7 +9,7 @@ import scala.util.parsing.input.Position
 
 class Connection {
 
-  val baseRelations = new HashMap[String, BaseRelation]
+  val baseRelations = new HashMap[Symbol, BaseRelation]
   val variables = new HashMap[String, Any]
 
   variables ++= Builtins.aggregateFunctions
@@ -74,7 +74,9 @@ class Connection {
         case _          => Type.names(t)
       }
 
-    for (Table(name, header, data) <- Importer.importFromString(data, doubleSpaces)) {
+    val tables = Importer.importFromString(data, doubleSpaces)
+
+    for (Table(name, header, data) <- tables) {
       val t =
         createTable(
           name,
@@ -84,18 +86,19 @@ class Connection {
             case ImpColumn(cname, typ, List("pk")) =>
               BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), false, false)
             case ImpColumn(cname, typ, List("fk", tref, cref)) =>
-              baseRelations get tref match {
-                case None => sys.error(s"unknown table: $tref")
+              val trefsym = Symbol(tref)
+
+              tables find (_.name == tref) match {
+                case None =>
+                  sys.error(s"unknown table: $tref")
                 case Some(tab) =>
-                  tab.metadata.columnMap get cref match {
-                    case None => sys.error(s"unknown column: $cref")
-                    case Some(col) =>
-                      tab.metadata.baseRelationHeader(col).constraint match {
-                        case Some(PrimaryKey | Unique) =>
-                          BaseRelationColumn(name, cname, types(typ), Some(ForeignKey(tab, col)), false, false)
-                        case _ =>
-                          sys.error(s"target column must be a primary key or unique: $cref")
-                      }
+                  tab.header.indexWhere(_.name == cref) match {
+                    case -1 => sys.error(s"unknown column: $cref")
+                    case col =>
+                      if (tab.header(col).args.contains("pk"))
+                        BaseRelationColumn(name, cname, types(typ), Some(ForeignKey(trefsym, col)), false, false)
+                      else
+                        sys.error(s"target column must be a primary key: $cref")
                   }
               }
           }
@@ -107,14 +110,16 @@ class Connection {
   }
 
   def createTable(name: String, definition: Seq[BaseRelationColumn]) = {
-    if (baseRelations contains name)
+    val sym = Symbol(name)
+
+    if (baseRelations contains sym)
       sys.error(s"base relation '$name' already exists")
     else if (variables contains name)
       sys.error(s"variable relation '$name' already exists")
 
     val res = new BaseRelation(name, definition)
 
-    baseRelations(name) = res
+    baseRelations(sym) = res
     res
   }
 
@@ -132,7 +137,7 @@ class Connection {
   def executeStatement(ast: AST): StatementResult =
     ast match {
       case CreateBaseRelationStatement(table @ Ident(base), columns) =>
-        if (baseRelations contains base)
+        if (baseRelations contains Symbol(base))
           problem(table.pos, "a base relation by that name already exists")
         else if (variables contains base)
           problem(table.pos, "a variable relation by that name already exists")
@@ -166,7 +171,9 @@ class Connection {
                 if (pkpos ne null)
                   Some(PrimaryKey)
                 else if (fkr ne null) {
-                  baseRelations get fkr.name match {
+                  val sym = Symbol(fkr.name)
+
+                  baseRelations get sym match {
                     case None => problem(fkr.pos, "unknown table")
                     case Some(t) =>
                       t.metadata.columnMap get fkc.name match {
@@ -174,7 +181,7 @@ class Connection {
                         case Some(c) =>
                           t.metadata.baseRelationHeader(c).constraint match {
                             case Some(PrimaryKey | Unique) =>
-                              Some(ForeignKey(t, c))
+                              Some(ForeignKey(sym, c))
                             case _ =>
                               problem(fkc.pos, "target column must be a primary key or unique")
                           }
@@ -189,14 +196,14 @@ class Connection {
         createTable(base, header)
         CreateResult(base)
       case DropTableStatement(table @ Ident(name)) =>
-        if (baseRelations contains name)
-          baseRelations remove name
+        if (baseRelations contains Symbol(name))
+          baseRelations remove Symbol(name)
         else
           problem(table.pos, "no base relation by that name exists")
 
         DropResult(name)
       case AssignRelationStatement(table @ Ident(name), relation) =>
-        if (baseRelations contains name)
+        if (baseRelations contains Symbol(name))
           problem(table.pos, "a base relation by that name already exists")
 
         val rel = evalRelation(relation, Nil)
@@ -205,7 +212,7 @@ class Connection {
         variables(name) = rel
         res
       case InsertTupleStatement(base, tuple) =>
-        baseRelations get base.name match {
+        baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
             val types = b.metadata.baseRelationHeader map (_.typ) toArray
@@ -227,7 +234,7 @@ class Connection {
             }
         }
       case InsertTupleseqStatement(base, tupleseq) =>
-        baseRelations get base.name match {
+        baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
             val types = b.metadata.header map (_.typ) toArray
@@ -239,7 +246,7 @@ class Connection {
       case InsertRelationStatement(table @ Ident(name), relation) =>
         val src = evalRelation(relation, Nil)
 
-        baseRelations get name match {
+        baseRelations get Symbol(name) match {
           case None => problem(table.pos, "unknown base relation")
           case Some(b) =>
             if (!src.metadata.attributes.subsetOf(b.metadata.attributes))
@@ -250,7 +257,7 @@ class Connection {
             InsertResult(l, c)
         }
       case DeleteStatement(base, condition) =>
-        baseRelations get base.name match {
+        baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
             val afuse = AFUseOrField(NoFieldOrAFUsed)
@@ -260,7 +267,7 @@ class Connection {
             DeleteResult(b.delete(this, cond))
         }
       case UpdateStatement(base, condition, updates) =>
-        baseRelations get base.name match {
+        baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
             val afuse = AFUseOrField(NoFieldOrAFUsed)
@@ -405,7 +412,7 @@ class Connection {
 
         new AliasRelation(r, alias.name)
       case RelationVariableExpression(v @ Ident(n)) =>
-        baseRelations get n match {
+        baseRelations get Symbol(n) match {
           case None =>
             variables get n match {
               case Some(r: Relation) => r

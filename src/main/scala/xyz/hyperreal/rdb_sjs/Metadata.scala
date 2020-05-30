@@ -48,6 +48,6 @@ case class BaseRelationColumn(table: String,
 
 trait Constraint
 case object PrimaryKey extends Constraint
-case class ForeignKey(table: BaseRelation, column: Int) extends Constraint
+case class ForeignKey(table: Symbol, column: Int) extends Constraint
 case object Unique extends Constraint
 case object Indexed extends Constraint
