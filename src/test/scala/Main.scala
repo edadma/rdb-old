@@ -46,9 +46,10 @@ object Main extends App {
   val conn = new Connection { load(readFile("samples/employees.tab"), doubleSpaces = true) }
   val statement =
     """
-      |SELECT e.emp_name, m.emp_name
-      |  FROM employee as e JOIN employee as m ON e.emp_id = m.manager_id
-        """.stripMargin
+      |SELECT emp_name
+      |  FROM employee
+      |  WHERE emp_name NOT LIKE 'S%'
+    """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =

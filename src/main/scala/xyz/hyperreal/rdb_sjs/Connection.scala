@@ -19,7 +19,7 @@ class Connection {
   def like(s: String, pattern: String): Boolean = {
     var sp = 0
     var pp = 0
-    val choices = new mutable.ArrayStack[ChoicePoint]
+    val choices = new mutable.Stack[ChoicePoint]
 
     case class ChoicePoint(sp: Int, pp: Int)
 
@@ -791,16 +791,19 @@ class Connection {
         }
 
       case LiteralLogical(_, lit) => lit
-      case LikeLogical(heading, left, pos, comp, right) =>
+      case LikeLogical(_, pos, left, right, negated) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
 
         (lv, rv) match {
           case (_: String, _) | (_, _: String) =>
-            Logical.fromBoolean(
-              if (comp startsWith "NOT") !like(lv.toString, rv.toString) else like(lv.toString, rv.toString))
+            Logical.fromBoolean(if (negated) !like(lv.toString, rv.toString) else like(lv.toString, rv.toString))
           case _ => problem(pos, "invalid 'like' comparison")
         }
+      case IsNullLogical(_, expr, negated) =>
+        val v = evalValue(context, expr)
+
+        Logical.fromBoolean(if (negated) v != null else v == null)
       case ComparisonLogical(_, left, pos, comp, right) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
@@ -840,11 +843,15 @@ class Connection {
 
         ExistsLogical(s"EXISTS ($rel)", rel)
       case LiteralLogicalExpression(lit) => LiteralLogical(lit.toString, lit)
-      case LikeLogicalExpression(left, lpos, comp, right) =>
+      case LikeLogicalExpression(left, right, lpos, negated) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
 
-        LikeLogical(s"${l.heading} $comp ${r.heading}", l, lpos, comp, r)
+        LikeLogical(s"${l.heading} ${if (negated) "NOT LIKE" else "LIKE"} ${r.heading}", lpos, l, r, negated)
+      case IsNullLogicalExpression(expr, negated) =>
+        val e = evalExpression(afuse, fmetadata, ametadata, expr)
+
+        IsNullLogical(s"${e.heading} IS ${if (negated) "NOT " else ""}NULL", e, negated)
       case ComparisonLogicalExpression(left, List((pos, comp, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
@@ -898,8 +905,9 @@ case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult)
 case class NotLogical(heading: String, expr: LogicalResult) extends LogicalResult
 case class ComparisonLogical(heading: String, left: ValueResult, pos: Position, comp: String, right: ValueResult)
     extends LogicalResult
-case class LikeLogical(heading: String, left: ValueResult, pos: Position, like: String, right: ValueResult)
+case class LikeLogical(heading: String, pos: Position, left: ValueResult, right: ValueResult, negated: Boolean)
     extends LogicalResult
+case class IsNullLogical(heading: String, expr: ValueResult, negated: Boolean) extends LogicalResult
 case class ExistsLogical(heading: String, tuples: Iterable[Tuple]) extends LogicalResult
 
 trait StatementResult

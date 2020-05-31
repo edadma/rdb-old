@@ -241,7 +241,7 @@ class SQLParser extends RegexParsers {
     ("NOT" | "not") ~> comparisonExpression ^^ (p => NotLogicalExpression(p)) |
       comparisonExpression
 
-  def comparisonExpression =
+  def comparisonExpression: Parser[LogicalExpression] =
     nonLogicalValueExpression ~ rep1(pos ~ comparison ~ nonLogicalValueExpression) ^^ {
       case l ~ cs =>
         ComparisonLogicalExpression(l, cs map { case p ~ c ~ v => (p, c, v) })
@@ -251,19 +251,23 @@ class SQLParser extends RegexParsers {
           ComparisonLogicalExpression(l, List((p, "<=", c), (p, "<=", u)))
       } |
       ("EXISTS" | "exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
-      nonLogicalValueExpression ~ pos ~ ("LIKE" | "like" | (("NOT" | "not") ~ ("LIKE" | "like") ^^^ "NOT LIKE")) ~ nonLogicalValueExpression ^^ {
-        case l ~ p ~ op ~ r =>
-          LikeLogicalExpression(l, p, op, r)
+      nonLogicalValueExpression ~ pos ~ (opt("NOT" | "not") <~ ("LIKE" | "like")) ~ nonLogicalValueExpression ^^ {
+        case l ~ p ~ None ~ r    => LikeLogicalExpression(l, r, p, negated = false)
+        case l ~ p ~ Some(_) ~ r => LikeLogicalExpression(l, r, p, negated = true)
+      } |
+      nonLogicalValueExpression ~ (("IS" | "is") ~> opt("NOT" | "not") <~ ("NULL" | "null")) ^^ {
+        case e ~ None    => IsNullLogicalExpression(e, negated = false)
+        case e ~ Some(_) => IsNullLogicalExpression(e, negated = true)
       } |
       logicalPrimary
 
-  def logicalPrimary =
+  def logicalPrimary: Parser[LogicalExpression] =
     positioned(
-      "true" ^^^ LiteralLogicalExpression(TRUE) |
-        "false" ^^^ LiteralLogicalExpression(FALSE)
+      ("TRUE" | "true") ^^^ LiteralLogicalExpression(TRUE) |
+        ("FALSE" | "false") ^^^ LiteralLogicalExpression(FALSE)
     ) | "(" ~> logicalExpression <~ ")"
 
-  def parseFromString[T](src: String, grammar: Parser[T]) = {
+  def parseFromString[T](src: String, grammar: Parser[T]): T = {
     parseAll(grammar, new CharSequenceReader(src)) match {
       case Success(tree, _)       => tree
       case NoSuccess(error, rest) => problem(rest.pos, error)
