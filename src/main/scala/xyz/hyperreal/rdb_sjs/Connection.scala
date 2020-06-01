@@ -780,7 +780,7 @@ class Connection {
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
-  def comparison(l: Number, comp: String, r: Number) = relate(l, comp, r)
+  def comparison(l: Number, comp: String, r: Number): Boolean = relate(l, comp, r)
 
   def evalCondition(context: List[Tuple], cond: LogicalResult): Logical =
     cond match {
@@ -790,7 +790,6 @@ class Connection {
             Logical.fromBoolean(r.iterator(context).nonEmpty)
           case _ => sys.error("fix this")
         }
-
       case LiteralLogical(_, lit) => lit
       case LikeLogical(_, pos, left, right, negated, casesensitive) =>
         val lv = evalValue(context, left)
@@ -798,15 +797,14 @@ class Connection {
 
         (lv, rv) match {
           case (_: String, _) | (_, _: String) =>
-            Logical.fromBoolean(
-              if (negated) !like(lv.toString, rv.toString, casesensitive)
-              else like(lv.toString, rv.toString, casesensitive))
+            Logical.fromBooleanMaybeNegated(like(lv.toString, rv.toString, casesensitive), negated)
           case _ => problem(pos, "invalid 'like' comparison")
         }
       case IsNullLogical(_, expr, negated) =>
-        val v = evalValue(context, expr)
-
-        Logical.fromBoolean(if (negated) v != null else v == null)
+        Logical.fromBooleanMaybeNegated(evalValue(context, expr) == null, negated)
+      case InLogical(_, expr, negated, list) =>
+        Logical.fromBooleanMaybeNegated(list.iterator map (evalValue(context, _)) contains evalValue(context, expr),
+                                        negated)
       case ComparisonLogical(_, left, pos, comp, right) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
@@ -860,6 +858,11 @@ class Connection {
         val e = evalExpression(afuse, fmetadata, ametadata, expr)
 
         IsNullLogical(s"${e.heading} IS ${if (negated) "NOT " else ""}NULL", e, negated)
+      case InLogicalExpression(expr, negated, list) =>
+        val e = evalExpression(afuse, fmetadata, ametadata, expr)
+        val l = list map (evalExpression(afuse, fmetadata, ametadata, _))
+
+        InLogical(s"${e.heading} ${if (negated) "NOT " else ""}IN (${l map (_.heading) mkString ", "})", e, negated, l)
       case ComparisonLogicalExpression(left, List((pos, comp, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
@@ -921,6 +924,8 @@ case class LikeLogical(heading: String,
                        casesensitive: Boolean)
     extends LogicalResult
 case class IsNullLogical(heading: String, expr: ValueResult, negated: Boolean) extends LogicalResult
+case class InLogical(heading: String, expr: ValueResult, negated: Boolean, list: List[ValueResult])
+    extends LogicalResult
 case class ExistsLogical(heading: String, tuples: Iterable[Tuple]) extends LogicalResult
 
 trait StatementResult

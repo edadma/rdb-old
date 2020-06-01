@@ -265,6 +265,11 @@ class SQLParser extends RegexParsers {
         case e ~ None    => IsNullLogicalExpression(e, negated = false)
         case e ~ Some(_) => IsNullLogicalExpression(e, negated = true)
       } |
+      nonLogicalValueExpression ~ (opt("NOT" | "not") <~ ("IN" | "in")) ~ ("(" ~> rep1sep(nonLogicalValueExpression,
+                                                                                          ",") <~ ")") ^^ {
+        case e ~ None ~ l    => InLogicalExpression(e, negated = false, l)
+        case e ~ Some(_) ~ l => InLogicalExpression(e, negated = true, l)
+      } |
       logicalPrimary
 
   def logicalPrimary: Parser[LogicalExpression] =

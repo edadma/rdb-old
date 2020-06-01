@@ -72,6 +72,8 @@ case class LikeLogicalExpression(left: ValueExpression,
                                  casesensitive: Boolean)
     extends LogicalExpression
 case class IsNullLogicalExpression(expr: ValueExpression, negated: Boolean) extends LogicalExpression
+case class InLogicalExpression(expr: ValueExpression, negated: Boolean, list: List[ValueExpression])
+    extends LogicalExpression
 case class AndLogicalExpression(left: LogicalExpression, right: LogicalExpression) extends LogicalExpression
 case class OrLogicalExpression(left: LogicalExpression, right: LogicalExpression) extends LogicalExpression
 case class NotLogicalExpression(expr: LogicalExpression) extends LogicalExpression

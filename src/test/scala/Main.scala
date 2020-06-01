@@ -46,9 +46,9 @@ object Main extends App {
   val conn = new Connection { load(readFile("samples/employees.tab"), doubleSpaces = true) }
   val statement =
     """
-      |SELECT emp_name
+      |SELECT emp_name, UPPER(LOWER(job_name))
       |  FROM employee
-      |  WHERE emp_name ILIKE 's%'
+      |  WHERE emp_name IN ('FRANK', 'ADELYN', 'ADNRES')
     """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }

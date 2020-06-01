@@ -21,12 +21,20 @@ object Builtins {
     )
   val scalarFunctions =
     List(
+      "LOWER" -> LowerScalarFunction,
+      "lower" -> LowerScalarFunction,
+      "UPPER" -> UpperScalarFunction,
+      "upper" -> UpperScalarFunction,
+      "FLOAT" -> FloatScalarFunction,
       "float" -> FloatScalarFunction,
+      "ABS" -> AbsScalarFunction,
       "abs" -> AbsScalarFunction,
+      "SQRT" -> sqrtScalarFunction,
       "sqrt" -> sqrtScalarFunction
     )
   val constants =
     List(
+      "PI" -> Pi,
       "pi" -> Pi
     )
 
