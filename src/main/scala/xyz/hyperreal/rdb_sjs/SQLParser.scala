@@ -251,9 +251,15 @@ class SQLParser extends RegexParsers {
           ComparisonLogicalExpression(l, List((p, "<=", c), (p, "<=", u)))
       } |
       ("EXISTS" | "exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
-      nonLogicalValueExpression ~ pos ~ (opt("NOT" | "not") <~ ("LIKE" | "like")) ~ nonLogicalValueExpression ^^ {
-        case l ~ p ~ None ~ r    => LikeLogicalExpression(l, r, p, negated = false)
-        case l ~ p ~ Some(_) ~ r => LikeLogicalExpression(l, r, p, negated = true)
+      nonLogicalValueExpression ~ pos ~ opt("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike") ~ nonLogicalValueExpression ^^ {
+        case l ~ p ~ None ~ ("LIKE" | "like") ~ r =>
+          LikeLogicalExpression(l, r, p, negated = false, casesensitive = true)
+        case l ~ p ~ Some(_) ~ ("LIKE" | "like") ~ r =>
+          LikeLogicalExpression(l, r, p, negated = true, casesensitive = true)
+        case l ~ p ~ None ~ ("ILIKE" | "ilike") ~ r =>
+          LikeLogicalExpression(l, r, p, negated = false, casesensitive = false)
+        case l ~ p ~ Some(_) ~ ("ILIKE" | "ilike") ~ r =>
+          LikeLogicalExpression(l, r, p, negated = true, casesensitive = false)
       } |
       nonLogicalValueExpression ~ (("IS" | "is") ~> opt("NOT" | "not") <~ ("NULL" | "null")) ^^ {
         case e ~ None    => IsNullLogicalExpression(e, negated = false)

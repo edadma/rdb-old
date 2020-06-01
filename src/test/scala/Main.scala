@@ -48,7 +48,7 @@ object Main extends App {
     """
       |SELECT emp_name
       |  FROM employee
-      |  WHERE emp_name NOT LIKE 'S%'
+      |  WHERE emp_name ILIKE 's%'
     """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
