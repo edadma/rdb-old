@@ -198,6 +198,7 @@ class SQLParser extends RegexParsers {
       "(" ~> valueExpression <~ ")" |
       positioned(("NULL" | "null") ^^^ MarkLit(A)) |
 //      positioned("I" ^^^ MarkLit(I)) |
+      booleanLiteral ^^ LogicalValueExpression |
       columnPrimary
 
   def caseExpression =
@@ -272,11 +273,14 @@ class SQLParser extends RegexParsers {
       } |
       logicalPrimary
 
+  def booleanLiteral: Parser[LiteralLogicalExpression] = positioned(
+    ("TRUE" | "true") ^^^ LiteralLogicalExpression(TRUE) |
+      ("FALSE" | "false") ^^^ LiteralLogicalExpression(FALSE)
+  )
+
   def logicalPrimary: Parser[LogicalExpression] =
-    positioned(
-      ("TRUE" | "true") ^^^ LiteralLogicalExpression(TRUE) |
-        ("FALSE" | "false") ^^^ LiteralLogicalExpression(FALSE)
-    ) | "(" ~> logicalExpression <~ ")"
+    booleanLiteral |
+      "(" ~> logicalExpression <~ ")"
 
   def parseFromString[T](src: String, grammar: Parser[T]): T = {
     parseAll(grammar, new CharSequenceReader(src)) match {

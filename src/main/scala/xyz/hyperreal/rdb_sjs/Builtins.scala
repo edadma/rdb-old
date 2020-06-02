@@ -21,6 +21,8 @@ object Builtins {
     )
   val scalarFunctions =
     List(
+      "CONCAT" -> ConcatScalarFunction,
+      "concat" -> ConcatScalarFunction,
       "LOWER" -> LowerScalarFunction,
       "lower" -> LowerScalarFunction,
       "UPPER" -> UpperScalarFunction,

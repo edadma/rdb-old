@@ -628,7 +628,7 @@ class Connection {
               if (a == Nil)
                 s"${f.heading}()"
               else
-                s"${f.heading}(${a map (_.heading) mkString ","})"
+                s"${f.heading}(${a map (_.heading) mkString ", "})"
 
             AggregateFunctionValue(e.pos, null, heading, af.typ(a map (_.typ)), af, a)
           case VariableValue(_, _, _, _, sf: ScalarFunction) =>
@@ -637,7 +637,7 @@ class Connection {
               if (a == Nil)
                 s"${f.heading}()"
               else
-                s"${f.heading}(${a map (_.heading) mkString ","})"
+                s"${f.heading}(${a map (_.heading) mkString ", "})"
 
             ScalarFunctionValue(e.pos, null, heading, sf.typ(a map (_.typ)), sf, a)
           case _ => problem(e.pos, s"'$f' is not a function")

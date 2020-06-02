@@ -46,7 +46,7 @@ object Main extends App {
   val conn = new Connection { load(readFile("samples/employees.tab"), doubleSpaces = true) }
   val statement =
     """
-      |SELECT emp_name, UPPER(LOWER(job_name))
+      |SELECT emp_name, CONCAT("job_name: ", job_name), true
       |  FROM employee
       |  WHERE emp_name IN ('FRANK', 'ADELYN', 'ADNRES')
     """.stripMargin

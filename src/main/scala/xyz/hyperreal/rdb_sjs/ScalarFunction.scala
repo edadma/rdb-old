@@ -27,6 +27,14 @@ object LowerScalarFunction extends AbstractScalarFunction("lower", FloatType) {
     }
 }
 
+object ConcatScalarFunction extends AbstractScalarFunction("concat", FloatType) {
+  def apply(args: List[Any]) =
+    args map {
+      case null => ""
+      case a    => a.toString
+    } mkString
+}
+
 object UpperScalarFunction extends AbstractScalarFunction("upper", FloatType) {
   def apply(args: List[Any]) =
     args match {
