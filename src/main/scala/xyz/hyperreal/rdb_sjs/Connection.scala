@@ -175,10 +175,10 @@ class Connection {
                   val sym = Symbol(fkr.name)
 
                   baseRelations get sym match {
-                    case None => problem(fkr.pos, "unknown table")
+                    case None => problem(fkr.pos, s"unknown table: $sym")
                     case Some(t) =>
                       t.metadata.columnMap get fkc.name match {
-                        case None => problem(fkc.pos, "unknown column")
+                        case None => problem(fkc.pos, s"unknown column: ${fkc.name}")
                         case Some(c) =>
                           t.metadata.baseRelationHeader(c).constraint match {
                             case Some(PrimaryKey | Unique) =>
@@ -536,10 +536,10 @@ class Connection {
         }
       case ValueColumnExpression(t, c) =>
         if (!fmetadata.exists(_.tableSet(t.name)))
-          problem(t.pos, "unknown table")
+          problem(t.pos, s"unknown table: ${t.name}")
         else
           search(fmetadata)(_.tableColumnMap get (t.name, c.name)) match {
-            case None => problem(c.pos, "no such column")
+            case None => problem(c.pos, s"no such column: ${(t.name, c.name)}")
             case Some((ind, depth)) =>
               afuse match {
                 case use @ AFUseOrField(OnlyAFUsed) =>
