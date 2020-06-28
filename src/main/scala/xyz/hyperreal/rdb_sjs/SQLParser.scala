@@ -50,7 +50,7 @@ class SQLParser extends RegexParsers {
 
   def columnType =
     "smallint" ^^^ SmallintType |
-      ("int" | "integer") ^^^ IntegerType |
+      ("integer" | "int") ^^^ IntegerType |
       "text" ^^^ TextType |
       "date" ^^^ DateType |
       "timestamp" ^^^ InstantType
