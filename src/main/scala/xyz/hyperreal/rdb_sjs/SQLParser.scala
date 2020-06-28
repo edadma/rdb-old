@@ -56,7 +56,14 @@ class SQLParser extends RegexParsers {
 
   def ascending(o: Option[String]) = o.isEmpty || o.get.toLowerCase == "asc"
 
-  def query: Parser[TupleCollectionExpression] =
+  def statement = query | insert
+
+  def insert =
+    ("INSERT" | "insert") ~ ("INTO" | "into") ~ ident ~ "(" ~ expressions ~ ")" ~ ("VALUES" | "values") ~ rep1sep(
+      "(" ~ expressions ~ ")",
+      ", ")
+
+  def query: Parser[RelationExpression] =
     (("SELECT" | "select") ~> pos ~ (expressions | "*" ^^^ Nil) <~ ("FROM" | "from")) ~ fromRelation ~ opt(where) ~ opt(
       groupby) ~ opt(orderby) ~ opt(("LIMIT" | "limit") ~> integer) ~ opt(("OFFSET" | "offset") ~> integer) ^^ {
       case _ ~ Nil ~ r ~ None ~ None ~ None ~ None ~ None => r
