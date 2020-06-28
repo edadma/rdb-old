@@ -238,7 +238,13 @@ class Connection {
         baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
-            val types = b.metadata.header map (_.typ) toArray
+            val types = //b.metadata.header map (_.typ) toArray
+              columns map (n => {
+                b.metadata.columnMap get n.name match {
+                  case None      => problem(n.pos, s"column '$n' does not exist")
+                  case Some(idx) => b.metadata.header(idx).typ
+                }
+              }) toArray
             val seq = evalTupleseq(types, tupleseq, Nil)
             val (l, c) = b.insertTupleseq(columns, seq)
 

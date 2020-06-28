@@ -12,9 +12,10 @@ object Main extends App {
 
   val conn = new Connection // { load(readFile("samples/student.tab"), doubleSpaces = true) }
 
-  REPLMain.printResult(conn.executeSQLStatement("create table student (id integer primary key auto, name text)"))
-
-  REPLMain.printResult(conn.executeSQLStatement("insert into student (id, name) values (3, 'asdf')"))
+  REPLMain.printResult(
+    conn.executeSQLStatement("create table student (id integer primary key auto, a text, b text not null)"))
+  REPLMain.printResult(conn.executeSQLStatement("insert into student (b) values ('asdf'), ('erty')"))
+  REPLMain.printResult(conn.executeSQLStatement("insert into student (b, a) values ('zxcv', 'dfgh')"))
 
   val statement =
     """
