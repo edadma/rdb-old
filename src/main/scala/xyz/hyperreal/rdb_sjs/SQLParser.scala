@@ -59,9 +59,11 @@ class SQLParser extends RegexParsers {
   def statement = query | insert
 
   def insert =
-    ("INSERT" | "insert") ~ ("INTO" | "into") ~ ident ~ "(" ~ expressions ~ ")" ~ ("VALUES" | "values") ~ rep1sep(
+    ("INSERT" | "insert") ~> ("INTO" | "into") ~> ident ~ ("(" ~> expressions <~ ")") ~ (("VALUES" | "values") ~> rep1sep(
       "(" ~ expressions ~ ")",
-      ", ")
+      ", ")) ^^ {
+      case t ~ cs ~ vs =>
+    }
 
   def query: Parser[RelationExpression] =
     (("SELECT" | "select") ~> pos ~ (expressions | "*" ^^^ Nil) <~ ("FROM" | "from")) ~ fromRelation ~ opt(where) ~ opt(

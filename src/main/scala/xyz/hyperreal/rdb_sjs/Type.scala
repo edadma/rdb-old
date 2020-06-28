@@ -18,7 +18,7 @@ object Type {
       "instant" -> InstantType
     )
 
-  def fromValue(v: Any) = {
+  def fromValue(v: Any): Option[Type] = {
     def _fromValue: PartialFunction[Any, Type] = {
       case _: Logical    => LogicalType
       case _: Int        => IntegerType
@@ -40,7 +40,7 @@ object Type {
 abstract class Type extends Ordering[Any] {
   val name: String
 
-  override def toString = name
+  override def toString: String = name
 }
 
 abstract class PrimitiveType(val name: String) extends Type
@@ -57,23 +57,23 @@ abstract class NumericalType(name: String) extends PrimitiveType(name) {
 
 trait Auto {
 
-  def next(v: Any): Any
+  def next(v: Number): Number
 
-  def default: Any
+  def default: Number
 
 }
 
 trait IntegralType extends Auto {
 
-  def next(v: Any) = compute(v.asInstanceOf[Number], Symbol("+"), 1)
+  def next(v: Number): Number = compute(v, Symbol("+"), 1)
 
-  def default = 1.asInstanceOf[Number]
+  def default = 1
 
 }
 
 case object LogicalType extends PrimitiveType("logical") {
 
-  def compare(x: Any, y: Any) =
+  def compare(x: Any, y: Any): Int =
     (x, y) match {
       case (true, true) | (false, false) =>
         0

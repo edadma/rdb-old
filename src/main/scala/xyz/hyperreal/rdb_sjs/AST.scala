@@ -9,7 +9,7 @@ case class AssignRelationStatement(variable: Ident, relation: RelationExpression
 case class CreateBaseRelationStatement(base: Ident, columns: List[ColumnDef]) extends StatementAST
 case class DropTableStatement(base: Ident) extends StatementAST
 case class InsertRelationStatement(base: Ident, relation: RelationExpression) extends StatementAST
-case class InsertTupleseqStatement(base: Ident, tupleseq: TupleseqExpression) extends StatementAST
+case class InsertTupleseqStatement(base: Ident, columns: Seq[String], tupleseq: TupleseqExpression) extends StatementAST
 case class InsertTupleStatement(base: Ident, tupl: TupleExpression) extends StatementAST
 case class DeleteStatement(base: Ident, condition: LogicalExpression) extends StatementAST
 case class UpdateStatement(base: Ident, condition: LogicalExpression, updates: List[(Ident, ValueExpression)])

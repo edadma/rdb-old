@@ -1,6 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
-import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer, TreeMap}
+import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer}
 
 class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRelations: HashMap[Symbol, BaseRelation])
     extends AbstractRelation {
@@ -9,11 +10,17 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
 
   val metadata = new Metadata(definition toIndexedSeq)
 
+  private val seqs =
+    metadata.baseRelationHeader flatMap {
+      case BaseRelationColumn(_, column, typ, _, _, true) => List(column -> typ.asInstanceOf[Auto].default)
+      case _                                              => Nil
+    } to mutable.HashMap
+
   private val indexes =
     metadata.baseRelationHeader map {
       case BaseRelationColumn(_, _, typ, constraint, _, auto) =>
         if (constraint.isDefined || auto)
-          new TreeMap[Any, Int]()(typ)
+          new mutable.TreeMap[Any, Int]()(typ)
         else
           null
     }
@@ -45,6 +52,36 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
       }
 
     count
+  }
+
+  def insertValues(columns: Seq[String], values: Tuple): Option[Map[String, Any]] = {
+    if (columns.length != values.length)
+      sys.error("insertValues: column names list not the same length as values list")
+
+    for (c <- columns)
+      if (!metadata.columnSet(c))
+        sys.error(s"insertValues: column '$c' does not exist")
+
+    val colmap = columns zip values toMap
+    val row =
+      definition map {
+        case BaseRelationColumn(_, column, typ, _, unmarkable, auto) =>
+          colmap get column match {
+            case Some(value) => value
+            case None =>
+              if (auto) {
+                val v = seqs(column)
+
+                seqs(column) = typ.asInstanceOf[Auto].next(v)
+                v
+              } else if (unmarkable)
+                sys.error(s"insertValues: column '$column' is unmarkable")
+              else
+                null // handle correctly as a mark
+          }
+      }
+
+    insertRow(row.toIndexedSeq)
   }
 
   def insertRow(row: Tuple): Option[Map[String, Any]] = {
@@ -100,7 +137,7 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
 
                   indexes(idx).lastOption map (_._1) match {
                     case None    => auto.default
-                    case Some(v) => auto.next(v)
+                    case Some(v) => auto.next(v.asInstanceOf[Number])
                   }
                 } else
                   I
@@ -118,12 +155,12 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
     (res toList, count)
   }
 
-  def insertTupleseq(data: Tupleseq) = {
+  def insertTupleseq(columns: Seq[String], data: Tupleseq) = {
     val res = new ListBuffer[Map[String, Any]]
     var count = 0
 
     for (r <- data) {
-      insertRow(r) match {
+      insertValues(columns, r) match {
         case None =>
         case Some(m) =>
           res += m

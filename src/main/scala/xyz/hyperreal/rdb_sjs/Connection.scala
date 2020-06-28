@@ -234,13 +234,13 @@ class Connection {
               case Some(a) => InsertResult(List(a), 1)
             }
         }
-      case InsertTupleseqStatement(base, tupleseq) =>
+      case InsertTupleseqStatement(base, columns, tupleseq) =>
         baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
             val types = b.metadata.header map (_.typ) toArray
             val seq = evalTupleseq(types, tupleseq, Nil)
-            val (l, c) = b.insertTupleseq(seq)
+            val (l, c) = b.insertTupleseq(columns, seq)
 
             InsertResult(l, c)
         }
