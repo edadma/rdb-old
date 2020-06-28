@@ -9,7 +9,7 @@ object SQLParser {
   def parseStatement(statement: String) = {
     val p = new SQLParser
 
-    p.parseFromString(statement, p.query)
+    p.parseFromString(statement, p.statement)
   }
 
 }
@@ -42,27 +42,30 @@ class SQLParser extends RegexParsers {
     }
 
   def columnDefinition =
-    ident ~ pos ~ columnType ~ opt("not" ~ "null") ~ opt("auto") ^^ {
-      case name ~ pos ~ typ ~ u ~ a =>
-        ColumnDef(name, pos, typ, null, null, null, u isDefined, a isDefined)
+    ident ~ pos ~ columnType ~ opt(("NOT" | "not") ~ ("NULL" | "null")) ~ opt(
+      pos <~ ("PRIMARY" | "primary") <~ ("KEY" | "key")) ~ opt("auto") ^^ {
+      case name ~ pos ~ typ ~ u ~ pk ~ a =>
+        ColumnDef(name, pos, typ, pk, null, u isDefined, a isDefined)
     }
 
   def columnType =
     "smallint" ^^^ SmallintType |
-      "integer" ^^^ IntegerType |
+      ("int" | "integer") ^^^ IntegerType |
       "text" ^^^ TextType |
       "date" ^^^ DateType |
       "timestamp" ^^^ InstantType
 
   def ascending(o: Option[String]) = o.isEmpty || o.get.toLowerCase == "asc"
 
-  def statement = query | insert
+  def statement = createTable | query | insert
 
-  def insert =
-    ("INSERT" | "insert") ~> ("INTO" | "into") ~> ident ~ ("(" ~> expressions <~ ")") ~ (("VALUES" | "values") ~> rep1sep(
-      "(" ~ expressions ~ ")",
-      ", ")) ^^ {
-      case t ~ cs ~ vs =>
+  def tupleseqLit = rep1sep(tuple, ",") ^^ TupleseqLit
+
+  def tuple = positioned("(" ~> expressions <~ ")" ^^ TupleExpression)
+
+  def insert: Parser[InsertTupleseqStatement] =
+    ("INSERT" | "insert") ~> ("INTO" | "into") ~> ident ~ ("(" ~> rep1sep(ident, ",") <~ ")") ~ (("VALUES" | "values") ~> tupleseqLit) ^^ {
+      case t ~ cs ~ vs => InsertTupleseqStatement(t, cs, vs)
     }
 
   def query: Parser[RelationExpression] =

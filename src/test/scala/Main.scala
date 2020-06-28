@@ -10,12 +10,17 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val conn = new Connection { load(readFile("samples/student.tab"), doubleSpaces = true) }
-//  val statement =
-//    """
-//      |SELECT *
-//      |  FROM student
-//    """.stripMargin
+  val conn = new Connection // { load(readFile("samples/student.tab"), doubleSpaces = true) }
+
+  REPLMain.printResult(conn.executeSQLStatement("create table student (id integer primary key auto, name text)"))
+
+  REPLMain.printResult(conn.executeSQLStatement("insert into student (id, name) values (3, 'asdf')"))
+
+  val statement =
+    """
+      |SELECT *
+      |  FROM student
+    """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
 //  val statement =
@@ -43,13 +48,13 @@ object Main extends App {
 //        |  LIMIT 3 OFFSET 3
 //        """.stripMargin
 
-  val conn = new Connection { load(readFile("samples/employees.tab"), doubleSpaces = true) }
-  val statement =
-    """
-      |SELECT emp_name, CONCAT("job_name: ", job_name), true
-      |  FROM employee
-      |  WHERE emp_name IN ('FRANK', 'ADELYN', 'ADNRES')
-    """.stripMargin
+//  val conn = new Connection { load(readFile("samples/employees.tab"), doubleSpaces = true) }
+//  val statement =
+//    """
+//      |SELECT emp_name, CONCAT("job_name: ", job_name), true
+//      |  FROM employee
+//      |  WHERE emp_name IN ('FRANK', 'ADELYN', 'ADNRES')
+//    """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), true) }
 //  val statement =

@@ -146,15 +146,15 @@ class Connection {
         var hset = Set[String]()
         var pk = false
 
-        for (ColumnDef(id @ Ident(n), _, _, pkpos, _, _, _, _) <- columns)
+        for (ColumnDef(id @ Ident(n), _, _, pkpos, _, _, _) <- columns)
           if (hset(n))
             problem(id.pos, "duplicate column")
           else {
             hset += n
 
-            if (pkpos != null)
+            if (pkpos isDefined)
               if (pk)
-                problem(pkpos, "a second primary key is not allowed")
+                problem(pkpos.get, "a second primary key is not allowed")
               else
                 pk = true
           }
@@ -164,27 +164,27 @@ class Connection {
 
         val header =
           columns map {
-            case ColumnDef(Ident(n), tp, typ, pkpos, fkr, fkc, u, a) =>
+            case ColumnDef(Ident(n), tp, typ, pkpos, fk, u, a) =>
               if (a && !typ.isInstanceOf[Auto])
                 problem(tp, "a column of this type cannot be declared auto")
 
               val constraint =
                 if (pkpos ne null)
                   Some(PrimaryKey)
-                else if (fkr ne null) {
-                  val sym = Symbol(fkr.name)
+                else if (fk isDefined) {
+                  val sym = Symbol(fk.get._1.name)
 
                   baseRelations get sym match {
-                    case None => problem(fkr.pos, s"unknown table: $sym")
+                    case None => problem(fk.get._1.pos, s"unknown table: $sym")
                     case Some(t) =>
-                      t.metadata.columnMap get fkc.name match {
-                        case None => problem(fkc.pos, s"unknown column: ${fkc.name}")
+                      t.metadata.columnMap get fk.get._2.get.name match {
+                        case None => problem(fk.get._2.get.pos, s"unknown column: ${fk.get._2.get.name}")
                         case Some(c) =>
                           t.metadata.baseRelationHeader(c).constraint match {
                             case Some(PrimaryKey | Unique) =>
                               Some(ForeignKey(sym, c))
                             case _ =>
-                              problem(fkc.pos, "target column must be a primary key or unique")
+                              problem(fk.get._2.get.pos, "target column must be a primary key or unique")
                           }
                       }
                   }

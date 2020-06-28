@@ -54,15 +54,15 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
     count
   }
 
-  def insertValues(columns: Seq[String], values: Tuple): Option[Map[String, Any]] = {
+  def insertValues(columns: Seq[Ident], values: Tuple): Option[Map[String, Any]] = {
     if (columns.length != values.length)
       sys.error("insertValues: column names list not the same length as values list")
 
     for (c <- columns)
-      if (!metadata.columnSet(c))
-        sys.error(s"insertValues: column '$c' does not exist")
+      if (!metadata.columnSet(c.name))
+        problem(c.pos, s"insertValues: column '$c' does not exist")
 
-    val colmap = columns zip values toMap
+    val colmap = columns map (_.name) zip values toMap
     val row =
       definition map {
         case BaseRelationColumn(_, column, typ, _, unmarkable, auto) =>
@@ -155,7 +155,7 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
     (res toList, count)
   }
 
-  def insertTupleseq(columns: Seq[String], data: Tupleseq) = {
+  def insertTupleseq(columns: Seq[Ident], data: Tupleseq) = {
     val res = new ListBuffer[Map[String, Any]]
     var count = 0
 
