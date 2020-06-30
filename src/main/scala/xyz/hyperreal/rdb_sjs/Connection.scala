@@ -292,10 +292,8 @@ class Connection {
             aggregateCondition(b, cond, afuse.state)
             UpdateResult(b.update(this, cond, upds))
         }
-      case r: RelationExpression =>
-        RelationResult(evalRelation(r, Nil))
-      case t: TupleseqExpression =>
-        TupleseqResult(evalTupleseq(null, t, Nil))
+      case r: RelationExpression => RelationResult(evalRelation(r, Nil))
+      case t: TupleseqExpression => TupleseqResult(evalTupleseq(null, t, Nil))
     }
 
   def evalTupleseq(types: Array[Type], tupleseq: TupleseqExpression, context: List[Metadata]): Tupleseq = {

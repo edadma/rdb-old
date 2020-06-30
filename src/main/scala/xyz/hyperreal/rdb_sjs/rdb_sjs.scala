@@ -8,7 +8,7 @@ package object rdb_sjs {
 
   type Tuple = IndexedSeq[Any]
 
-  private val escapes = """\\b|\\f|\\t|\\r|\\n|\\\\|\\"\\'""" r
+  private val escapes = """\\b|\\f|\\t|\\r|\\n|\\\\|\\"|\\'""" r
 
   def unescape(s: String): String =
     escapes.replaceAllIn(s, _.matched match {

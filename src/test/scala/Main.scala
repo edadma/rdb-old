@@ -10,17 +10,20 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new Connection // { load(readFile("samples/student.tab"), doubleSpaces = true) }
+  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
 
-  REPLMain.printResult(
-    conn.executeSQLStatement("create table student (id integer primary key auto, a text, b text not null)"))
-  REPLMain.printResult(conn.executeSQLStatement("insert into student (b) values ('asdf'), ('erty')"))
-  REPLMain.printResult(conn.executeSQLStatement("insert into student (b, a) values ('zxcv', 'dfgh')"))
+//  REPLMain.printResult(
+//    conn.executeSQLStatement("create table student (id integer primary key auto, a text, b text not null)"))
+//  REPLMain.printResult(conn.executeSQLStatement("insert into student (b) values ('asdf'), ('erty')"))
+//  REPLMain.printResult(conn.executeSQLStatement("insert into student (b, a) values ('zxcv', 'dfgh')"))
 
   val statement =
     """
-      |SELECT *
-      |  FROM student
+      |SELECT planet.plan_id,
+      |       planet.name,
+      |       planet.climate
+      |  FROM planet
+      |  WHERE planet.name = 'Qo\'noS'
     """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
