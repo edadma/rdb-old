@@ -31,8 +31,8 @@ class SQLParser extends RegexParsers {
 
   def string: Parser[ValueExpression] =
     positioned(
-      (("'" ~> """[^'\n]*""".r <~ "'") |
-        ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLit)
+      (("'" ~> """(?:[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'") |
+        ("\"" ~> """(?:[^"\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "\"")) ^^ StringLit)
 
   def ident = positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 

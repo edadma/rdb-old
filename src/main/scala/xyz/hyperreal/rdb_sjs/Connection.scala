@@ -238,7 +238,7 @@ class Connection {
         baseRelations get Symbol(base.name) match {
           case None => problem(base.pos, "unknown base relation")
           case Some(b) =>
-            val types = //b.metadata.header map (_.typ) toArray
+            val types =
               columns map (n => {
                 b.metadata.columnMap get n.name match {
                   case None      => problem(n.pos, s"column '$n' does not exist")
@@ -514,7 +514,7 @@ class Connection {
         LiteralValue(ast.pos, null, n, FloatType, java.lang.Double.valueOf(n))
       case IntegerLit(n) =>
         LiteralValue(ast.pos, null, n, IntegerType, Integer.valueOf(n))
-      case StringLit(s) => LiteralValue(ast.pos, null, s""""$s"""", TextType, s)
+      case StringLit(s) => LiteralValue(ast.pos, null, s"'$s'", TextType, unescape(s))
       case MarkLit(m)   => MarkedValue(ast.pos, null, m.toString, null, m)
       case ValueVariableExpression(n) =>
         search(fmetadata)(_.columnMap get n.name) match {

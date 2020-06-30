@@ -1,11 +1,26 @@
 package xyz.hyperreal
 
+import scala.util.matching.Regex
 import scala.util.parsing.input.Position
 
 package object rdb_sjs {
   val VERSION = "0.1"
 
   type Tuple = IndexedSeq[Any]
+
+  private val escapes = """\\b|\\f|\\t|\\r|\\n|\\\\|\\"\\'""" r
+
+  def unescape(s: String): String =
+    escapes.replaceAllIn(s, _.matched match {
+      case "\\b"  => "\b"
+      case "\\f"  => "\f"
+      case "\\t"  => "\t"
+      case "\\r"  => "\r"
+      case "\\n"  => "\n"
+      case "\\\\" => "\\"
+      case "\\\"" => "\""
+      case "\\\'" => "'"
+    })
 
   def problem(pos: Position, error: String) =
     if (pos eq null)

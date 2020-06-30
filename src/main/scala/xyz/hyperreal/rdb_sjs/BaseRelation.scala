@@ -155,7 +155,7 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
     (res toList, count)
   }
 
-  def insertTupleseq(columns: Seq[Ident], data: Tupleseq) = {
+  def insertTupleseq(columns: Seq[Ident], data: Tupleseq): (List[Map[String, Any]], Int) = {
     val res = new ListBuffer[Map[String, Any]]
     var count = 0
 
