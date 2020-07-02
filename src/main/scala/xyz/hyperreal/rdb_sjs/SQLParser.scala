@@ -64,8 +64,9 @@ class SQLParser extends RegexParsers {
   def tuple = positioned("(" ~> expressions <~ ")" ^^ TupleExpression)
 
   def insert: Parser[InsertTupleseqStatement] =
-    ("INSERT" | "insert") ~> ("INTO" | "into") ~> ident ~ ("(" ~> rep1sep(ident, ",") <~ ")") ~ (("VALUES" | "values") ~> tupleseqLit) ^^ {
-      case t ~ cs ~ vs => InsertTupleseqStatement(t, cs, vs)
+    ("INSERT" | "insert") ~> ("INTO" | "into") ~> ident ~ ("(" ~> rep1sep(ident, ",") <~ ")") ~ (("VALUES" | "values") ~> tupleseqLit) ~ opt(
+      ("RETURNING" | "returning") ~> ident) ^^ {
+      case t ~ cs ~ vs ~ _ => InsertTupleseqStatement(t, cs, vs)
     }
 
   def query: Parser[RelationExpression] =

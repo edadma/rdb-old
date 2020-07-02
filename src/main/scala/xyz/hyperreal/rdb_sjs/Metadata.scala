@@ -41,7 +41,7 @@ case class SimpleColumn(table: String, column: String, typ: Type) extends Column
 case class BaseRelationColumn(table: String,
                               column: String,
                               typ: Type,
-                              constraint: Option[Constraint],
+                              var constraint: Option[Constraint],
                               unmarkable: Boolean,
                               auto: Boolean)
     extends Column
