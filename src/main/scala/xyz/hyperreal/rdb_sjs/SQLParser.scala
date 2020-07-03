@@ -43,17 +43,18 @@ class SQLParser extends RegexParsers {
 
   def columnDefinition =
     ident ~ pos ~ columnType ~ opt(("NOT" | "not") ~ ("NULL" | "null")) ~ opt(
-      pos <~ ("PRIMARY" | "primary") <~ ("KEY" | "key")) ~ opt("auto") ^^ {
-      case name ~ pos ~ typ ~ u ~ pk ~ a =>
-        ColumnDef(name, pos, typ, pk, null, u isDefined, a isDefined)
+      pos <~ ("PRIMARY" | "primary") <~ ("KEY" | "key")) ^^ {
+      case name ~ pos ~ ("SERIAL" | "serial") ~ u ~ pk =>
+        ColumnDef(name, pos, IntegerType, pk, null, u isDefined, auto = true)
+      case name ~ pos ~ typ ~ u ~ pk => ColumnDef(name, pos, Type.names(typ), pk, null, u isDefined, auto = false)
     }
 
   def columnType =
-    "smallint" ^^^ SmallintType |
-      ("integer" | "int") ^^^ IntegerType |
-      "text" ^^^ TextType |
-      "date" ^^^ DateType |
-      "timestamp" ^^^ InstantType
+    "SMALLINT" | "smallint" |
+      "NTEGER" | "integer" | "INT" | "int" |
+      "TEXT" | "text" |
+      "DATE" | "date" |
+      "TIMESTAMP" | "timestamp" | "SERIAL" | "serial" | "BIGSERIAL" | "bigserial"
 
   def ascending(o: Option[String]) = o.isEmpty || o.get.toLowerCase == "asc"
 

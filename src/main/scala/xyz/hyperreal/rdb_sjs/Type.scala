@@ -9,6 +9,7 @@ object Type {
   val names =
     Map(
       "logical" -> LogicalType,
+      "int" -> IntegerType,
       "integer" -> IntegerType,
       "smallint" -> SmallintType,
       "float" -> FloatType,

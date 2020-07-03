@@ -13,8 +13,7 @@ object Main extends App {
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
   val conn = new Connection
 
-  REPLMain.printResult(
-    conn.executeSQLStatement("create table t (id integer primary key auto, a text, b text not null)"))
+  REPLMain.printResult(conn.executeSQLStatement("create table t (id serial primary key, a text, b text not null)"))
   REPLMain.printResult(conn.executeSQLStatement("insert into t (b) values ('asdf'), ('erty')"))
   REPLMain.printResult(conn.executeSQLStatement("insert into t (b, a) values ('zxcv', 'dfgh')"))
 
