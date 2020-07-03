@@ -43,15 +43,16 @@ class SQLParser extends RegexParsers {
 
   def columnDefinition =
     ident ~ pos ~ columnType ~ opt(("NOT" | "not") ~ ("NULL" | "null")) ~ opt(
-      pos <~ ("PRIMARY" | "primary") <~ ("KEY" | "key")) ^^ {
-      case name ~ pos ~ ("SERIAL" | "serial") ~ u ~ pk =>
-        ColumnDef(name, pos, IntegerType, pk, null, u isDefined, auto = true)
-      case name ~ pos ~ typ ~ u ~ pk => ColumnDef(name, pos, Type.names(typ), pk, null, u isDefined, auto = false)
+      pos <~ ("PRIMARY" | "primary") <~ ("KEY" | "key")) ~ opt(("REFERENCES" | "references") ~> ident) ^^ {
+      case name ~ pos ~ ("SERIAL" | "serial") ~ u ~ pk ~ fk =>
+        ColumnDef(name, pos, IntegerType, pk, fk map ((_, None)), u.isDefined || pk.isDefined, auto = true)
+      case name ~ pos ~ typ ~ u ~ pk ~ fk =>
+        ColumnDef(name, pos, Type.names(typ.toLowerCase), pk, fk map ((_, None)), u isDefined, auto = false)
     }
 
   def columnType =
     "SMALLINT" | "smallint" |
-      "NTEGER" | "integer" | "INT" | "int" |
+      "INTEGER" | "integer" | "INT" | "int" |
       "TEXT" | "text" |
       "DATE" | "date" |
       "TIMESTAMP" | "timestamp" | "SERIAL" | "serial" | "BIGSERIAL" | "bigserial"

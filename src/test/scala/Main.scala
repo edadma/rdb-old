@@ -13,13 +13,13 @@ object Main extends App {
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
   val conn = new Connection
 
-  REPLMain.printResult(conn.executeSQLStatement("create table t (id serial primary key, a text, b text not null)"))
-  REPLMain.printResult(conn.executeSQLStatement("insert into t (b) values ('asdf'), ('erty')"))
-  REPLMain.printResult(conn.executeSQLStatement("insert into t (b, a) values ('zxcv', 'dfgh')"))
+  REPLMain.printResult(
+    conn.executeSQLStatement("CREATE TABLE country (\n  id SERIAL PRIMARY KEY,\n  name TEXT NOT NULL)"))
+  REPLMain.printResult(conn.executeSQLStatement("insert into country (name) values ('asdf'), ('erty')"))
 
   val statement =
     """
-      |SELECT * FROM t
+      |SELECT * FROM country
   """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
