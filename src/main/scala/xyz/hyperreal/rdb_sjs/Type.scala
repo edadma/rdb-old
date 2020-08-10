@@ -12,6 +12,7 @@ object Type {
       "int" -> IntegerType,
       "integer" -> IntegerType,
       "smallint" -> SmallintType,
+      "bigint" -> BigintType,
       "float" -> FloatType,
       "text" -> TextType,
       "decimal" -> DecimalType,
@@ -98,7 +99,8 @@ case object SmallintType extends NumericalType("smallint") with IntegralType
 
 case object IntegerType extends NumericalType("integer") with IntegralType
 
-//case object BigintType extends PrimitiveType
+case object BigintType extends NumericalType("bigint") with IntegralType
+
 case object FloatType extends NumericalType("float")
 
 case object DecimalType extends NumericalType("decimal")

@@ -53,6 +53,7 @@ class SQLParser extends RegexParsers {
   def columnType =
     "SMALLINT" | "smallint" |
       "INTEGER" | "integer" | "INT" | "int" |
+      "BIGINT" | "bigint" |
       "TEXT" | "text" |
       "DATE" | "date" |
       "TIMESTAMP" | "timestamp" | "SERIAL" | "serial" | "BIGSERIAL" | "bigserial"
