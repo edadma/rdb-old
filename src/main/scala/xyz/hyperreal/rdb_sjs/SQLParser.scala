@@ -53,7 +53,8 @@ class SQLParser extends RegexParsers {
     }
 
   def columnType =
-    "SMALLINT" | "smallint" |
+    "BOOLEAN" | "boolean" |
+      "SMALLINT" | "smallint" |
       "INTEGER" | "integer" | "INT" | "int" |
       "BIGINT" | "bigint" |
       "TEXT" | "text" |

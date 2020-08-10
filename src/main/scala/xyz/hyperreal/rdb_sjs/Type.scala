@@ -8,7 +8,7 @@ object Type {
 
   val names =
     Map(
-      "logical" -> LogicalType,
+      "boolean" -> LogicalType,
       "int" -> IntegerType,
       "integer" -> IntegerType,
       "smallint" -> SmallintType,
@@ -73,7 +73,7 @@ trait IntegralType extends Auto {
 
 }
 
-case object LogicalType extends PrimitiveType("logical") {
+case object LogicalType extends PrimitiveType("boolean") {
 
   def compare(x: Any, y: Any): Int =
     (x, y) match {
