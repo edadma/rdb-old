@@ -17,7 +17,7 @@ object Type {
       "text" -> TextType,
       "decimal" -> DecimalType,
       "date" -> DateType,
-      "instant" -> InstantType
+      "timestamp" -> InstantType
     )
 
   def fromValue(v: Any): Option[Type] = {

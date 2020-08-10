@@ -14,15 +14,19 @@ object Main extends App {
   val conn = new Connection
 
   REPLMain.printResult(conn.executeSQLStatement("""
-      |CREATE TABLE roles (
+      |CREATE TABLE tenants (
       |  id BIGSERIAL PRIMARY KEY,
-      |  role_name TEXT)
+      |  domain TEXT,
+      |  active BOOLEAN,
+      |  stripe_customer_id TEXT,
+      |  stripe_subscription_id TEXT,
+      |  stripe_subscription_item_id TEXT)
       |""".stripMargin))
-  REPLMain.printResult(conn.executeSQLStatement("insert into roles (role_name) values ('asdf'), ('erty')"))
+  REPLMain.printResult(conn.executeSQLStatement("insert into tenants (domain) values ('asdf'), ('erty')"))
 
   val statement =
     """
-      |SELECT * FROM roles
+      |SELECT * FROM tenants
   """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
