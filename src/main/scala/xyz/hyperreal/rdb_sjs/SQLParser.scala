@@ -46,6 +46,8 @@ class SQLParser extends RegexParsers {
       pos <~ ("PRIMARY" | "primary") <~ ("KEY" | "key")) ~ opt(("REFERENCES" | "references") ~> ident) ^^ {
       case name ~ pos ~ ("SERIAL" | "serial") ~ u ~ pk ~ fk =>
         ColumnDef(name, pos, IntegerType, pk, fk map ((_, None)), u.isDefined || pk.isDefined, auto = true)
+      case name ~ pos ~ ("BIGSERIAL" | "bigserial") ~ u ~ pk ~ fk =>
+        ColumnDef(name, pos, BigintType, pk, fk map ((_, None)), u.isDefined || pk.isDefined, auto = true)
       case name ~ pos ~ typ ~ u ~ pk ~ fk =>
         ColumnDef(name, pos, Type.names(typ.toLowerCase), pk, fk map ((_, None)), u isDefined, auto = false)
     }

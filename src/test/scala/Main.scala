@@ -13,13 +13,16 @@ object Main extends App {
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
   val conn = new Connection
 
-  REPLMain.printResult(
-    conn.executeSQLStatement("CREATE TABLE country (\n  id SERIAL PRIMARY KEY,\n  name TEXT NOT NULL)"))
-  REPLMain.printResult(conn.executeSQLStatement("insert into country (name) values ('asdf'), ('erty')"))
+  REPLMain.printResult(conn.executeSQLStatement("""
+      |CREATE TABLE roles (
+      |  id BIGSERIAL PRIMARY KEY,
+      |  role_name TEXT)
+      |""".stripMargin))
+  REPLMain.printResult(conn.executeSQLStatement("insert into roles (role_name) values ('asdf'), ('erty')"))
 
   val statement =
     """
-      |SELECT * FROM country
+      |SELECT * FROM roles
   """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
