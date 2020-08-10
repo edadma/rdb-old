@@ -61,7 +61,8 @@ class SQLParser extends RegexParsers {
       "DATE" | "date" |
       "TIMESTAMP" | "timestamp" |
       "SERIAL" | "serial" |
-      "BIGSERIAL" | "bigserial"
+      "BIGSERIAL" | "bigserial" |
+      "UUID" | "uuid"
 
   def ascending(o: Option[String]) = o.isEmpty || o.get.toLowerCase == "asc"
 

@@ -17,7 +17,8 @@ object Type {
       "text" -> TextType,
       "decimal" -> DecimalType,
       "date" -> DateType,
-      "timestamp" -> InstantType
+      "timestamp" -> InstantType,
+      "uuid" -> TextType // todo: implement uuid type
     )
 
   def fromValue(v: Any): Option[Type] = {
