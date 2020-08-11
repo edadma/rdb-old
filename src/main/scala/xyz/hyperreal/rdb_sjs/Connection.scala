@@ -159,8 +159,8 @@ class Connection {
                 pk = true
           }
 
-        if (!pk)
-          problem(table.pos, "one of the columns must be declared to be the primary key")
+//        if (!pk)  // todo: check this
+//          problem(table.pos, "one of the columns must be declared to be the primary key")
 
         val header =
           columns map {
@@ -338,6 +338,8 @@ class Connection {
             case TextType =>
             case typ      => problem(v.pos, s"expected $typ, not string")
           }
+        case TRUE  => x = true
+        case FALSE => x = false
       }
 
       row += x

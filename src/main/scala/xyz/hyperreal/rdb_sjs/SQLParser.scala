@@ -57,6 +57,7 @@ class SQLParser extends RegexParsers {
       "SMALLINT" | "smallint" |
       "INTEGER" | "integer" | "INT" | "int" |
       "BIGINT" | "bigint" |
+      "FLOAT" | "float" |
       "TEXT" | "text" |
       "DATE" | "date" |
       "TIMESTAMP" | "timestamp" |
