@@ -330,6 +330,8 @@ class Connection {
             case IntegerType =>
             case FloatType =>
               x = a.toDouble.asInstanceOf[Number]
+            case BigintType =>
+              x = a.toLong.asInstanceOf[Number]
             case typ => problem(v.pos, s"expected $typ, not integer")
           }
         case _: String =>
