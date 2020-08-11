@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import xyz.hyperreal.dal_sjs.BasicDAL.{relate, compute => dcompute}
+import xyz.hyperreal.dal.BasicDAL.{relate, compute => dcompute}
 
 trait AggregateFunction {
 
@@ -12,8 +12,7 @@ trait AggregateFunction {
 
 }
 
-abstract class AbstractAggregateFunction(val name: String)
-    extends AggregateFunction {
+abstract class AbstractAggregateFunction(val name: String) extends AggregateFunction {
 
   override def toString = s"<aggregate function '$name'>"
 
@@ -27,8 +26,7 @@ trait AggregateFunctionInstance {
 
 }
 
-abstract class AbstractAggregateFunctionInstance[T]
-    extends AggregateFunctionInstance {
+abstract class AbstractAggregateFunctionInstance[T] extends AggregateFunctionInstance {
 
   protected var intermediate: T = _
   protected var count = 0

@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import xyz.hyperreal.dal_sjs.BasicDAL.{compute, negate, relate}
+import xyz.hyperreal.dal.BasicDAL.{compute, negate, relate}
 import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 
 import scala.collection.mutable

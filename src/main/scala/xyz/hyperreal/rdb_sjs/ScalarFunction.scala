@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import xyz.hyperreal.dal_sjs.BasicDAL.{absFunction, sqrtFunction}
+import xyz.hyperreal.dal.BasicDAL.{absFunction, sqrtFunction}
 
 trait ScalarFunction extends (List[Any] => Any) {
 
