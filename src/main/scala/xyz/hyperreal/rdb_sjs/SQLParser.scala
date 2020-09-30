@@ -209,7 +209,7 @@ class SQLParser extends RegexParsers {
       applicativeExpression
 
   def applicativeExpression: Parser[ValueExpression] =
-    positioned(valuePrimary ~ ("(" ~> repsep(valueExpression, ",") <~ ")") ^^ {
+    positioned(valuePrimary ~ ("(" ~> (repN(1, "*" ^^^ StarExpression) | repsep(valueExpression, ",")) <~ ")") ^^ {
       case f ~ args => ApplicativeValueExpression(f, args)
     }) |
       valuePrimary

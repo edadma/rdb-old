@@ -1,6 +1,6 @@
 name := "rdb-sjs"
 
-version := "0.1.0-alpha.45"
+version := "0.1.0-snapshot-1"
 
 description := "In-memory relational database system"
 
@@ -31,8 +31,9 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2"
+	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2",
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
+  "org.scala-js" %%% "scalajs-java-time" % "1.0.0"
 )
 
 libraryDependencies ++= Seq(

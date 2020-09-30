@@ -6,6 +6,7 @@ import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.util.parsing.input.Position
+import java.time.{Instant, ZonedDateTime}
 
 class Connection {
 
@@ -334,11 +335,12 @@ class Connection {
               x = a.toLong.asInstanceOf[Number]
             case typ => problem(v.pos, s"expected $typ, not integer")
           }
-        case _: String =>
+        case s: String =>
           types(i) match {
-            case null     => types(i) = TextType
-            case TextType =>
-            case typ      => problem(v.pos, s"expected $typ, not string")
+            case null          => types(i) = TextType
+            case TextType      =>
+            case TimestampType => x = Instant.parse(s)
+            case typ           => problem(v.pos, s"expected $typ, not string")
           }
         case TRUE  => x = true
         case FALSE => x = false
@@ -512,6 +514,7 @@ class Connection {
         val v = evalExpression(afuse, fmetadata, ametadata, expr)
 
         AliasValue(v.pos, v.table, alias.name, v.typ, alias.pos, v)
+      case StarExpression => LiteralValue(ast.pos, null, "*", IntegerType, 0)
       case FloatLit(n) =>
         LiteralValue(ast.pos, null, n, FloatType, java.lang.Double.valueOf(n))
       case IntegerLit(n) =>

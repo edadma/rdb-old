@@ -17,7 +17,7 @@ object Type {
       "text" -> TextType,
       "decimal" -> DecimalType,
       "date" -> DateType,
-      "timestamp" -> InstantType,
+      "timestamp" -> TimestampType,
       "uuid" -> TextType // todo: implement uuid type
     )
 
@@ -29,7 +29,7 @@ object Type {
       case _: String     => TextType
       case _: BigDecimal => DecimalType
       case _: LocalDate  => DateType
-      case _: Instant    => InstantType
+      case _: Instant    => TimestampType
     }
 
     if (_fromValue isDefinedAt v)
@@ -129,7 +129,7 @@ case object DateType extends PrimitiveType("date") {
 
 }
 
-case object InstantType extends PrimitiveType("instant") {
+case object TimestampType extends PrimitiveType("timestamp") {
 
   def compare(x: Any, y: Any) =
     (x, y) match {

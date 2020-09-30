@@ -87,6 +87,7 @@ object Main extends App {
 
 //    println( SQLParser.parseStatement(statement) )
   REPLMain.printResult(conn.executeSQLStatement(statement))
+  REPLMain.printResult(conn.executeSQLStatement("SELECT count(*) FROM tenants"))
 
   /*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))

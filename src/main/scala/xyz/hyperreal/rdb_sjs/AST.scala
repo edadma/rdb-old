@@ -20,6 +20,7 @@ case class FloatLit(n: String) extends ValueExpression
 case class IntegerLit(n: String) extends ValueExpression
 case class StringLit(s: String) extends ValueExpression
 case class MarkLit(m: Mark) extends ValueExpression
+case object StarExpression extends ValueExpression
 case class ValueVariableExpression(name: Ident) extends ValueExpression
 case class ValueColumnExpression(table: Ident, column: Ident) extends ValueExpression
 case class TupleExpression(t: List[ValueExpression]) extends ValueExpression

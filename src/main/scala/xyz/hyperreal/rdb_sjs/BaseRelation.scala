@@ -88,8 +88,8 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
     var auto = Map.empty[String, Any]
 
     for (((r, d), i) <- (row zip definition) zipWithIndex) {
-      if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains(PrimaryKey)))
-        sys.error(s"column '${d.column}' of table '${d.table}' is unmarkable")
+//      if (r.isInstanceOf[Mark] && (d.unmarkable || d.constraint.contains(PrimaryKey)))  // todo: wasn't working
+//        sys.error(s"column '${d.column}' of table '${d.table}' is unmarkable")
 
       d.constraint match {
         case Some(PrimaryKey) if indexes(i) contains r => return None
