@@ -370,8 +370,8 @@ class Connection {
         val afuse = AFUseOrField(NoFieldOrAFUsed)
         val es =
           exprs map {
-            case (e, d) =>
-              evalExpression(afuse, rel.metadata :: context, e) -> d
+            case (e, d, n) =>
+              (evalExpression(afuse, rel.metadata :: context, e), d, n)
           }
 
         rel.sort(this, es)

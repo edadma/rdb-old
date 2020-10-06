@@ -1,6 +1,6 @@
 name := "rdb-sjs"
 
-version := "0.1.0-snapshot.1"
+version := "0.1.0-snapshot.2"
 
 description := "In-memory relational database system"
 
@@ -20,9 +20,9 @@ enablePlugins(ScalablyTypedConverterPlugin)
 
 //scalaJSUseMainModuleInitializer := true
 
-Test / scalaJSUseMainModuleInitializer := true
-
-Test / scalaJSUseTestModuleInitializer := false
+//Test / scalaJSUseMainModuleInitializer := true
+//
+//Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 

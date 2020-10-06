@@ -10,24 +10,25 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
-  val conn = new Connection
+  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
 
-  REPLMain.printResult(conn.executeSQLStatement("""
-      |CREATE TABLE tenants (
-      |  id BIGSERIAL PRIMARY KEY,
-      |  domain TEXT,
-      |  active BOOLEAN,
-      |  stripe_customer_id TEXT,
-      |  stripe_subscription_id TEXT,
-      |  stripe_subscription_item_id TEXT)
-      |""".stripMargin))
-  REPLMain.printResult(conn.executeSQLStatement("insert into tenants (domain) values ('asdf'), ('erty')"))
-
-  val statement =
-    """
-      |SELECT * FROM tenants
-  """.stripMargin
+//  val conn = new Connection
+//
+//  REPLMain.printResult(conn.executeSQLStatement("""
+//      |CREATE TABLE tenants (
+//      |  id BIGSERIAL PRIMARY KEY,
+//      |  domain TEXT,
+//      |  active BOOLEAN,
+//      |  stripe_customer_id TEXT,
+//      |  stripe_subscription_id TEXT,
+//      |  stripe_subscription_item_id TEXT)
+//      |""".stripMargin))
+//  REPLMain.printResult(conn.executeSQLStatement("insert into tenants (domain) values ('asdf'), ('erty')"))
+//
+//  val statement =
+//    """
+//      |SELECT * FROM tenants
+//  """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
 //  val statement =
@@ -86,8 +87,11 @@ object Main extends App {
 //	""".stripMargin
 
 //    println( SQLParser.parseStatement(statement) )
-  REPLMain.printResult(conn.executeSQLStatement(statement))
-  REPLMain.printResult(conn.executeSQLStatement("SELECT count(*) FROM tenants"))
+//  REPLMain.printResult(conn.executeSQLStatement(statement))
+//  REPLMain.printResult(conn.executeSQLStatement("SELECT count(*) FROM tenants"))
+  REPLMain.printResult(conn.executeSQLStatement("SELECT * FROM species"))
+
+  println(Testing.sqlQuery("SELECT * FROM species", conn))
 
   /*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))
@@ -134,4 +138,5 @@ object Main extends App {
 
 	{[a, b, c] (1, 2, 7), (0, 5, 7), (3, 4, 6)} order by a
 	*/
+
 }

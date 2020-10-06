@@ -21,7 +21,7 @@ object Testing {
     res.replace(" \n", "\n")
   }
 
-  val starTrekDB =
+  val starTrekDB: Connection =
     new Connection {
       load(
         """
@@ -31,14 +31,16 @@ object Testing {
         | 2                     Vulcan      pretty hot      
         | 3                     Betazed     awesome weather 
         | 4                     Qo'noS      turbulent       
-        | 5                     Turkana IV  null            
+        | 5                     Turkana IV  null
+        | 6                     Janus VI    boiling atmosphere
         |
         |species
         | spec_id: integer, pk  name: text  lifespan: integer  origin: integer, fk, planet, plan_id 
         | 1                     Human       71                 1                                    
         | 2                     Vulcan      220                2                                    
         | 3                     Betazoid    120                3                                    
-        | 4                     Klingon     150                4                                    
+        | 4                     Klingon     150                4
+        | 5                     Horta       null               6
         |
         |character
         | char_id: integer, pk      name: text       home: integer, fk, planet, plan_id  species: integer, fk, species, spec_id 

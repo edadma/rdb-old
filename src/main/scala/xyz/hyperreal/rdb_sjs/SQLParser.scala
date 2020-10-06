@@ -154,12 +154,15 @@ class SQLParser extends RegexParsers {
     (("GROUP" | "group") ~ ("BY" | "by")) ~> expressions ~ opt(("HAVING" | "having") ~> logicalExpression)
 
   def orderby =
-    ("ORDER" | "order") ~ ("BY" | "by") ~> rep1sep(valueExpression ~ opt(("ASC" | "asc") | ("DESC" | "desc")), ",") ^^ (
-        l =>
-          l.map {
-            case i ~ None    => (i, 1)
-            case i ~ Some(a) => (i, if (a.toLowerCase == "asc") 1 else -1)
-          })
+    ("ORDER" | "order") ~ ("BY" | "by") ~> rep1sep(valueExpression ~ opt("ASC" | "asc" | "DESC" | "desc") ~ opt(
+                                                     "NULLS" ~> ("FIRST" | "LAST") | "nulls" ~> ("first" | "last")),
+                                                   ",") ^^ (l =>
+      l.map {
+        case i ~ (None | Some("ASC" | "asc")) ~ (None | Some("LAST" | "last")) => (i, 1, 1)
+        case i ~ (None | Some("ASC" | "asc")) ~ Some("FIRST" | "first")        => (i, 1, -1)
+        case i ~ Some("DESC" | "desc") ~ (None | Some("LAST" | "last"))        => (i, -1, 1)
+        case i ~ Some("DESC" | "desc") ~ Some("FIRST" | "first")               => (i, -1, -1)
+      })
 
   def expressions = rep1sep(valueExpression, ",")
 

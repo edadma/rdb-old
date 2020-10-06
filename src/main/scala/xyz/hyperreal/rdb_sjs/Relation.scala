@@ -1,5 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
+import scalajs.js
+
 trait Relation extends collection.Set[Tuple] {
 
   def metadata: Metadata
@@ -8,12 +10,9 @@ trait Relation extends collection.Set[Tuple] {
 
   def iterator(context: List[Tuple]): Iterator[Tuple]
 
-  def sort(conn: Connection, exprs: List[(ValueResult, Int)]): Relation
+  def sort(conn: Connection, exprs: List[(ValueResult, Int, Int)]): Relation
 
-  def boundedIterator(context: List[Tuple],
-                      bounds: Seq[Symbol],
-                      idx: Int,
-                      v: AnyRef): Iterator[Tuple]
+  def boundedIterator(context: List[Tuple], bounds: Seq[Symbol], idx: Int, v: AnyRef): Iterator[Tuple]
 
 }
 
@@ -28,15 +27,19 @@ abstract class AbstractRelation extends Relation {
   def collect = new ConcreteRelation(metadata.header, iterator.toList)
 
   // todo: sort doesn't take into account context
-  def sort(conn: Connection, exprs: List[(ValueResult, Int)]) = {
+  def sort(conn: Connection, exprs: List[(ValueResult, Int, Int)]): ConcreteRelation = {
     val data = iterator.toList
-
-    def compare(exprs: List[(ValueResult, Int)], a: Tuple, b: Tuple): Int =
+    @scala.annotation.tailrec
+    def compare(exprs: List[(ValueResult, Int, Int)], a: Tuple, b: Tuple): Int =
       exprs match {
         case Nil => 0
-        case (v, d) :: tail =>
+        case (v, d, n) :: tail =>
           val comp =
             d * ((conn.evalValue(List(a), v), conn.evalValue(List(b), v)) match {
+              case (null, _) => n * d
+              case (_, null) => -n * d
+              case (x: js.Date, y: js.Date) =>
+                (x.getMilliseconds - y.getMilliseconds).sign.toInt // todo: platform independence
               case (x: String, y: String) => x compare y
               case (x: Int, y: Int)       => x compare y
               case (x: Double, y: Double) => x compare y
@@ -55,15 +58,11 @@ abstract class AbstractRelation extends Relation {
 
   def iterator = iterator(Nil)
 
-  def boundedIterator(context: List[Tuple],
-                      bounds: Seq[Symbol],
-                      idx: Int,
-                      v: AnyRef) = ns
+  def boundedIterator(context: List[Tuple], bounds: Seq[Symbol], idx: Int, v: AnyRef) = ns
 
   def ns = sys.error("not supported yet")
 
   def na(comp: String) =
-    sys.error(
-      s"comparison '$comp' can only be use with a base relation column that is indexed")
+    sys.error(s"comparison '$comp' can only be use with a base relation column that is indexed")
 
 }
