@@ -10,7 +10,7 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
+  val conn = new Connection { load(readFile("samples/northwind.tab"), doubleSpaces = true) }
 
 //  val conn = new Connection
 //
@@ -89,9 +89,18 @@ object Main extends App {
 //    println( SQLParser.parseStatement(statement) )
 //  REPLMain.printResult(conn.executeSQLStatement(statement))
 //  REPLMain.printResult(conn.executeSQLStatement("SELECT count(*) FROM tenants"))
-  REPLMain.printResult(conn.executeSQLStatement("SELECT * FROM species"))
-
-  println(Testing.sqlQuery("SELECT * FROM species", conn))
+  REPLMain.printResult(conn.executeSQLStatement(
+    """
+      |SELECT CompanyName
+      |FROM Suppliers
+      |WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.SupplierID AND UnitPrice = 22)
+      |""".stripMargin))
+  REPLMain.printResult(
+    conn.executeSQLStatement("""
+      |SELECT CompanyName
+      |FROM Suppliers JOIN Products ON Products.SupplierID = Suppliers.SupplierID
+      |WHERE UnitPrice = 22
+      |""".stripMargin))
 
   /*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))
