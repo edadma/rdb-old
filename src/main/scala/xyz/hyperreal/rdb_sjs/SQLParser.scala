@@ -274,8 +274,7 @@ class SQLParser extends RegexParsers {
         ComparisonLogicalExpression(l, cs map { case p ~ c ~ v => (p, c, v) })
     } |
       columnPrimary ~ pos ~ (("BETWEEN" | "between") ~> nonLogicalValueExpression <~ ("AND" | "and")) ~ nonLogicalValueExpression ^^ {
-        case c ~ p ~ l ~ u =>
-          ComparisonLogicalExpression(l, List((p, "<=", c), (p, "<=", u)))
+        case c ~ p ~ l ~ u => ComparisonLogicalExpression(l, List((p, "<=", c), (p, "<=", u)))
       } |
       ("EXISTS" | "exists") ~> ("(" ~> query <~ ")") ^^ ExistsLogicalExpression |
       nonLogicalValueExpression ~ pos ~ opt("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike") ~ nonLogicalValueExpression ^^ {
@@ -291,6 +290,10 @@ class SQLParser extends RegexParsers {
       nonLogicalValueExpression ~ (("IS" | "is") ~> opt("NOT" | "not") <~ ("NULL" | "null")) ^^ {
         case e ~ None    => IsNullLogicalExpression(e, negated = false)
         case e ~ Some(_) => IsNullLogicalExpression(e, negated = true)
+      } |
+      nonLogicalValueExpression ~ (opt("NOT" | "not") <~ ("IN" | "in")) ~ ("(" ~> query <~ ")") ^^ {
+        case e ~ None ~ q    => InQueryLogicalExpression(e, negated = false, q)
+        case e ~ Some(_) ~ q => InQueryLogicalExpression(e, negated = true, q)
       } |
       nonLogicalValueExpression ~ (opt("NOT" | "not") <~ ("IN" | "in")) ~ ("(" ~> rep1sep(nonLogicalValueExpression,
                                                                                           ",") <~ ")") ^^ {

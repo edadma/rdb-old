@@ -801,6 +801,18 @@ class Connection {
             Logical.fromBoolean(r.iterator(context).nonEmpty)
           case _ => sys.error("fix this")
         }
+      case InLogical(_, expr, negated, list) =>
+        Logical.fromBooleanMaybeNegated(list.iterator map (evalValue(context, _)) contains evalValue(context, expr),
+                                        negated)
+      case InQueryLogical(heading, expr, negated, relation) =>
+        relation match {
+          case r: Relation =>
+            if (r.metadata.header.length != 1)
+              sys.error(s"sub-query should yield one column result: $heading")
+
+            Logical.fromBooleanMaybeNegated(r.iterator(context) map (_.head) contains evalValue(context, expr), negated)
+          case _ => sys.error("fix this")
+        }
       case LiteralLogical(_, lit) => lit
       case LikeLogical(_, pos, left, right, negated, casesensitive) =>
         val lv = evalValue(context, left)
@@ -813,9 +825,6 @@ class Connection {
         }
       case IsNullLogical(_, expr, negated) =>
         Logical.fromBooleanMaybeNegated(evalValue(context, expr) == null, negated)
-      case InLogical(_, expr, negated, list) =>
-        Logical.fromBooleanMaybeNegated(list.iterator map (evalValue(context, _)) contains evalValue(context, expr),
-                                        negated)
       case ComparisonLogical(_, left, pos, comp, right) =>
         val lv = evalValue(context, left)
         val rv = evalValue(context, right)
@@ -854,6 +863,20 @@ class Connection {
           }
 
         ExistsLogical(s"EXISTS ($rel)", rel)
+      case InQueryLogicalExpression(expr, negated, tuples) =>
+        val e = evalExpression(afuse, fmetadata, ametadata, expr)
+        val rel =
+          tuples match {
+            case r: RelationExpression => evalRelation(r, fmetadata)
+            case s: TupleseqExpression => evalTupleseq(null, s, fmetadata)
+          }
+
+        InQueryLogical(s"${e.heading} ${if (negated) "NOT " else ""}IN ($rel)", e, negated, rel)
+      case InLogicalExpression(expr, negated, list) =>
+        val e = evalExpression(afuse, fmetadata, ametadata, expr)
+        val l = list map (evalExpression(afuse, fmetadata, ametadata, _))
+
+        InLogical(s"${e.heading} ${if (negated) "NOT " else ""}IN (${l map (_.heading) mkString ", "})", e, negated, l)
       case LiteralLogicalExpression(lit) => LiteralLogical(lit.toString, lit)
       case LikeLogicalExpression(left, right, lpos, negated, casesensitive) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
@@ -869,11 +892,6 @@ class Connection {
         val e = evalExpression(afuse, fmetadata, ametadata, expr)
 
         IsNullLogical(s"${e.heading} IS ${if (negated) "NOT " else ""}NULL", e, negated)
-      case InLogicalExpression(expr, negated, list) =>
-        val e = evalExpression(afuse, fmetadata, ametadata, expr)
-        val l = list map (evalExpression(afuse, fmetadata, ametadata, _))
-
-        InLogical(s"${e.heading} ${if (negated) "NOT " else ""}IN (${l map (_.heading) mkString ", "})", e, negated, l)
       case ComparisonLogicalExpression(left, List((pos, comp, right))) =>
         val l = evalExpression(afuse, fmetadata, ametadata, left)
         val r = evalExpression(afuse, fmetadata, ametadata, right)
@@ -916,28 +934,6 @@ case object FieldAndAFUsed extends AggregateFunctionUseState
 trait AggregateFunctionUse
 case object AFUseNotAllowed extends AggregateFunctionUse
 case class AFUseOrField(var state: AggregateFunctionUseState) extends AggregateFunctionUse
-
-trait LogicalResult {
-  val heading: String
-}
-
-case class LiteralLogical(heading: String, value: Logical) extends LogicalResult
-case class AndLogical(heading: String, left: LogicalResult, right: LogicalResult) extends LogicalResult
-case class OrLogical(heading: String, left: LogicalResult, right: LogicalResult) extends LogicalResult
-case class NotLogical(heading: String, expr: LogicalResult) extends LogicalResult
-case class ComparisonLogical(heading: String, left: ValueResult, pos: Position, comp: String, right: ValueResult)
-    extends LogicalResult
-case class LikeLogical(heading: String,
-                       pos: Position,
-                       left: ValueResult,
-                       right: ValueResult,
-                       negated: Boolean,
-                       casesensitive: Boolean)
-    extends LogicalResult
-case class IsNullLogical(heading: String, expr: ValueResult, negated: Boolean) extends LogicalResult
-case class InLogical(heading: String, expr: ValueResult, negated: Boolean, list: List[ValueResult])
-    extends LogicalResult
-case class ExistsLogical(heading: String, tuples: Iterable[Tuple]) extends LogicalResult
 
 trait StatementResult
 case class CreateResult(name: String) extends StatementResult

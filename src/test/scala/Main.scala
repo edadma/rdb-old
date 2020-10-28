@@ -101,6 +101,12 @@ object Main extends App {
       |FROM Suppliers JOIN Products ON Products.SupplierID = Suppliers.SupplierID
       |WHERE UnitPrice = 22
       |""".stripMargin))
+  REPLMain.printResult(
+    conn.executeSQLStatement("""
+                             |SELECT CompanyName
+                             |FROM Suppliers
+                             |WHERE SupplierID IN (SELECT SupplierID FROM Products WHERE UnitPrice = 22)
+                             |""".stripMargin))
 
   /*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))
