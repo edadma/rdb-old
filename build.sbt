@@ -1,10 +1,10 @@
 name := "rdb-sjs"
 
-version := "0.1.0-snapshot.3"
+version := "0.1.0-snapshot.4"
 
 description := "In-memory relational database system"
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.4"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
@@ -20,9 +20,9 @@ enablePlugins(ScalablyTypedConverterPlugin)
 
 //scalaJSUseMainModuleInitializer := true
 
-Test / scalaJSUseMainModuleInitializer := true
-
-Test / scalaJSUseTestModuleInitializer := false
+//Test / scalaJSUseMainModuleInitializer := true
+//
+//Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
@@ -33,14 +33,14 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
 	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2",
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-  "org.scala-js" %%% "scalajs-java-time" % "1.0.0"
+  "io.github.cquiroz" %%% "scala-java-time" % "2.0.0"
 )
 
 libraryDependencies ++= Seq(
 //	"xyz.hyperreal" %% "json" % "0.8.0",
 	"xyz.hyperreal" %%% "table-sjs" % "0.11.3",
 //	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %%% "importer-sjs" % "0.5.4",
+	"xyz.hyperreal" %%% "importer-sjs" % "0.1.0-snapshot.3",
   "xyz.hyperreal" %%% "dal" % "0.1.11"
 )
 

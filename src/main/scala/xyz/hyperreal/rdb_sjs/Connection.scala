@@ -31,7 +31,7 @@ class Connection {
 
     def choice: Boolean =
       if (choices nonEmpty) {
-        val ChoicePoint(nsp, npp) = choices.pop
+        val ChoicePoint(nsp, npp) = choices.pop()
 
         sp = nsp
         pp = npp

@@ -39,7 +39,7 @@ abstract class AbstractRelation extends Relation {
               case (null, _) => n * d
               case (_, null) => -n * d
               case (x: js.Date, y: js.Date) =>
-                (x.getMilliseconds - y.getMilliseconds).sign.toInt // todo: platform independence
+                (x.getMilliseconds() - y.getMilliseconds()).sign.toInt // todo: platform independence
               case (x: String, y: String) => x compare y
               case (x: Int, y: Int)       => x compare y
               case (x: Double, y: Double) => x compare y

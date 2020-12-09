@@ -1,19 +1,17 @@
 package xyz.hyperreal.rdb_sjs
 
-
 trait Tupleseq extends Seq[Tuple] {
 
-	def header: Option[IndexedSeq[String]]
+  def header: Option[IndexedSeq[String]]
 
-	def types: IndexedSeq[Type]
+  def types: IndexedSeq[Type]
 
 }
 
 abstract class AbstractTupleseq extends Tupleseq {
 
-	def apply( idx: Int ) = iterator drop idx next
+  def apply(idx: Int): Tuple = iterator.drop(idx).next()
 
-	def length = iterator length
+  def length: Int = iterator length
 
 }
-
