@@ -1,5 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
+import java.time.Instant
 import scalajs.js
 
 trait Relation extends collection.Set[Tuple] {
@@ -40,9 +41,10 @@ abstract class AbstractRelation extends Relation {
               case (_, null) => -n * d
               case (x: js.Date, y: js.Date) =>
                 (x.getMilliseconds() - y.getMilliseconds()).sign.toInt // todo: platform independence
-              case (x: String, y: String) => x compare y
-              case (x: Int, y: Int)       => x compare y
-              case (x: Double, y: Double) => x compare y
+              case (x: Instant, y: Instant) => x compareTo y
+              case (x: String, y: String)   => x compare y
+              case (x: Int, y: Int)         => x compare y
+              case (x: Double, y: Double)   => x compare y
             })
 
           if (comp != 0)

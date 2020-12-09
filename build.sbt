@@ -1,6 +1,6 @@
 name := "rdb-sjs"
 
-version := "0.1.0-snapshot.4"
+version := "0.1.0-snapshot.5"
 
 description := "In-memory relational database system"
 
