@@ -10,9 +10,11 @@ scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-lan
 
 organization := "xyz.hyperreal"
 
-resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
+githubOwner := "edadma"
 
-resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
+githubRepository := "rdb-sjs"
+
+githubTokenSource := TokenSource.GitConfig("github.token")
 
 enablePlugins(ScalaJSPlugin)
 
