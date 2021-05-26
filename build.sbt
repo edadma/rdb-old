@@ -1,10 +1,10 @@
 name := "rdb-sjs"
 
-version := "0.1.0-snapshot.5"
+version := "0.1.0-snapshot.6"
 
 description := "In-memory relational database system"
 
-scalaVersion := "2.13.4"
+scalaVersion := "2.13.6"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
@@ -16,7 +16,7 @@ resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
 enablePlugins(ScalaJSPlugin)
 
-enablePlugins(ScalablyTypedConverterPlugin)
+//enablePlugins(ScalablyTypedConverterPlugin)
 
 //scalaJSUseMainModuleInitializer := true
 
@@ -31,27 +31,27 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2",
+	"org.scala-lang.modules" %%% "scala-parser-combinators" % "2.0.0",
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
   "io.github.cquiroz" %%% "scala-java-time" % "2.0.0"
 )
 
 libraryDependencies ++= Seq(
 //	"xyz.hyperreal" %% "json" % "0.8.0",
-	"xyz.hyperreal" %%% "table-sjs" % "0.11.3",
+	"xyz.hyperreal" %%% "table" % "1.0.0-snapshot.3",
 //	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %%% "importer-sjs" % "0.1.0-snapshot.3",
+	"xyz.hyperreal" %%% "importer" % "0.1.0-snapshot.1",
   "xyz.hyperreal" %%% "dal" % "0.1.11"
 )
 
-npmDependencies in Compile ++= Seq(
-)
+//npmDependencies in Compile ++= Seq(
+//)
 
-mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
+mainClass := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
 
 publishMavenStyle := true
 
-publishArtifact in Test := false
+Test / publishArtifact := false
 
 pomIncludeRepository := { _ => false }
 

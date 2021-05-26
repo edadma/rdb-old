@@ -1,6 +1,6 @@
 package xyz.hyperreal.rdb_sjs
 
-import xyz.hyperreal.table_sjs.TextTable
+import xyz.hyperreal.table.TextTable
 
 object REPLMain /*extends App*/ {
 
