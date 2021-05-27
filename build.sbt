@@ -14,8 +14,6 @@ githubOwner := "edadma"
 
 githubRepository := "rdb-sjs"
 
-githubTokenSource := TokenSource.GitConfig("github.token")
-
 enablePlugins(ScalaJSPlugin)
 
 //enablePlugins(ScalablyTypedConverterPlugin)
