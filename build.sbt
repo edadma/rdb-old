@@ -27,7 +27,7 @@ enablePlugins(ScalaJSPlugin)
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 libraryDependencies ++= Seq(
-	"org.scalatest" %%% "scalatest" % "3.1.1" % "test"
+	"org.scalatest" %%% "scalatest" % "3.2.5" % "test"
 )
 
 libraryDependencies ++= Seq(
@@ -40,8 +40,8 @@ libraryDependencies ++= Seq(
 //	"xyz.hyperreal" %% "json" % "0.8.0",
 	"xyz.hyperreal" %%% "table" % "1.0.0-snapshot.3",
 //	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %%% "importer" % "0.1.0-snapshot.1",
-  "xyz.hyperreal" %%% "dal" % "0.1.11"
+	"xyz.hyperreal" %%% "importer" % "0.1.1",
+  "xyz.hyperreal" %%% "dal" % "0.2.0"
 )
 
 //npmDependencies in Compile ++= Seq(

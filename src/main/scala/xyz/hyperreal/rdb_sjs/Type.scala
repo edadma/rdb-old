@@ -68,7 +68,7 @@ trait Auto {
 
 trait IntegralType extends Auto {
 
-  def next(v: Number): Number = compute(v, Symbol("+"), 1)
+  def next(v: Number): Number = compute(Symbol("+"), v, 1)
 
   def default = 1
 

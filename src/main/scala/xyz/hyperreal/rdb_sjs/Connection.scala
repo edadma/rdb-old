@@ -738,7 +738,7 @@ class Connection {
           (lv, op, rv) match {
             case (_: String, "+", _) | (_, "+", _: String) =>
               lv.toString ++ rv.toString
-            case (l: Number, _, r: Number) => compute(l, op, r)
+            case (l: Number, _, r: Number) => compute(op, l, r)
             case _                         => problem(pos, "invalid operation")
           }
         } catch {
@@ -791,7 +791,7 @@ class Connection {
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
-  def comparison(l: Number, comp: String, r: Number): Boolean = relate(l, comp, r)
+  def comparison(l: Number, comp: String, r: Number): Boolean = relate(comp, l, r)
 
   def evalCondition(context: List[Tuple], cond: LogicalResult): Logical =
     cond match {
