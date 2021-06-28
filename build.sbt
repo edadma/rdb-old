@@ -1,12 +1,16 @@
 name := "rdb-sjs"
 
-version := "0.1.0-snapshot.7"
+version := "0.1.0-snapshot.8"
 
 description := "In-memory relational database system"
 
 scalaVersion := "2.13.6"
 
-scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
+scalacOptions ++= Seq("-deprecation",
+                      "-feature",
+                      "-language:postfixOps",
+                      "-language:implicitConversions",
+                      "-language:existentials")
 
 organization := "xyz.hyperreal"
 
@@ -18,42 +22,44 @@ enablePlugins(ScalaJSPlugin)
 
 //enablePlugins(ScalablyTypedConverterPlugin)
 
-//scalaJSUseMainModuleInitializer := true
+scalaJSUseMainModuleInitializer := true
 
-//Test / scalaJSUseMainModuleInitializer := true
-//
-//Test / scalaJSUseTestModuleInitializer := false
+Test / scalaJSUseMainModuleInitializer := true
+
+Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 libraryDependencies ++= Seq(
-	"org.scalatest" %%% "scalatest" % "3.2.5" % "test"
+  "org.scalatest" %%% "scalatest" % "3.2.5" % "test"
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %%% "scala-parser-combinators" % "2.0.0",
+  "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.0.0",
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
   "io.github.cquiroz" %%% "scala-java-time" % "2.0.0"
 )
 
 libraryDependencies ++= Seq(
 //	"xyz.hyperreal" %% "json" % "0.8.0",
-	"xyz.hyperreal" %%% "table" % "1.0.0-snapshot.3",
+  "xyz.hyperreal" %%% "table" % "1.0.0-snapshot.3",
 //	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %%% "importer" % "0.1.1",
+  "xyz.hyperreal" %%% "importer" % "0.1.1",
   "xyz.hyperreal" %%% "dal" % "0.2.0"
 )
 
 //npmDependencies in Compile ++= Seq(
 //)
 
-mainClass := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
+mainClass := Some("xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain")
 
 publishMavenStyle := true
 
 Test / publishArtifact := false
 
-pomIncludeRepository := { _ => false }
+pomIncludeRepository := { _ =>
+  false
+}
 
 licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
 

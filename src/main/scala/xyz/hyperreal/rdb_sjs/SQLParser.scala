@@ -30,11 +30,11 @@ class SQLParser extends RegexParsers {
     })
 
   def string: Parser[ValueExpression] =
-    positioned(
-      (("'" ~> """(?:[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'") |
-        ("\"" ~> """(?:[^"\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "\"")) ^^ StringLit)
+    positioned("""'(?:''|[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*'""".r ^^ StringLit)
 
-  def ident = positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
+  def ident =
+    positioned(
+      """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident | """"[^"]*"""".r ^^ (s => Ident(s.substring(1, s.length - 1))))
 
   def createTable =
     (("CREATE" | "create") ~ ("TABLE" | "table")) ~> ident ~ ("(" ~> rep1sep(columnDefinition, ",") <~ ")") ^^ {
