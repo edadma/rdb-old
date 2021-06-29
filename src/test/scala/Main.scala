@@ -10,7 +10,24 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val conn = new Connection { load(readFile("samples/northwind.tab"), doubleSpaces = true) }
+  val data =
+    """
+      |t1
+      | id: integer, pk   s: text
+      | 1                 asdf
+      |""".trim.stripMargin
+  val conn = new Connection { load(data, doubleSpaces = true) }
+  val insert = """INSERT INTO t1 (id, s) VALUES (2, 'qwer')"""
+
+  REPLMain.printResult(conn.executeSQLStatement(insert))
+
+  val statement =
+    """
+  | SELECT *
+  | FROM "t1"
+  """.stripMargin
+
+  //  val conn = new Connection { load(readFile("samples/northwind.tab"), doubleSpaces = true) }
 
 //  val conn = new Connection
 //
@@ -30,12 +47,12 @@ object Main extends App {
 //      |SELECT * FROM tenants
 //  """.stripMargin
 
-  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
-  val statement =
-    """
-        |SELECT *
-        |  FROM "character" LEFT JOIN planet ON character.home = planet.plan_id
-      """.stripMargin
+//  val conn = new Connection { load(readFile("samples/star_trek.tab"), doubleSpaces = true) }
+//  val statement =
+//    """
+//        |SELECT *
+//        |  FROM "character" LEFT JOIN planet ON character.home = planet.plan_id
+//      """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/grouping.tab"), doubleSpaces = true) }
 //  val statement =

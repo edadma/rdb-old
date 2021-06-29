@@ -519,7 +519,7 @@ class Connection {
         LiteralValue(ast.pos, null, n, FloatType, java.lang.Double.valueOf(n))
       case IntegerLit(n) =>
         LiteralValue(ast.pos, null, n, IntegerType, Integer.valueOf(n))
-      case StringLit(s) => LiteralValue(ast.pos, null, s"'$s'", TextType, unescape(s))
+      case StringLit(s) => LiteralValue(ast.pos, null, s"'$s'", TextType, unescape(s.substring(1, s.length - 1)))
       case MarkLit(m)   => MarkedValue(ast.pos, null, m.toString, null, m)
       case ValueVariableExpression(n) =>
         search(fmetadata)(_.columnMap get n.name) match {
