@@ -144,6 +144,7 @@ class BaseRelation(val name: String, definition: Seq[BaseRelationColumn], baseRe
             }
           }) toVector
 
+      sys.error("insertRelation")
       insertRow(r) match {
         case None =>
         case Some(m) =>

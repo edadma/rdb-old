@@ -13,19 +13,17 @@ object Main extends App {
   val data =
     """
       |t1
-      | id: integer, pk   s: text
-      | 1                 asdf
+      | id: integer, pk, auto   s: text
       |""".trim.stripMargin
   val conn = new Connection { load(data, doubleSpaces = true) }
-  val insert = """INSERT INTO t1 (id, s) VALUES (2, 'qwer')"""
 
-  REPLMain.printResult(conn.executeSQLStatement(insert))
+  REPLMain.printResult(conn.executeSQLStatement("INSERT INTO t1 (s) VALUES ('qwer')"))
 
   val statement =
     """
-  | SELECT *
-  | FROM "t1"
-  """.stripMargin
+    | SELECT *
+    | FROM "t1"
+    """.stripMargin
 
   //  val conn = new Connection { load(readFile("samples/northwind.tab"), doubleSpaces = true) }
 

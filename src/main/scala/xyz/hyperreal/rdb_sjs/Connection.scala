@@ -85,8 +85,10 @@ class Connection {
           header map {
             case ImpColumn(cname, typ, Nil) =>
               BaseRelationColumn(name, cname, types(typ), None, false, false)
+            case ImpColumn(cname, typ, List("pk", "auto")) =>
+              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), unmarkable = true, auto = true)
             case ImpColumn(cname, typ, List("pk")) =>
-              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), false, false)
+              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), true, false)
             case ImpColumn(cname, typ, List("fk", tref, cref)) =>
               val trefsym = Symbol(tref)
 
@@ -230,6 +232,7 @@ class Connection {
                 problem(e.pos, s"column '$column' of table '$table' is unmarkable")
             }
 
+            sys.error("InsertTupleStatement")
             b.insertRow(t) match {
               case None    => InsertResult(Nil, 0)
               case Some(a) => InsertResult(List(a), 1)
