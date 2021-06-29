@@ -17,7 +17,7 @@ object Main extends App {
       |""".trim.stripMargin
   val conn = new Connection { load(data, doubleSpaces = true) }
 
-  REPLMain.printResult(conn.executeSQLStatement("INSERT INTO t1 (s) VALUES ('qwer')"))
+  REPLMain.printResult(conn.executeSQLStatement("""INSERT INTO t1 (s) VALUES ('qw\ner')"""))
 
   val statement =
     """
