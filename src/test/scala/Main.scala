@@ -18,6 +18,7 @@ object Main extends App {
   val conn = new Connection { load(data, doubleSpaces = true) }
 
   REPLMain.printResult(conn.executeSQLStatement("""INSERT INTO t1 (s) VALUES ('qw\ner')"""))
+  REPLMain.printResult(conn.executeSQLStatement("""UPDATE t1 SET s = 'as\ndf' WHERE id = 1"""))
 
   val statement =
     """
