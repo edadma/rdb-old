@@ -1,6 +1,6 @@
-name := "rdb-sjs"
+name := "rdb"
 
-version := "0.1.0-snapshot.5"
+version := "0.1.0-snapshot.1"
 
 description := "In-memory relational database system"
 
@@ -16,7 +16,7 @@ resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
 enablePlugins(ScalaJSPlugin)
 
-enablePlugins(ScalablyTypedConverterPlugin)
+//enablePlugins(ScalablyTypedConverterPlugin)
 
 //scalaJSUseMainModuleInitializer := true
 
@@ -44,8 +44,8 @@ libraryDependencies ++= Seq(
   "xyz.hyperreal" %%% "dal" % "0.1.11"
 )
 
-npmDependencies in Compile ++= Seq(
-)
+//npmDependencies in Compile ++= Seq(
+//)
 
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
 
