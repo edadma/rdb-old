@@ -16,7 +16,7 @@ organization := "io.github.edadma"
 
 githubOwner := "edadma"
 
-githubRepository := "rdb-sjs"
+githubRepository := "rdb"
 
 enablePlugins(ScalaJSPlugin)
 
