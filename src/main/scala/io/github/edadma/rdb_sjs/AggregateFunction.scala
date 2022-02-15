@@ -1,6 +1,7 @@
 package io.github.edadma.rdb_sjs
 
-import io.github.edadma.dal.BasicDAL.{relate, compute => dcompute}
+import io.github.edadma.dal.BasicDAL
+import io.github.edadma.dal.BasicDAL.relate
 
 trait AggregateFunction {
 
@@ -63,7 +64,7 @@ object SumAggregateFunction extends AbstractAggregateFunction("sum") {
         if (intermediate eq null)
           next.asInstanceOf[Number]
         else
-          dcompute(Symbol("+"), intermediate, next.asInstanceOf[Number])
+          BasicDAL.compute(Symbol("+"), intermediate, next.asInstanceOf[Number])
     }
 
 }
@@ -78,9 +79,9 @@ object AvgAggregateFunction extends AbstractAggregateFunction("avg") {
         if (intermediate eq null)
           next.asInstanceOf[Number]
         else
-          dcompute(Symbol("+"), intermediate, next.asInstanceOf[Number])
+          BasicDAL.compute(Symbol("+"), intermediate, next.asInstanceOf[Number])
 
-      override def result = dcompute(Symbol("/"), intermediate, count)
+      override def result = BasicDAL.compute(Symbol("/"), intermediate, count)
     }
 
 }

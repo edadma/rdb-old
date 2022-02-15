@@ -1,10 +1,8 @@
 package io.github.edadma.rdb_sjs
 
-import org.scalatest._
-import freespec.AnyFreeSpec
-import matchers.should.Matchers
-
-import Testing._
+import io.github.edadma.rdb_sjs.Testing._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class SQLTests extends AnyFreeSpec with Matchers {
 

@@ -1,8 +1,9 @@
 package io.github.edadma.rdb_sjs
 
-import java.time.{Instant, LocalDate}
+import io.github.edadma.dal.BasicDAL
+import io.github.edadma.dal.BasicDAL.compute
 
-import io.github.edadma.dal.BasicDAL.{compute, compare => dcompare}
+import java.time.{Instant, LocalDate}
 
 object Type {
 
@@ -52,7 +53,7 @@ abstract class NumericalType(name: String) extends PrimitiveType(name) {
 
   def compare(x: Any, y: Any): Int =
     (x, y) match {
-      case (x: Number, y: Number) => dcompare(x, y)
+      case (x: Number, y: Number) => BasicDAL.compare(x, y)
       case _                      => sys.error(s"incomparable values: $x, $y")
     }
 
