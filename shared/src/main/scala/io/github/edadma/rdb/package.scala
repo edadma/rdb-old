@@ -4,8 +4,6 @@ import scala.util.matching.Regex
 import scala.util.parsing.input.Position
 
 package object rdb {
-  val VERSION = "0.1"
-
   type Tuple = IndexedSeq[Any]
 
   private val escapes = """''|\\b|\\f|\\t|\\r|\\n|\\\\|\\"|\\'""" r
