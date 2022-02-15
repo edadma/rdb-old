@@ -1,4 +1,4 @@
-package xyz.hyperreal
+package io.github.edadma
 
 import scala.util.matching.Regex
 import scala.util.parsing.input.Position

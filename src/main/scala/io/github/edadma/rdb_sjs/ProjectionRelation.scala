@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 class ProjectionRelation(conn: Connection,
                          relation: Relation,

@@ -1,6 +1,6 @@
 name := "rdb"
 
-version := "0.1.0-snapshot.10"
+version := "0.1.0-pre.1"
 
 description := "In-memory relational database system"
 
@@ -12,7 +12,7 @@ scalacOptions ++= Seq("-deprecation",
                       "-language:implicitConversions",
                       "-language:existentials")
 
-organization := "xyz.hyperreal"
+organization := "io.github.edadma"
 
 githubOwner := "edadma"
 
@@ -24,9 +24,13 @@ enablePlugins(ScalaJSPlugin)
 
 scalaJSUseMainModuleInitializer := true
 
-Test / scalaJSUseMainModuleInitializer := true
+Test / scalaJSUseMainModuleInitializer := false
 
-Test / scalaJSUseTestModuleInitializer := false
+Test / scalaJSUseTestModuleInitializer := true
+
+//Test / scalaJSUseMainModuleInitializer := true
+//
+//Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
@@ -46,7 +50,7 @@ libraryDependencies ++= Seq(
   "io.github.edadma" %%% "dal" % "0.1.5"
 )
 
-mainClass := Some("xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain")
+mainClass := Some("io.github.edadma." + name.value.replace('-', '_') + ".REPLMain")
 
 publishMavenStyle := true
 

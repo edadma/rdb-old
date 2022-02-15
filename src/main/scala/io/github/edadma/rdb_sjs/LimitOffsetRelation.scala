@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 class LimitOffsetRelation(relation: Relation, limit: Option[Int], offset: Option[Int]) extends AbstractRelation {
 

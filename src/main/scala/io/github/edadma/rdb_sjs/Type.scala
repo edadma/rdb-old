@@ -1,8 +1,8 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 import java.time.{Instant, LocalDate}
 
-import xyz.hyperreal.dal.BasicDAL.{compute, compare => dcompare}
+import io.github.edadma.dal.BasicDAL.{compute, compare => dcompare}
 
 object Type {
 

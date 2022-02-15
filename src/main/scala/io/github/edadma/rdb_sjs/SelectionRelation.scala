@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 
 class SelectionRelation( conn: Connection, relation: Relation, filter: LogicalResult, afuse: AggregateFunctionUseState ) extends AbstractRelation {

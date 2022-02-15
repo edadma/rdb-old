@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers

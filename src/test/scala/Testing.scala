@@ -1,6 +1,6 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
-import xyz.hyperreal.table.TextTable
+import io.github.edadma.table.TextTable
 
 object Testing {
 

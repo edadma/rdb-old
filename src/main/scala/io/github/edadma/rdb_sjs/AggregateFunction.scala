@@ -1,6 +1,6 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
-import xyz.hyperreal.dal.BasicDAL.{relate, compute => dcompute}
+import io.github.edadma.dal.BasicDAL.{relate, compute => dcompute}
 
 trait AggregateFunction {
 

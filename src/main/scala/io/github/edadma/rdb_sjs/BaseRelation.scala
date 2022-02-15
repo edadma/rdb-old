@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer}

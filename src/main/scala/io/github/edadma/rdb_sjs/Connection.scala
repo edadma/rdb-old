@@ -1,17 +1,17 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
-import xyz.hyperreal.dal.BasicDAL.{compute, negate, relate}
-import xyz.hyperreal.importer.{Importer, Table, Column => ImpColumn}
+import io.github.edadma.dal.BasicDAL.{compute, negate, relate}
+import io.github.edadma.importer.{Importer, Table, Column => ImpColumn}
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, HashMap}
+import scala.collection.mutable.ArrayBuffer
 import scala.util.parsing.input.Position
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 
 class Connection {
 
-  val baseRelations = new HashMap[Symbol, BaseRelation]
-  val variables = new HashMap[String, Any]
+  val baseRelations = new mutable.HashMap[Symbol, BaseRelation]
+  val variables = new mutable.HashMap[String, Any]
 
   variables ++= Builtins.aggregateFunctions
   variables ++= Builtins.scalarFunctions
@@ -78,21 +78,21 @@ class Connection {
 
     val tables = Importer.importFromString(data, doubleSpaces)
 
-    for (Table(name, header, data) <- tables) {
+    for (Table(name, header, data) <- tables.tables) {
       val t =
         createTable(
           name,
           header map {
             case ImpColumn(cname, typ, Nil) =>
-              BaseRelationColumn(name, cname, types(typ), None, false, false)
+              BaseRelationColumn(name, cname, types(typ), None, unmarkable = false, auto = false)
             case ImpColumn(cname, typ, List("pk", "auto")) =>
               BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), unmarkable = true, auto = true)
             case ImpColumn(cname, typ, List("pk")) =>
-              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), true, false)
+              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), unmarkable = true, auto = false)
             case ImpColumn(cname, typ, List("fk", tref, cref)) =>
               val trefsym = Symbol(tref)
 
-              tables find (_.name == tref) match {
+              tables.tables find (_.name == tref) match {
                 case None =>
                   sys.error(s"unknown table: $tref")
                 case Some(tab) =>
@@ -100,7 +100,7 @@ class Connection {
                     case -1 => sys.error(s"unknown column: $cref")
                     case col =>
                       if (tab.header(col).args.contains("pk"))
-                        BaseRelationColumn(name, cname, types(typ), Some(ForeignKey(trefsym, col)), false, false)
+                        BaseRelationColumn(name, cname, types(typ), Some(ForeignKey(trefsym, col)), unmarkable = false, auto = false)
                       else
                         sys.error(s"target column must be a primary key: $cref")
                   }
@@ -113,7 +113,7 @@ class Connection {
     }
   }
 
-  def createTable(name: String, definition: Seq[BaseRelationColumn]) = {
+  def createTable(name: String, definition: Seq[BaseRelationColumn]): BaseRelation = {
     val sym = Symbol(name)
 
     if (baseRelations contains sym)
@@ -313,7 +313,7 @@ class Connection {
     }
   }
 
-  def evalTuple(types: Array[Type], tuple: TupleExpression) = {
+  def evalTuple(types: Array[Type], tuple: TupleExpression): Vector[Any] = {
     val row = new ArrayBuffer[Any]
     val r = tuple.t
 
@@ -358,7 +358,7 @@ class Connection {
   def evalTupleList(types: Array[Type], data: List[TupleExpression]): List[Tuple] = {
     val body = new ArrayBuffer[Tuple]
 
-    for (t @ TupleExpression(r) <- data)
+    for (t @ TupleExpression(_) <- data)
       body += evalTuple(types, t)
 
     body.toList
@@ -577,12 +577,12 @@ class Connection {
           case _ =>
             val space = if (Set("+", "-")(operation)) " " else ""
             val lh =
-              if (brackets(e, left, false))
+              if (brackets(e, left, right = false))
                 s"(${l.heading})"
               else
                 l.heading
             val rh =
-              if (brackets(e, right, true))
+              if (brackets(e, right, right = true))
                 s"(${r.heading})"
               else
                 r.heading
@@ -616,7 +616,7 @@ class Connection {
         val e = evalExpression(afuse, fmetadata, ametadata, expr)
 
         e match {
-          case LiteralValue(p, _, _, op, x) =>
+          case LiteralValue(p, _, _, _, x) =>
             val res = unaryOperation(oppos, operation, x)
 
             LiteralValue(p, null, res.toString, Type.fromValue(res).get, res)
@@ -662,7 +662,7 @@ class Connection {
         LogicalValue(e.pos, null, log.heading, LogicalType, log)
     }
 
-  def aggregateCondition(tuples: Iterable[Tuple], condition: LogicalResult, afuse: AggregateFunctionUseState) =
+  def aggregateCondition(tuples: Iterable[Tuple], condition: LogicalResult, afuse: AggregateFunctionUseState): Unit =
     if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
       initAggregation(condition)
 
@@ -670,7 +670,7 @@ class Connection {
         aggregate(t, condition)
     }
 
-  def aggregateColumns(tuples: Iterable[Tuple], columns: Vector[ValueResult], afuse: AggregateFunctionUseState) =
+  def aggregateColumns(tuples: Iterable[Tuple], columns: Vector[ValueResult], afuse: AggregateFunctionUseState): Unit =
     if (afuse == OnlyAFUsed || afuse == FieldAndAFUsed) {
       for (c <- columns)
         initAggregation(c)
@@ -729,10 +729,10 @@ class Connection {
         initAggregation(right)
     }
 
-  def evalVector(row: List[Tuple], vector: Vector[ValueResult]) =
+  def evalVector(row: List[Tuple], vector: Vector[ValueResult]): Vector[Any] =
     vector map (evalValue(row, _))
 
-  def binaryOperation(lv: Any, pos: Position, op: String, rv: Any) =
+  def binaryOperation(lv: Any, pos: Position, op: String, rv: Any): Any =
     (lv, rv) match {
       case (I, _) | (_, I) => I
       case (A, _) | (_, A) => A
@@ -750,7 +750,7 @@ class Connection {
         }
     }
 
-  def unaryOperation(pos: Position, op: String, v: Any) =
+  def unaryOperation(pos: Position, op: String, v: Any): Number =
     try {
       (op, v) match {
         case ("-", v: Number) => negate(v)
@@ -789,8 +789,8 @@ class Connection {
       case UnaryValue(p, _, _, _, v, op) =>
         unaryOperation(p, op, evalValue(row, v))
       case ScalarFunctionValue(_, _, _, _, func, args) =>
-        func(args map (evalValue(row, _))).asInstanceOf[Any]
-      case a: AggregateFunctionValue   => a.func.result.asInstanceOf[Any]
+        func(args map (evalValue(row, _)))
+      case a: AggregateFunctionValue   => a.func.result
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 

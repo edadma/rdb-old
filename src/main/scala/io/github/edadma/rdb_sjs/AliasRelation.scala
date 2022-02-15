@@ -1,4 +1,4 @@
-package xyz.hyperreal.rdb_sjs
+package io.github.edadma.rdb_sjs
 
 class AliasRelation(rel: Relation, alias: String) extends AbstractRelation {
 
