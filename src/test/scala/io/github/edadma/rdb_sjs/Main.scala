@@ -1,8 +1,9 @@
 package io.github.edadma.rdb_sjs
 
+import scala.scalajs.js
 
 object Main extends App {
-  private val fs = g.require("fs")
+  private val fs = js.Dynamic.global.require("fs")
 
   private def readFile(name: String) = {
     fs.readFileSync(name).toString
