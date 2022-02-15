@@ -1,73 +1,55 @@
 name := "rdb"
 
-version := "0.1.0-snapshot.1"
+version := "0.1.0-snapshot.10"
 
 description := "In-memory relational database system"
 
-scalaVersion := "2.13.4"
+scalaVersion := "2.13.8"
 
-scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
+scalacOptions ++= Seq("-deprecation",
+                      "-feature",
+                      "-language:postfixOps",
+                      "-language:implicitConversions",
+                      "-language:existentials")
 
 organization := "xyz.hyperreal"
 
-resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
+githubOwner := "edadma"
 
-resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
+githubRepository := "rdb-sjs"
 
 enablePlugins(ScalaJSPlugin)
 
 //enablePlugins(ScalablyTypedConverterPlugin)
 
-//scalaJSUseMainModuleInitializer := true
+scalaJSUseMainModuleInitializer := true
 
-//Test / scalaJSUseMainModuleInitializer := true
-//
-//Test / scalaJSUseTestModuleInitializer := false
+Test / scalaJSUseMainModuleInitializer := true
+
+Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 libraryDependencies ++= Seq(
-	"org.scalatest" %%% "scalatest" % "3.1.1" % "test"
+  "org.scalatest" %%% "scalatest" % "3.2.11" % "test"
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2",
+  "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.1.0",
 //	"org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-  "io.github.cquiroz" %%% "scala-java-time" % "2.0.0"
+  "io.github.cquiroz" %%% "scala-java-time" % "2.3.0"
 )
 
 libraryDependencies ++= Seq(
-//	"xyz.hyperreal" %% "json" % "0.8.0",
-	"xyz.hyperreal" %%% "table-sjs" % "0.11.3",
-//	"xyz.hyperreal" %% "options" % "0.3",
-	"xyz.hyperreal" %%% "importer-sjs" % "0.1.0-snapshot.3",
-  "xyz.hyperreal" %%% "dal" % "0.1.11"
+  "io.github.edadma" %%% "table" % "1.0.0",
+  "io.github.edadma" %%% "importer" % "0.1.5",
+  "io.github.edadma" %%% "dal" % "0.1.5"
 )
 
-//npmDependencies in Compile ++= Seq(
-//)
-
-mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain" )
+mainClass := Some("xyz.hyperreal." + name.value.replace('-', '_') + ".REPLMain")
 
 publishMavenStyle := true
 
-publishArtifact in Test := false
-
-pomIncludeRepository := { _ => false }
+Test / publishArtifact := false
 
 licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
-
-homepage := Some(url("https://github.com/edadma/" + name.value))
-
-pomExtra :=
-  <scm>
-    <url>git@github.com:edadma/{name.value}.git</url>
-    <connection>scm:git:git@github.com:edadma/{name.value}.git</connection>
-  </scm>
-  <developers>
-    <developer>
-      <id>edadma</id>
-      <name>Edward A. Maxedon, Sr.</name>
-      <url>https://github.com/edadma</url>
-    </developer>
-  </developers>

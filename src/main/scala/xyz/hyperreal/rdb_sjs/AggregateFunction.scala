@@ -57,13 +57,13 @@ object SumAggregateFunction extends AbstractAggregateFunction("sum") {
 
   def typ(inputs: List[Type]) = inputs.head
 
-  def instance =
+  def instance: AbstractAggregateFunctionInstance[Number] =
     new AbstractAggregateFunctionInstance[Number] {
-      override def compute(next: Any) =
+      override def compute(next: Any): Number =
         if (intermediate eq null)
           next.asInstanceOf[Number]
         else
-          dcompute(intermediate, Symbol("+"), next.asInstanceOf[Number])
+          dcompute(Symbol("+"), intermediate, next.asInstanceOf[Number])
     }
 
 }
@@ -78,9 +78,9 @@ object AvgAggregateFunction extends AbstractAggregateFunction("avg") {
         if (intermediate eq null)
           next.asInstanceOf[Number]
         else
-          dcompute(intermediate, Symbol("+"), next.asInstanceOf[Number])
+          dcompute(Symbol("+"), intermediate, next.asInstanceOf[Number])
 
-      override def result = dcompute(intermediate, Symbol("/"), count)
+      override def result = dcompute(Symbol("/"), intermediate, count)
     }
 
 }
@@ -94,7 +94,7 @@ object MinAggregateFunction extends AbstractAggregateFunction("min") {
       override def compute(next: Any) = {
         if (intermediate eq null)
           next.asInstanceOf[Number]
-        else if (relate(next.asInstanceOf[Number], Symbol("<"), intermediate))
+        else if (relate(Symbol("<"), next.asInstanceOf[Number], intermediate))
           next.asInstanceOf[Number]
         else
           intermediate
@@ -112,7 +112,7 @@ object MaxAggregateFunction extends AbstractAggregateFunction("max") {
       override def compute(next: Any) = {
         if (intermediate eq null)
           next.asInstanceOf[Number]
-        else if (relate(intermediate, Symbol("<"), next.asInstanceOf[Number]))
+        else if (relate(Symbol("<"), intermediate, next.asInstanceOf[Number]))
           next.asInstanceOf[Number]
         else
           intermediate

@@ -1,7 +1,7 @@
 package xyz.hyperreal.rdb_sjs
 
 import xyz.hyperreal.dal.BasicDAL.{compute, negate, relate}
-import xyz.hyperreal.importer_sjs.{Importer, Table, Column => ImpColumn}
+import xyz.hyperreal.importer.{Importer, Table, Column => ImpColumn}
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap}
@@ -85,8 +85,10 @@ class Connection {
           header map {
             case ImpColumn(cname, typ, Nil) =>
               BaseRelationColumn(name, cname, types(typ), None, false, false)
+            case ImpColumn(cname, typ, List("pk", "auto")) =>
+              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), unmarkable = true, auto = true)
             case ImpColumn(cname, typ, List("pk")) =>
-              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), false, false)
+              BaseRelationColumn(name, cname, types(typ), Some(PrimaryKey), true, false)
             case ImpColumn(cname, typ, List("fk", tref, cref)) =>
               val trefsym = Symbol(tref)
 
@@ -230,6 +232,7 @@ class Connection {
                 problem(e.pos, s"column '$column' of table '$table' is unmarkable")
             }
 
+            sys.error("InsertTupleStatement")
             b.insertRow(t) match {
               case None    => InsertResult(Nil, 0)
               case Some(a) => InsertResult(List(a), 1)
@@ -519,7 +522,7 @@ class Connection {
         LiteralValue(ast.pos, null, n, FloatType, java.lang.Double.valueOf(n))
       case IntegerLit(n) =>
         LiteralValue(ast.pos, null, n, IntegerType, Integer.valueOf(n))
-      case StringLit(s) => LiteralValue(ast.pos, null, s"'$s'", TextType, unescape(s))
+      case StringLit(s) => LiteralValue(ast.pos, null, s"'$s'", TextType, unescape(s.substring(1, s.length - 1)))
       case MarkLit(m)   => MarkedValue(ast.pos, null, m.toString, null, m)
       case ValueVariableExpression(n) =>
         search(fmetadata)(_.columnMap get n.name) match {
@@ -738,7 +741,7 @@ class Connection {
           (lv, op, rv) match {
             case (_: String, "+", _) | (_, "+", _: String) =>
               lv.toString ++ rv.toString
-            case (l: Number, _, r: Number) => compute(l, op, r)
+            case (l: Number, _, r: Number) => compute(op, l, r)
             case _                         => problem(pos, "invalid operation")
           }
         } catch {
@@ -791,7 +794,7 @@ class Connection {
       case LogicalValue(_, _, _, _, l) => evalCondition(row, l)
     }
 
-  def comparison(l: Number, comp: String, r: Number): Boolean = relate(l, comp, r)
+  def comparison(l: Number, comp: String, r: Number): Boolean = relate(comp, l, r)
 
   def evalCondition(context: List[Tuple], cond: LogicalResult): Logical =
     cond match {

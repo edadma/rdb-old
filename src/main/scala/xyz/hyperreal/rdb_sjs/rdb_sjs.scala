@@ -8,19 +8,22 @@ package object rdb_sjs {
 
   type Tuple = IndexedSeq[Any]
 
-  private val escapes = """\\b|\\f|\\t|\\r|\\n|\\\\|\\"|\\'""" r
+  private val escapes = """''|\\b|\\f|\\t|\\r|\\n|\\\\|\\"|\\'""" r
 
   def unescape(s: String): String =
-    escapes.replaceAllIn(s, _.matched match {
-      case "\\b"  => "\b"
-      case "\\f"  => "\f"
-      case "\\t"  => "\t"
-      case "\\r"  => "\r"
-      case "\\n"  => "\n"
-      case "\\\\" => "\\"
-      case "\\\"" => "\""
-      case "\\\'" => "'"
-    })
+    escapes.replaceAllIn(
+      s,
+      _.matched match {
+        case "\\b"         => "\b"
+        case "\\f"         => "\f"
+        case "\\t"         => "\t"
+        case "\\r"         => "\r"
+        case "\\n"         => "\n"
+        case "\\\\"        => "\\"
+        case "\\\""        => "\""
+        case "''" | "\\\'" => "'"
+      }
+    )
 
   def problem(pos: Position, error: String) =
     if (pos eq null)

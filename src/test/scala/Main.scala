@@ -10,7 +10,23 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new Connection { load(readFile("samples/northwind.tab"), doubleSpaces = true) }
+  val data =
+    """
+      |t1
+      | id: integer, pk, auto   s: text
+      |""".trim.stripMargin
+  val conn = new Connection { load(data, doubleSpaces = true) }
+
+  REPLMain.printResult(conn.executeSQLStatement("""INSERT INTO t1 (s) VALUES ('qw\ner')"""))
+  REPLMain.printResult(conn.executeSQLStatement("""UPDATE t1 SET s = 'as\ndf' WHERE id = 1"""))
+
+  val statement =
+    """
+    | SELECT *
+    | FROM "t1"
+    """.stripMargin
+
+  //  val conn = new Connection { load(readFile("samples/northwind.tab"), doubleSpaces = true) }
 
 //  val conn = new Connection
 //
@@ -34,7 +50,7 @@ object Main extends App {
 //  val statement =
 //    """
 //        |SELECT *
-//        |  FROM character LEFT JOIN planet ON character.home = planet.plan_id
+//        |  FROM "character" LEFT JOIN planet ON character.home = planet.plan_id
 //      """.stripMargin
 
 //  val conn = new Connection { load(readFile("samples/grouping.tab"), doubleSpaces = true) }
@@ -87,26 +103,26 @@ object Main extends App {
 //	""".stripMargin
 
 //    println( SQLParser.parseStatement(statement) )
-//  REPLMain.printResult(conn.executeSQLStatement(statement))
+  REPLMain.printResult(conn.executeSQLStatement(statement))
 //  REPLMain.printResult(conn.executeSQLStatement("SELECT count(*) FROM tenants"))
-  REPLMain.printResult(conn.executeSQLStatement(
-    """
-      |SELECT CompanyName
-      |FROM Suppliers
-      |WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.SupplierID AND UnitPrice = 22)
-      |""".stripMargin))
-  REPLMain.printResult(
-    conn.executeSQLStatement("""
-      |SELECT CompanyName
-      |FROM Suppliers JOIN Products ON Products.SupplierID = Suppliers.SupplierID
-      |WHERE UnitPrice = 22
-      |""".stripMargin))
-  REPLMain.printResult(
-    conn.executeSQLStatement("""
-                             |SELECT CompanyName
-                             |FROM Suppliers
-                             |WHERE SupplierID IN (SELECT SupplierID FROM Products WHERE UnitPrice = 22)
-                             |""".stripMargin))
+//  REPLMain.printResult(conn.executeSQLStatement(
+//    """
+//      |SELECT CompanyName
+//      |FROM Suppliers
+//      |WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.SupplierID AND UnitPrice = 22)
+//      |""".stripMargin))
+//  REPLMain.printResult(
+//    conn.executeSQLStatement("""
+//      |SELECT CompanyName
+//      |FROM Suppliers JOIN Products ON Products.SupplierID = Suppliers.SupplierID
+//      |WHERE UnitPrice = 22
+//      |""".stripMargin))
+//  REPLMain.printResult(
+//    conn.executeSQLStatement("""
+//                             |SELECT CompanyName
+//                             |FROM Suppliers
+//                             |WHERE SupplierID IN (SELECT SupplierID FROM Products WHERE UnitPrice = 22)
+//                             |""".stripMargin))
 
   /*
 	Products [Products.CategoryID = Categories.CategoryID] Categories <CategoryName> (CategoryName, sum(Price))

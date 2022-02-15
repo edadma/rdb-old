@@ -30,11 +30,11 @@ class SQLParser extends RegexParsers {
     })
 
   def string: Parser[ValueExpression] =
-    positioned(
-      (("'" ~> """(?:[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'") |
-        ("\"" ~> """(?:[^"\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "\"")) ^^ StringLit)
+    positioned("""'(?:''|[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*'""".r ^^ StringLit)
 
-  def ident = positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
+  def ident =
+    positioned(
+      """[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident | """"[^"]*"""".r ^^ (s => Ident(s.substring(1, s.length - 1))))
 
   def createTable =
     (("CREATE" | "create") ~ ("TABLE" | "table")) ~> ident ~ ("(" ~> rep1sep(columnDefinition, ",") <~ ")") ^^ {
@@ -67,7 +67,7 @@ class SQLParser extends RegexParsers {
 
   def ascending(o: Option[String]) = o.isEmpty || o.get.toLowerCase == "asc"
 
-  def statement = createTable | query | insert
+  def statement = createTable | query | insert | update
 
   def tupleseqLit = rep1sep(tuple, ",") ^^ TupleseqLit
 
@@ -78,6 +78,15 @@ class SQLParser extends RegexParsers {
       ("RETURNING" | "returning") ~> ident) ^^ {
       case t ~ cs ~ vs ~ _ => InsertTupleseqStatement(t, cs, vs)
     }
+
+  def update: Parser[UpdateStatement] =
+    (("UPDATE" | "update") ~> ident) ~ (("SET" | "set") ~> rep1sep(set, ",")) ~ where ^^ {
+      case t ~ u ~ w => UpdateStatement(t, w, u)
+    }
+
+  def set: Parser[(Ident, ValueExpression)] = ident ~ "=" ~ valueExpression ^^ {
+    case i ~ _ ~ e => (i, e)
+  }
 
   def query: Parser[RelationExpression] =
     (("SELECT" | "select") ~> pos ~ (expressions | "*" ^^^ Nil) <~ ("FROM" | "from")) ~ fromRelation ~ opt(where) ~ opt(
