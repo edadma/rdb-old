@@ -1,7 +1,6 @@
 package io.github.edadma.rdb
 
 import java.time.Instant
-import scalajs.js
 
 trait Relation extends collection.Set[Tuple] {
 
@@ -23,7 +22,7 @@ abstract class AbstractRelation extends Relation {
     iterator contains elem // extending classes can override with a more effecient implementation
 
   def diff(that: collection.Set[Tuple]) =
-    filterNot(that contains) // extending classes can override with a more effecient implementation
+    filterNot(that.contains) // extending classes can override with a more effecient implementation
 
   def collect = new ConcreteRelation(metadata.header, iterator.toList)
 
@@ -39,8 +38,8 @@ abstract class AbstractRelation extends Relation {
             d * ((conn.evalValue(List(a), v), conn.evalValue(List(b), v)) match {
               case (null, _) => n * d
               case (_, null) => -n * d
-              case (x: js.Date, y: js.Date) =>
-                (x.getMilliseconds() - y.getMilliseconds()).sign.toInt // todo: platform independence
+//              case (x: js.Date, y: js.Date) =>
+//                (x.getMilliseconds() - y.getMilliseconds()).sign.toInt // todo: platform independence
               case (x: Instant, y: Instant) => x compareTo y
               case (x: String, y: String)   => x compare y
               case (x: Int, y: Int)         => x compare y
