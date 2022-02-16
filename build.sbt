@@ -30,8 +30,9 @@ lazy val rdb = crossProject(JSPlatform, JVMPlatform, NativePlatform).in(file("."
       ),
     libraryDependencies ++= Seq(
       "io.github.edadma" %%% "table" % "1.0.0",
-      "io.github.edadma" %%% "importer" % "0.1.5",
-      "io.github.edadma" %%% "dal" % "0.1.5"
+      "io.github.edadma" %%% "importer" % "0.1.7",
+      "io.github.edadma" %%% "dal" % "0.1.5",
+      "io.github.edadma" %%% "cross-platform" % "0.1.2"
       ),
     publishMavenStyle := true,
     Test / publishArtifact := false,
